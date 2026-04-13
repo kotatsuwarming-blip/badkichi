@@ -74,7 +74,8 @@ export interface GameState {
   positions: TeamPositions
 }
 
-/** セット結果（試合勝者判定への入力） */
+/** セット結果（統計・記録用） */
 export interface SetResult {
   winner: Team
+  score: Score
 }

@@ -74,7 +74,7 @@ rule-engine は **増分計算** を採用する。現在の状態（GameState�
 | `applyRally` | ラリー結果を適用して次の状態を返す | GameState, RallyResult | GameState | REQ-001〜006, REQ-010, REQ-011 |
 | `applyOverride` | PositionOverride を適用して位置を反転 | GameState, Team | GameState | REQ-104, REQ-105 |
 | `determineSetWinner` | セットの勝者を判定 | Score, SetConfig | Team \| null | REQ-007, REQ-101〜103 |
-| `determineMatchWinner` | 試合の勝者を判定 | SetResult[] | Team \| null | REQ-008 |
+| ~~`determineMatchWinner`~~ | ~~試合の勝者を判定~~ | ~~削除: ユーザヒアリング 2026-04-14~~ | | |
 
 ### 関数の関係
 
@@ -92,9 +92,6 @@ createInitialState(config, positions) → 初期 GameState
    │  winner = determineSetWinner(        │
    │             state.score, config)     │
    └─────────────────────────────────────┘
-        │
-        ▼ セット終了後
-   determineMatchWinner(setResults) → 試合の勝者
 ```
 
 ## ディレクトリ構造 🔵
@@ -111,7 +108,6 @@ app/
       apply-rally.ts           # ラリー結果の適用（状態遷移）
       apply-override.ts        # PositionOverride の適用
       determine-set-winner.ts  # セット勝者判定
-      determine-match-winner.ts # 試合勝者判定
       __tests__/               # テストファイル
 ```
 
@@ -201,9 +197,9 @@ test('得点入力でスコアが更新される', () => {
 })
 ```
 
-### 保守性・拡張性 🟡
+### 保守性・拡張性 🔵
 
-**信頼性**: 🟡 *NFR-201 から推測*
+**信頼性**: 🔵 *NFR-201 + ユーザヒアリング 2026-04-14「拡張性を保って欲しい」*
 
 - **シングルス/トリプルス対応**: チーム人数をハードコードしない。`SetPlayerPosition[]` の配列長で対応
 - **サーバー移行**: rule-engine は純 TypeScript なので、Node.js サーバーでも同じコードが動く
@@ -226,8 +222,8 @@ test('得点入力でスコアが更新される', () => {
 
 ## 信頼性レベルサマリー
 
-- 🔵 青信号: 10 件 (91%)
-- 🟡 黄信号: 1 件 (9%)
+- 🔵 青信号: 11 件 (100%)
+- 🟡 黄信号: 0 件 (0%)
 - 🔴 赤信号: 0 件 (0%)
 
 **品質評価**: 高品質

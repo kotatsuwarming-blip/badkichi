@@ -111,11 +111,12 @@ export interface GameState {
 }
 
 /**
- * セット結果（試合勝者判定への入力）
- * 🟡 REQ-008 から推測
+ * セット結果（統計・記録用）
+ * 🔵 ユーザヒアリング 2026-04-14「スコアもあっていい」
  */
 export interface SetResult {
   winner: Team
+  score: Score
 }
 
 // ========================================
@@ -175,20 +176,15 @@ export type ApplyOverride = (
  */
 export type DetermineSetWinner = (score: Score, config: SetConfig) => Team | null
 
-/**
- * 試合の勝者を判定する
- * 🟡 REQ-008（3セットマッチ、先に2セット取ったチームが勝利）
- *
- * @returns 勝者のチーム。まだ決着がついていない場合は null
- */
-export type DetermineMatchWinner = (setResults: SetResult[]) => Team | null
+// DetermineMatchWinner は削除
+// 🔵 ユーザヒアリング 2026-04-14「どちらが勝ったかの情報は出す必要がないのでいらない」
 
 // ========================================
 // 信頼性レベルサマリー
 // ========================================
 /**
- * - 🔵 青信号: 14 件 (88%)
- * - 🟡 黄信号: 2 件 (12%)
+ * - 🔵 青信号: 14 件 (100%)
+ * - 🟡 黄信号: 0 件 (0%)
  * - 🔴 赤信号: 0 件 (0%)
  *
  * 品質評価: 高品質

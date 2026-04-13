@@ -35,9 +35,6 @@
   │                                              │
   │  ※ composable がループを制御、DB に保存        │
   └──────────────────────────────────────────────┘
-        │
-        ▼ セット終了
-  determineMatchWinner(setResults) → Team | null
 ```
 
 ## 主要フロー
@@ -132,12 +129,7 @@
   ├ 前セットの勝者（'A'）をサーブ権チームとして config に設定
   └ state = createInitialState(newConfig, newPositions)
 
-試合終了判定:
-
-  determineMatchWinner([
-    { winner: 'A' },  // セット1
-    { winner: 'A' },  // セット2
-  ]) → 'A'  // チームA が 2-0 で勝利
+  ※ 試合勝者判定は rule-engine の範囲外（composable 側で管理）
 ```
 
 ### フロー5: 得点者変更（直前のラリーの修正） 🔵
