@@ -54,8 +54,8 @@ export interface Score {
 
 /** チームのポジション（左右の選手配置） */
 export interface TeamPositions {
-  teamA: { left: PlayerId; right: PlayerId }
-  teamB: { left: PlayerId; right: PlayerId }
+  teamA: { left: PlayerId, right: PlayerId }
+  teamB: { left: PlayerId, right: PlayerId }
 }
 
 /** ゲームの現在の状態 */
