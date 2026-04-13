@@ -34,26 +34,16 @@ export interface SetPlayerPosition {
   position: CourtSide
 }
 
-/** ラリー情報（rule-engine への入力） */
-export interface Rally {
-  /** セット内の連番（1始まり） */
-  rallyNumber: number
+/** ラリー結果（applyRally への入力） */
+export interface RallyResult {
   /** 得点チーム。レットの場合は null */
   pointWinner: Team | null
   /** レットかどうか */
   isLet: boolean
 }
 
-/** PositionOverride（左右入れ替わり） */
-export interface PositionOverride {
-  /** このラリーからオーバーライドが適用される */
-  rallyNumber: number
-  /** どちらのチームで起きたか */
-  team: Team
-}
-
 // ========================================
-// 出力型（rule-engine が返すデータ）
+// 状態型（rule-engine が管理する現在の状態）
 // ========================================
 
 /** スコア */
@@ -68,35 +58,18 @@ export interface TeamPositions {
   teamB: { left: PlayerId; right: PlayerId }
 }
 
-/** 各ラリーの計算結果 */
-export interface RallyState {
-  rallyNumber: number
-  /** サーバーの選手ID */
-  server: PlayerId
-  /** レシーバーの選手ID */
-  receiver: PlayerId
-  /** サーバーのコート位置 */
-  serverPosition: CourtSide
-  /** このラリー時点でのスコア（このラリーの得点を含む） */
-  scoreAfter: Score
-  /** サーブ権を持つチーム */
-  servingTeam: Team
-  /** このラリーの各チームの実際のポジション */
-  positions: TeamPositions
-}
-
-/** 次のサーバー情報 */
-export interface NextServerInfo {
-  /** サーブ権を持つチーム */
-  servingTeam: Team
-  /** サーバーの選手ID */
-  server: PlayerId
-  /** サーバーのコート位置 */
-  serverPosition: CourtSide
-  /** レシーバーの選手ID */
-  receiver: PlayerId
+/** ゲームの現在の状態 */
+export interface GameState {
   /** 現在のスコア */
-  currentScore: Score
+  score: Score
+  /** サーブ権を持つチーム */
+  servingTeam: Team
+  /** サーバーの選手ID */
+  server: PlayerId
+  /** レシーバーの選手ID */
+  receiver: PlayerId
+  /** サーバーのコート位置（スコアの偶奇で決定） */
+  serverPosition: CourtSide
   /** 各チームの現在のポジション */
   positions: TeamPositions
 }

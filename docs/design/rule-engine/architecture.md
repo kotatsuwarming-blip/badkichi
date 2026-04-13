@@ -1,6 +1,7 @@
 # rule-engine アーキテクチャ設計
 
 **作成日**: 2026-04-10
+**更新日**: 2026-04-13（増分計算アーキテクチャに変更）
 **関連要件定義**: [requirements.md](../../spec/rule-engine/requirements.md)
 **ヒアリング記録**: [design-interview.md](design-interview.md)
 
@@ -19,7 +20,16 @@ rule-engine は、バドミントンのダブルスルールに基づく純 Type
 
 ## アーキテクチャパターン 🔵
 
-**信頼性**: 🔵 *ADR-002「純TypeScriptロジック」+ ユーザヒアリング 2026-04-10*
+**信頼性**: 🔵 *ADR-002「純TypeScriptロジック」+ ユーザヒアリング 2026-04-10, 2026-04-13*
+
+### 計算方式: 増分計算（状態遷移）
+
+rule-engine は **増分計算** を採用する。現在の状態（GameState）に対してラリー結果を適用し、次の状態を返す。ラリー全件を渡して最初から再計算する方式ではない。
+
+**選択理由**:
+- UI に現在の状態が常に表示されているため、その情報を使って次の状態を計算するのが自然
+- コードがシンプル（「現在の状態 + 入力 → 次の状態」の1パターン）
+- ラリー記録と計算結果は DB に保存されるため、全件再計算は不要
 
 ### badkichi 全体のレイヤー構造
 
@@ -32,6 +42,8 @@ rule-engine は、バドミントンのダブルスルールに基づく純 Type
 │  Use Case Layer                                  │
 │  composables/                                    │
 │  ユースケースの組み立て（DB読み書き + 計算呼び出し） │
+│  ・applyRally の前後で状態を DB に保存              │
+│  ・Override 記録を DB に保存                       │
 ├─────────────────────────────────────────────────┤
 │  Domain Layer ★ rule-engine はここ                │
 │  app/utils/rule-engine/                          │
@@ -47,44 +59,42 @@ rule-engine は、バドミントンのダブルスルールに基づく純 Type
 
 - **純関数の集合**（クラスベースではない）
 - 入力 → 出力が決定的。副作用なし
-- **計算単位はセット**: 各関数は1セット分のデータを受け取る。複数セットをまたぐ計算は呼び出し側が行う
+- **状態遷移モデル**: GameState を受け取り、新しい GameState を返す
 - 試合勝者判定のみ、セット結果の配列を受け取る
 
 ## コンポーネント構成 🔵
 
-**信頼性**: 🔵 *要件定義書 REQ-001〜REQ-009 + ユーザヒアリング*
+**信頼性**: 🔵 *要件定義書 REQ-001〜REQ-011 + ユーザヒアリング 2026-04-13*
 
 ### rule-engine の公開関数
 
 | 関数名 | 責務 | 入力 | 出力 | 関連要件 |
 |--------|------|------|------|---------|
-| `computeRallyStates` | セット内の全ラリーの状態を計算 | SetConfig, SetPlayerPosition[], Rally[], PositionOverride[] | RallyState[] | REQ-001〜006, REQ-104/105 |
-| `computeNextServer` | 次のラリーのサーバー情報を返す | SetConfig, SetPlayerPosition[], Rally[], PositionOverride[] | NextServerInfo | REQ-001〜003 |
-| `computeScore` | 現在のスコアを計算 | Rally[] | Score | REQ-005, REQ-006 |
+| `createInitialState` | セットの初期状態を生成 | SetConfig, SetPlayerPosition[] | GameState | REQ-001 |
+| `applyRally` | ラリー結果を適用して次の状態を返す | GameState, RallyResult | GameState | REQ-001〜006, REQ-010, REQ-011 |
+| `applyOverride` | PositionOverride を適用して位置を反転 | GameState, Team | GameState | REQ-104, REQ-105 |
 | `determineSetWinner` | セットの勝者を判定 | Score, SetConfig | Team \| null | REQ-007, REQ-101〜103 |
 | `determineMatchWinner` | 試合の勝者を判定 | SetResult[] | Team \| null | REQ-008 |
-| `isSetComplete` | セットが終了しているか判定 | Score, SetConfig | boolean | REQ-007 |
 
-### 関数の依存関係
+### 関数の関係
 
 ```
-computeRallyStates (メイン関数)
-├── computeScore          (スコア計算)
-├── resolveServingTeam    (サーブ権の決定) ← 内部関数
-├── resolveServerPosition (サーバーの左右) ← 内部関数
-└── applyOverrides        (PositionOverride 適用) ← 内部関数
-
-computeNextServer
-├── computeScore
-├── resolveServingTeam
-├── resolveServerPosition
-└── applyOverrides
-
-determineSetWinner
-└── (スコアとルール設定のみで計算)
-
-determineMatchWinner
-└── (セット結果の配列のみで計算)
+createInitialState(config, positions) → 初期 GameState
+        │
+        ▼
+   ┌─────────────────────────────────────┐
+   │  ラリーごとのループ（composable 側）    │
+   │                                      │
+   │  state = applyRally(state, rally)    │
+   │       or                             │
+   │  state = applyOverride(state, team)  │
+   │                                      │
+   │  winner = determineSetWinner(        │
+   │             state.score, config)     │
+   └─────────────────────────────────────┘
+        │
+        ▼ セット終了後
+   determineMatchWinner(setResults) → 試合の勝者
 ```
 
 ## ディレクトリ構造 🔵
@@ -95,17 +105,14 @@ determineMatchWinner
 app/
   utils/
     rule-engine/
-      index.ts              # 公開 API（re-export）
-      types.ts              # 型定義
-      compute-rally-states.ts  # メイン計算関数
-      compute-next-server.ts   # 次のサーバー計算
-      compute-score.ts         # スコア計算
+      index.ts                 # 公開 API（re-export）
+      types.ts                 # 型定義
+      create-initial-state.ts  # 初期状態生成
+      apply-rally.ts           # ラリー結果の適用（状態遷移）
+      apply-override.ts        # PositionOverride の適用
       determine-set-winner.ts  # セット勝者判定
       determine-match-winner.ts # 試合勝者判定
-      internal/
-        resolve-serving-team.ts    # サーブ権の決定（内部）
-        resolve-server-position.ts # サーバーの左右（内部）
-        apply-overrides.ts         # PositionOverride 適用（内部）
+      __tests__/               # テストファイル
 ```
 
 **命名規則**:
@@ -115,7 +122,7 @@ app/
 
 ## 呼び出し側との連携 🔵
 
-**信頼性**: 🔵 *ユーザヒアリング 2026-04-10 composable 説明*
+**信頼性**: 🔵 *ユーザヒアリング 2026-04-10, 2026-04-13 composable 説明*
 
 ### 録画画面からの呼び出しイメージ
 
@@ -123,29 +130,47 @@ app/
 // app/composables/useMatchRecording.ts（将来 match-recording で実装）
 
 export function useMatchRecording(matchId: string) {
-  const rallies = ref<Rally[]>([])
-  const positions = ref<SetPlayerPosition[]>([])
-  const overrides = ref<PositionOverride[]>([])
-  const setConfig = ref<SetConfig>({ targetPoints: 21, enableDeuce: true, deucePointCap: 30 })
+  const config = ref<SetConfig>({
+    targetPoints: 21,
+    enableDeuce: true,
+    deucePointCap: 30,
+    firstServingTeam: 'A'
+  })
+  const state = ref<GameState | null>(null)
 
-  // rule-engine を呼ぶ（純関数なので computed で自動再計算）
-  const rallyStates = computed(() =>
-    computeRallyStates(setConfig.value, positions.value, rallies.value, overrides.value)
-  )
+  // セット開始
+  function startSet(positions: SetPlayerPosition[]) {
+    state.value = createInitialState(config.value, positions)
+  }
 
-  const nextServer = computed(() =>
-    computeNextServer(setConfig.value, positions.value, rallies.value, overrides.value)
-  )
+  // 得点入力
+  function recordPoint(team: Team) {
+    const before = state.value!
+    state.value = applyRally(before, { pointWinner: team, isLet: false })
+    saveRallyToDb(before, team)  // composable が DB に保存
 
-  const score = computed(() => computeScore(rallies.value))
+    // セット終了チェック
+    const winner = determineSetWinner(state.value.score, config.value)
+    if (winner) handleSetEnd(winner)
+  }
 
-  const setWinner = computed(() =>
-    determineSetWinner(score.value, setConfig.value)
-  )
+  // レット入力
+  function recordLet() {
+    state.value = applyRally(state.value!, { pointWinner: null, isLet: true })
+  }
+
+  // 位置補正
+  function overridePosition(team: Team) {
+    state.value = applyOverride(state.value!, team)
+    saveOverrideToDb(team)  // Override 記録を DB に保存
+  }
 }
 ```
 
-**ポイント**: Vue の `computed` は依存するデータが変わると自動で再計算される。ラリーが追加されるたびに rule-engine の関数が自動で呼ばれ、結果が即座に画面に反映される。
+**ポイント**:
+- `state` は Vue の `ref` で保持。変更するとUIが自動更新される
+- DB への保存は composable の責務。rule-engine は計算のみ
+- Override 記録も DB に保存する（統計分析用）
 
 ## 非機能要件の実現方法
 
@@ -153,9 +178,9 @@ export function useMatchRecording(matchId: string) {
 
 **信頼性**: 🔵 *NFR-001 + 純関数の性質*
 
-- **目標**: 1セット分（最大60ラリー）の計算が 10ms 以内
-- **実現方法**: 純粋な配列操作のみ。DOM操作、DB通信、非同期処理なし
-- **Vue computed の特性**: 依存データが変わらなければキャッシュされる（同じ入力で2回計算しない）
+- **目標**: 各関数の呼び出しが 1ms 以内（増分計算のため、1ラリー分の計算のみ）
+- **実現方法**: 純粋な比較・代入操作のみ。配列走査なし
+- **Vue ref の特性**: 値が変わるとUIが自動で再描画される
 
 ### テスト容易性 🔵
 
@@ -167,15 +192,12 @@ export function useMatchRecording(matchId: string) {
 
 ```typescript
 // テストの例
-import { computeScore } from '../compute-score'
+import { applyRally, createInitialState } from '../index'
 
-test('レットはスコアに加算されない', () => {
-  const rallies = [
-    { rally_number: 1, point_winner: 'A', is_let: false },
-    { rally_number: 2, point_winner: null, is_let: true },  // レット
-    { rally_number: 3, point_winner: 'B', is_let: false },
-  ]
-  expect(computeScore(rallies)).toEqual({ teamA: 1, teamB: 1 })
+test('得点入力でスコアが更新される', () => {
+  const state = createInitialState(config, positions)
+  const next = applyRally(state, { pointWinner: 'A', isLet: false })
+  expect(next.score).toEqual({ teamA: 1, teamB: 0 })
 })
 ```
 
@@ -193,7 +215,7 @@ test('レットはスコアに加算されない', () => {
 
 - rule-engine は DB、ネットワーク、ファイルシステムに一切アクセスしない
 - rule-engine は Nuxt / Vue に依存しない（ただし `app/utils/` に配置して auto-import の恩恵は受ける）
-- rule-engine に渡される全ラリーは得点者 or レットが確定済み
+- rule-engine に渡されるラリー結果は得点者 or レットが確定済み
 
 ## 関連文書
 
@@ -204,8 +226,8 @@ test('レットはスコアに加算されない', () => {
 
 ## 信頼性レベルサマリー
 
-- 🔵 青信号: 11 件 (92%)
-- 🟡 黄信号: 1 件 (8%)
+- 🔵 青信号: 10 件 (91%)
+- 🟡 黄信号: 1 件 (9%)
 - 🔴 赤信号: 0 件 (0%)
 
 **品質評価**: 高品質
