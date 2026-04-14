@@ -17,11 +17,11 @@
 | タスク | 内容 | タイプ | 工数 | 依存 | 状態 |
 |--------|------|--------|------|------|------|
 | [TASK-0001](TASK-0001.md) | 型定義ファイル作成 | DIRECT | 1h | なし | ✅ 完了 |
-| [TASK-0002](TASK-0002.md) | determineSetWinner | TDD | 3h | 0001 | |
-| [TASK-0003](TASK-0003.md) | createInitialState | TDD | 3h | 0001 | |
-| [TASK-0004](TASK-0004.md) | applyRally | TDD | 5h | 0003 | |
-| [TASK-0005](TASK-0005.md) | applyOverride | TDD | 2h | 0001 | |
-| [TASK-0006](TASK-0006.md) | index.ts 公開API | DIRECT | 1h | 全部 | |
+| [TASK-0002](TASK-0002.md) | determineSetWinner | TDD | 3h | 0001 | ✅ 完了 |
+| [TASK-0003](TASK-0003.md) | createInitialState | TDD | 3h | 0001 | ✅ 完了 |
+| [TASK-0004](TASK-0004.md) | applyRally | TDD | 5h | 0003 | ✅ 完了 |
+| [TASK-0005](TASK-0005.md) | applyOverride | TDD | 2h | 0001 | ✅ 完了 |
+| [TASK-0006](TASK-0006.md) | index.ts 公開API | DIRECT | 1h | 全部 | ✅ 完了 |
 
 ## 依存関係
 
