@@ -183,6 +183,10 @@ CREATE POLICY "xxx_update" ON xxx FOR UPDATE USING (is_member_of(group_id));
 コード生成: `substring(md5(random()::text) from 1 for 8)` で 8 文字英数字。
 検証: expires_at > now() でチェック。期限切れなら例外 raise。
 
+> 例外メッセージ → UI 文言の変換、UI チャネル使い分けは
+> [`docs/design/cross-cutting/error-handling.md`](../cross-cutting/error-handling.md)
+> および [ADR-005](../../decisions/005-error-handling-strategy.md) を参照。
+
 ### マイグレーション運用 🔵
 
 **信頼性**: 🔵 *ヒアリング 2026-04-16 Q4*

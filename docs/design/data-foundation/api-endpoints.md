@@ -291,6 +291,12 @@ RLS ポリシー内部で使用するヘルパー。クライアントから直�
 
 **信頼性**: 🔵 *Supabase JS クライアント仕様*
 
+> **横断規約は [ADR-005](../../decisions/005-error-handling-strategy.md) で確定。
+> 識別子集約・変換 composable・UI チャネル決定木・i18n・Sentry の実装規約は
+> [`docs/design/cross-cutting/error-handling.md`](../cross-cutting/error-handling.md)
+> を参照すること。** 本セクションは Supabase 側のエラーオブジェクト形と
+> PostgreSQL SQLSTATE 一覧のみを残す (data-foundation 固有の参照情報)。
+
 ### エラーオブジェクトの形
 
 PostgREST 系（CRUD / RPC）:
@@ -312,25 +318,19 @@ Auth 系:
 }
 ```
 
-### 標準的なエラー種別
+### data-foundation で発生する標準的なエラー種別
 
-| エラー | PostgreSQL code | 発生箇所 | UI 処理 |
-|--------|----------------|----------|---------|
-| RLS 拒否 | なし（空結果） | SELECT | 「データがありません」 |
-| RLS 拒否 | `42501` | INSERT/UPDATE | 「権限がありません」 |
-| ユニーク制約違反 | `23505` | INSERT | 「既に存在します」 |
-| FK 違反 | `23503` | INSERT | 「関連データが見つかりません」 |
-| CHECK 違反 | `23514` | INSERT/UPDATE | 「入力値が不正です」 |
-| RPC カスタム例外 | `P0001` | RPC | メッセージで分岐（上記参照） |
+| エラー | PostgreSQL code | 発生箇所 |
+|--------|----------------|----------|
+| RLS 拒否 | なし（空結果） | SELECT |
+| RLS 拒否 | `42501` | INSERT/UPDATE |
+| ユニーク制約違反 | `23505` | INSERT |
+| FK 違反 | `23503` | INSERT |
+| CHECK 違反 | `23514` | INSERT/UPDATE |
+| RPC カスタム例外 | `P0001` | RPC (RAISE EXCEPTION のメッセージで識別子判定) |
 
-### クライアント側の方針 🟡
-
-**信頼性**: 🟡 *妥当な推測 + Supabase 標準*
-
-- データ取得エラー: UI 側で try/catch せず、`error` を直接 UI に表示
-- 入力系エラー: Zod で事前検証 + サーバー側エラーをフォールバック表示
-- 認証切れ: `supabase.auth.onAuthStateChange` で検知し `/login` へリダイレクト
-- 詳細 UX は **auth-onboarding 単位** で決定
+UI チャネル選択 / 文言変換 / 認証切れ時のリダイレクト等は cross-cutting 文書の
+決定木と composable 規約に従う。
 
 ---
 
