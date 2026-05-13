@@ -61,7 +61,7 @@
 
 ## フロー 2: Group 作成 🔵
 
-**信頼性**: 🔵 *REQ-101, REQ-401, ヒアリング 2026-04-16 Q3*
+**信頼性**: 🔵 *REQ-101, REQ-401, ヒアリング 2026-04-16 Q3, ⑦ A-1 + A-2*
 **関連要件**: REQ-101, REQ-401
 
 ```
@@ -69,24 +69,32 @@
   │                  │                     │
   │  Group 名入力     │                     │
   │─────────────────→│                     │
-  │                  │  INSERT groups       │
+  │                  │  rpc('create_group_ │
+  │                  │   with_owner',      │
+  │                  │   { group_name })   │
   │                  │────────────────────→│
-  │                  │                     │  groups に行追加
-  │                  │                     │  group_members に
-  │                  │                     │  (group_id, user_id) 追加
-  │                  │  ← group data       │
+  │                  │                     │  ① auth.uid() チェック
+  │                  │                     │     NG → raise 'not_authenticated'
+  │                  │                     │  ② 文字数 1〜50 チェック
+  │                  │                     │     NG → raise 'invalid_group_name'
+  │                  │                     │  ③ groups に INSERT
+  │                  │                     │  ④ group_members に
+  │                  │                     │     (group_id, auth.uid()) INSERT
+  │                  │  ← { group_id }     │
   │                  │←────────────────────│
   │  作成完了         │                     │
   │←─────────────────│                     │
 ```
 
-**ポイント**:
-- Group 作成者は自動的に group_members に追加される
-- これにより RLS が有効になり、作成した Group のデータにアクセス可能
+**ポイント (⑦ A-1 + A-2)**:
+- `groups` および `group_members` の直接 INSERT は RLS で禁止。Group 作成は
+  `create_group_with_owner` RPC のみで、groups INSERT + group_members INSERT が 1 トランザクションで原子化される。
+- 中途失敗による「孤児 Group」(メンバーゼロで誰も見えない) が生まれない。
+- 旧 `group_members_insert` ポリシーの OR 条件 (任意 Group への自己追加) も削除済みで攻撃面が縮小。
 
 ## フロー 3: 招待コード発行 🔵
 
-**信頼性**: 🔵 *REQ-102, NFR-103, ヒアリング 2026-04-16 Q7*
+**信頼性**: 🔵 *REQ-102, NFR-103, ヒアリング 2026-04-16 Q7, ⑧ B-12*
 **関連要件**: REQ-102, NFR-103, EDGE-101
 
 ```
@@ -96,12 +104,15 @@ Group メンバー      Nuxt                Supabase (PostgreSQL)
   │─────────────────→│                     │
   │                  │  rpc('generate_     │
   │                  │   invitation_code', │
-  │                  │   { group_id })     │
+  │                  │   { target_group_id})│
   │                  │────────────────────→│
   │                  │                     │  ① is_member_of チェック
-  │                  │                     │  ② ランダム 8 文字生成
+  │                  │                     │  ② CSPRNG (gen_random_uuid) から 8 hex
   │                  │                     │  ③ group_invitations に INSERT
   │                  │                     │     (expires_at = now() + 7日)
+  │                  │                     │     UNIQUE 衝突なら 5 回までリトライ
+  │                  │                     │     全失敗で raise
+  │                  │                     │     'invitation_code_collision_after_retry'
   │                  │  ← { code }         │
   │                  │←────────────────────│
   │  コード表示       │                     │

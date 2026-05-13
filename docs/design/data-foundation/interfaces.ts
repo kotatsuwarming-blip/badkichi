@@ -50,8 +50,10 @@
  *         rallies:            { Row, Insert, Update }
  *         shots:              { Row, Insert, Update }
  *         position_overrides: { Row, Insert, Update }
+ *         recording_gaps:     { Row, Insert, Update }
  *       }
  *       Functions: {
+ *         create_group_with_owner:  { Args, Returns }
  *         generate_invitation_code: { Args, Returns }
  *         join_group_with_code:     { Args, Returns }
  *         is_member_of:             { Args, Returns }
@@ -101,13 +103,14 @@ type DatabaseShape = {
  *   type Tables<T extends keyof Database['public']['Tables']> =
  *     Database['public']['Tables'][T]['Row']
  *
- *   export type Group        = Tables<'groups'>
- *   export type GroupMember  = Tables<'group_members'>
- *   export type Player       = Tables<'players'>
- *   export type Match        = Tables<'matches'>
- *   export type SetRow       = Tables<'sets'>
- *   export type Rally        = Tables<'rallies'>
- *   export type Shot         = Tables<'shots'>
+ *   export type Group         = Tables<'groups'>
+ *   export type GroupMember   = Tables<'group_members'>
+ *   export type Player        = Tables<'players'>
+ *   export type Match         = Tables<'matches'>
+ *   export type SetRow        = Tables<'sets'>
+ *   export type Rally         = Tables<'rallies'>
+ *   export type Shot          = Tables<'shots'>
+ *   export type RecordingGap  = Tables<'recording_gaps'>
  *   ...
  */
 
@@ -180,6 +183,10 @@ export interface Match {
  */
 export type Team = 'A' | 'B'
 
+/**
+ * 🔵 ② B-7: score_team_a / score_team_b は削除 (rallies.point_winner から COUNT 集計で導出)。
+ * camera_near_team_at_start はセット開始時のカメラ手前チーム (NULL = カメラ向き不明)。
+ */
 export interface SetRow {
   id: string
   match_id: string
@@ -188,8 +195,7 @@ export interface SetRow {
   enable_deuce: boolean
   deuce_point_cap: number
   first_serving_team: Team
-  score_team_a: number
-  score_team_b: number
+  camera_near_team_at_start: Team | null
   winner: Team | null
   created_at: string
   updated_at: string
@@ -210,18 +216,26 @@ export interface SetPlayerPosition {
   deleted_at: string | null
 }
 
+/**
+ * 🔵 ② B-7 / ③ B-9 / ⑥ B-14:
+ * - score_team_a_after / score_team_b_after は削除 (rallies の COUNT で導出)
+ * - serving_team / server_position / camera_near_team を追加 (rule-engine 導出値を denormalize 保存)
+ * - server_player_id / receiver_player_id を NOT NULL に変更 (設計原則 5: ラリー記録の必須条件)
+ * - video_start_timestamp_ms は ms 単位 integer (float 等値比較を回避、⑥ B-14)
+ */
 export interface Rally {
   id: string
   set_id: string
   rally_number: number
-  server_player_id: string | null
-  receiver_player_id: string | null
-  video_start_timestamp: number | null
+  serving_team: Team
+  server_position: CourtSide
+  server_player_id: string
+  receiver_player_id: string
+  camera_near_team: Team | null
+  video_start_timestamp_ms: number | null
   point_winner: Team | null
   is_let: boolean
   is_point_confirmed: boolean
-  score_team_a_after: number
-  score_team_b_after: number
   created_at: string
   updated_at: string
   deleted_at: string | null
@@ -230,11 +244,14 @@ export interface Rally {
 /** 🟡 将来の AI ショット識別を見越した拡張点（PRD） */
 export type ShotInputSource = 'manual' | 'ai'
 
+/**
+ * 🔵 ⑥ B-14: video_timestamp は ms 単位 integer に変更 (float 等値比較を回避)。
+ */
 export interface Shot {
   id: string
   rally_id: string
   shot_number: number
-  video_timestamp: number | null
+  video_timestamp_ms: number | null
   input_source: ShotInputSource
   created_at: string
   updated_at: string
@@ -249,6 +266,23 @@ export interface PositionOverride {
   rally_id: string
   team: Team
   override_type: PositionOverrideType
+  created_at: string
+  updated_at: string
+  deleted_at: string | null
+}
+
+/**
+ * 🔵 ② B-7 / 設計原則 6: 動画断絶イベント (per-rally フラグではなく独立テーブル)。
+ * after_rally_number は rallies.rally_number と照合する (FK 不使用、タイミング問題回避)。
+ * resumed_score_team_a/b は再開時のスコア (NULL = ユーザーも不明)。
+ */
+export interface RecordingGap {
+  id: string
+  set_id: string
+  after_rally_number: number | null
+  resumed_score_team_a: number | null
+  resumed_score_team_b: number | null
+  note: string | null
   created_at: string
   updated_at: string
   deleted_at: string | null
@@ -278,9 +312,12 @@ export interface PositionOverride {
 // 設計書としては、以下の入力スキーマが必要になる想定を示す。
 // 実装時に Zod の z.object(...) として書き下す。
 
-/** 🔵 REQ-101 Group 作成入力 */
+/**
+ * 🔵 REQ-101 / ⑩ A-3 Group 作成入力
+ * 直接 INSERT は不可 (RLS で禁止)。`create_group_with_owner` RPC を呼び出す。
+ */
 export interface CreateGroupInput {
-  /** 1〜50 文字（妥当な範囲。確定時は acceptance-criteria と合わせる） 🟡 */
+  /** 🔵 ⑩ A-3: 1〜50 文字 (trim 後)。DB の CHECK 制約および RPC バリデーションと整合 */
   name: string
 }
 
@@ -330,6 +367,17 @@ export interface CreateMatchInput {
  *   // data: string | null, error: PostgrestError | null
  */
 
+/**
+ * 🔵 ⑦ A-1 + A-2: create_group_with_owner の I/O
+ * groups INSERT と作成者の group_members INSERT を 1 トランザクションで原子化する RPC。
+ * groups / group_members の直接 INSERT は RLS で禁止されており、Group 作成はこの RPC のみ。
+ */
+export interface CreateGroupWithOwnerArgs {
+  /** 🔵 ⑩ A-3: 1〜50 文字 (trim 後)。RPC 側で再バリデーション */
+  group_name: string
+}
+export type CreateGroupWithOwnerReturns = string // 新規 group_id (uuid)
+
 /** 🔵 generate_invitation_code の I/O */
 export interface GenerateInvitationCodeArgs {
   target_group_id: string
@@ -364,6 +412,14 @@ export type InvitationErrorMessage
   = | 'not_a_member' // 招待コード発行時、group に未所属
     | 'invitation_not_found' // コードが存在しない
     | 'invitation_expired' // コードが期限切れ
+    | 'invitation_code_collision_after_retry' // 🔵 ⑧ B-12: 5 回連続 UNIQUE 衝突 (事実上ゼロ確率)
+
+/**
+ * 🔵 ⑦ A-1 + ⑩ A-3: create_group_with_owner RPC の例外メッセージ。
+ */
+export type CreateGroupErrorMessage
+  = | 'not_authenticated' // auth.uid() が NULL
+    | 'invalid_group_name' // 1〜50 文字 (trim 後) を外れた
 
 // ========================================
 // 型の使い方ルール
@@ -397,8 +453,8 @@ export type InvitationErrorMessage
 // 信頼性レベルサマリー
 // ========================================
 /**
- * - 🔵 青信号: 26 件（型定義・方針）
- * - 🟡 黄信号: 2 件（Group.name の文字数制限、Shot.input_source の将来拡張）
+ * - 🔵 青信号: 28 件（型定義・方針）
+ * - 🟡 黄信号: 1 件（Shot.input_source の将来拡張）
  * - 🔴 赤信号: 0 件
  *
  * 品質評価: 高品質

@@ -69,7 +69,7 @@ Supabase Cloud (dev)               Supabase Cloud (prod)
 │  │ players          │  │          │  │ players          │  │
 │  │ matches          │  │          │  │ matches          │  │
 │  │ sets             │  │          │  │ sets             │  │
-│  │ ... (全10テーブル) │  │          │  │ ... (全10テーブル) │  │
+│  │ ... (全11テーブル) │  │          │  │ ... (全11テーブル) │  │
 │  └─────────────────┘  │          │  └─────────────────┘  │
 │  + RLS ポリシー        │          │  + RLS ポリシー        │
 │  + DB 関数             │          │  + DB 関数             │
@@ -131,7 +131,7 @@ nuxt.config.ts
 
 **信頼性**: 🔵 *PRD §5.2 + ヒアリング全般*
 
-**テーブル一覧（10 テーブル）**:
+**テーブル一覧（11 テーブル）**:
 
 | テーブル | 直接 group_id | 間接 FK 経路 | 用途 |
 |---------|:---:|:----|------|
@@ -145,8 +145,17 @@ nuxt.config.ts
 | rallies | - | → sets → matches → group_id | ラリー |
 | shots | - | → rallies → sets → matches | ショット |
 | position_overrides | - | → rallies → sets → matches | 左右入替記録 |
+| recording_gaps | - | → sets → matches → group_id | 動画断絶イベント |
 
 **詳細 DDL**: [database-schema.sql](database-schema.sql)
+
+**スコア管理方針 🔵** (② B-7、設計原則 1〜2):
+- `sets.score_team_a/b` および `rallies.score_team_a_after/b_after` は **保持しない**。
+  スコアは `rallies.point_winner` の COUNT 集計で都度導出する。
+- 「SQL で導出できない値」 (サーブチーム / サーバー / レシーバー / サーブ位置 / カメラ向き) のみ
+  rallies に denormalize 保存する (rule-engine の出力を保存する形)。
+- 動画が見えないために「ラリー数すら数えられない断絶」は per-rally フラグではなく
+  独立テーブル `recording_gaps` で記録する (設計原則 6)。
 
 ### RLS 設計 🔵
 
@@ -169,23 +178,50 @@ CREATE POLICY "xxx_update" ON xxx FOR UPDATE USING (is_member_of(group_id));
 - FK 経路を辿って group_id を解決する SQL をポリシー内に記述
 - 例: rallies → sets.match_id → matches.group_id
 
-### 招待コード設計 🔵
+### Group 作成・招待コード設計 🔵
 
-**信頼性**: 🔵 *ヒアリング 2026-04-20 Q1*
+**信頼性**: 🔵 *ヒアリング 2026-04-20 Q1 + ⑦ A-1 + ⑧ B-12 + ⑨ B-13*
 
-**方式**: PostgreSQL 関数（plpgsql）
+**方式**: PostgreSQL 関数（plpgsql、すべて `SECURITY DEFINER`）
 
 | 関数名 | 用途 | 呼び出し方 |
 |--------|------|-----------|
-| `generate_invitation_code(group_id)` | 招待コード発行 | `supabase.rpc('generate_invitation_code', { group_id })` |
-| `join_group_with_code(code)` | 招待コードで参加 | `supabase.rpc('join_group_with_code', { code })` |
+| `create_group_with_owner(group_name)` | Group 作成 + 作成者の自己加入を原子化 | `supabase.rpc('create_group_with_owner', { group_name })` |
+| `generate_invitation_code(group_id)` | 招待コード発行 | `supabase.rpc('generate_invitation_code', { target_group_id })` |
+| `join_group_with_code(code)` | 招待コードで参加 | `supabase.rpc('join_group_with_code', { invite_code })` |
 
-コード生成: `substring(md5(random()::text) from 1 for 8)` で 8 文字英数字。
-検証: expires_at > now() でチェック。期限切れなら例外 raise。
+**Group 作成 (⑦ A-1 + A-2)**:
+- `groups` および `group_members` の **直接 INSERT は RLS で禁止**。Group 作成は `create_group_with_owner` RPC のみ。
+- 2 ステップ INSERT (groups + group_members) の中途失敗で「孤児 Group」が生まれるリスクを排除し、
+  `group_members_insert` ポリシーの OR 条件 (任意 Group への自己追加) も削除して攻撃面を縮小。
+
+**招待コード生成 (⑧ B-12)**:
+- ランダム源は CSPRNG (`gen_random_uuid()` の hex から 8 文字)。`random()` ベースの PRNG は使わない。
+- UNIQUE 衝突時は最大 **5 回リトライ**で透過回復。全リトライ失敗時は `invitation_code_collision_after_retry`
+  例外をスロー (事実上発生しないが UI でハンドリング可能)。
+- コード長は 8 hex 文字を維持 (口頭/Slack で伝える UX を優先)。
+
+**期限切れ招待コードの GC 方針 (⑨ B-13)**:
+- MVP では GC せず放置。`group_invitations` の行数が **10 万行を超えた段階** で、
+  Supabase Scheduled Functions / pg_cron による定期論理削除 (`deleted_at` を立てる) job を導入する。
+- 物理削除は監査要件 (招待発行履歴) を損なうため不採用。
+- `code` の UNIQUE 制約は論理削除後も残るが、32bit 空間 (43 億通り) に対し 10 万行は 0.002% であり
+  衝突確率に影響なし。partial UNIQUE 化 (`UNIQUE (code) WHERE deleted_at IS NULL`) は不要。
 
 > 例外メッセージ → UI 文言の変換、UI チャネル使い分けは
 > [`docs/design/cross-cutting/error-handling.md`](../cross-cutting/error-handling.md)
 > および [ADR-005](../../decisions/005-error-handling-strategy.md) を参照。
+
+### Auth フロー: /confirm ページ 🔵
+
+**信頼性**: 🔵 *⑬ C-15*
+
+`@nuxtjs/supabase` の callback URL `/confirm` は OAuth リダイレクト戻り先となるため、
+data-foundation で **最小スタブ** (`app/pages/confirm.vue`) を配置する。
+スタブの責務は「Supabase ユーザーセッションを検知したらホーム (`/`) に遷移するだけ」で、
+ローディング UI / エラー UI / Group 未所属時のオンボーディング遷移などの本実装は
+**auth-onboarding 単位** で置換する。これにより data-foundation 完了時に
+「Google ログイン → /confirm → ホーム遷移」のスモークテストが成立する。
 
 ### マイグレーション運用 🔵
 
@@ -205,7 +241,18 @@ supabase/
 - 変更検出: pre-commit フック + GitHub Actions の二重ガード（REQ-011）
 - dev 適用: `supabase db push`
 - dev リセット: `pnpm db:reset`（seed.sql 再投入）
-- prod 適用: `supabase db push`（seed 不使用）
+- prod 適用 (⑮ C-17): `main` ブランチへの merge を契機に GitHub Actions
+  (`.github/workflows/migrate-prod.yml`) が自動実行する。発火条件は
+  `supabase/migrations/**` パス変更時のみ。バックアップは Supabase 標準の日次自動バックアップに依存し、
+  適用直前バックアップは追加しない。失敗時は通知 (Slack / GitHub Issue 等) のみ。
+
+**seed.sql 方針 (⑭ C-16)**:
+- `supabase/seed.sql` は **空** (枠ファイル、INSERT ゼロ行) としてコミットする。
+- 理由: `group_members` は `auth.uid()` 紐付けが必須のため、メンバーなしの Group を seed しても
+  RLS で誰にも見えない。意味のある seed データを作るには本物の auth ユーザーが必要となり、
+  ローカル開発体験を損ねる。
+- CI のテストデータは `tests/setup/create-test-users.ts` から Supabase Admin API
+  (`auth.admin.createUser`) で動的生成する。
 
 ### CI / 開発者ツール 🔵
 
@@ -214,10 +261,11 @@ supabase/
 | ツール | 用途 | 実装場所 |
 |--------|------|---------|
 | pre-commit フック | マイグレーション改変検出 + 既存 lint/typecheck/test | `.husky/pre-commit` |
-| GitHub Actions | マイグレーション改変検出（セーフティネット） | `.github/workflows/` |
+| GitHub Actions | マイグレーション改変検出（セーフティネット） + main merge 時の prod 自動適用 | `.github/workflows/` (`ci.yml`, `migrate-prod.yml`) |
 | `pnpm db:push` | dev にマイグレーション適用 | `package.json` scripts |
 | `pnpm db:reset` | dev をリセット（prod ガード付き） | `package.json` scripts |
 | `pnpm db:types` | TypeScript 型再生成 | `package.json` scripts |
+| `pnpm test:integration` | RLS 統合テスト + RPC テスト (Supabase Admin API でテスト用ユーザを自動生成して RLS の境界・RPC の挙動を検証) | `package.json` scripts |
 
 ### 型生成パイプライン 🔵
 
@@ -241,19 +289,26 @@ badkichi/
 ├── supabase/                     ← 🆕 data-foundation で追加
 │   ├── migrations/
 │   │   └── 20260422000000_initial_schema.sql
-│   ├── seed.sql
+│   ├── seed.sql                  ← 空 (枠ファイル、INSERT ゼロ行。⑭ C-16)
 │   └── config.toml
 ├── types/                        ← 🆕 data-foundation で追加
 │   └── supabase.ts               ← supabase gen types で自動生成
 ├── scripts/                      ← 🆕 data-foundation で追加
 │   └── check-migration-integrity.sh  ← CI/pre-commit 用
+├── tests/                        ← 🆕 data-foundation で追加
+│   └── setup/
+│       └── create-test-users.ts  ← Supabase Admin API でテスト用ユーザを動的生成 (⑭ C-16)
 ├── .env.development              ← 🆕（gitignore 対象）
 ├── .env.production               ← 🆕（gitignore 対象）
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                ← 🆕 マイグレーション改変検出追加
+│       ├── ci.yml                ← 🆕 マイグレーション改変検出 + RLS/RPC 統合テスト
+│       └── migrate-prod.yml      ← 🆕 main merge 時に prod 自動適用 (⑮ C-17)
+├── app/
+│   └── pages/
+│       └── confirm.vue           ← 🆕 OAuth callback 最小スタブ (⑬ C-15、auth-onboarding で置換)
 ├── nuxt.config.ts                ← modules に @nuxtjs/supabase 追加
-├── package.json                  ← scripts に db:push, db:reset, db:types 追加
+├── package.json                  ← scripts に db:push, db:reset, db:types, test:integration 追加
 ├── app/
 │   └── utils/
 │       └── rule-engine/          ← 既存（Domain Layer）
@@ -308,8 +363,8 @@ badkichi/
 
 ## 信頼性レベルサマリー
 
-- 🔵 青信号: 17 件（94%）
-- 🟡 黄信号: 1 件（6%）— パフォーマンス（実測推奨）
+- 🔵 青信号: 19 件（95%）
+- 🟡 黄信号: 1 件（5%）— パフォーマンス（NFR-001 は data-foundation 実装後に実測確認、⑯ A-5）
 - 🔴 赤信号: 0 件（0%）
 
 **品質評価**: 高品質

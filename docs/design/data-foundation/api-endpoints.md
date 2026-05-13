@@ -80,48 +80,37 @@ DELETE:  (MVP では使用しない。REQ-402)
 
 #### groups 🔵
 
-**信頼性**: 🔵 *PRD §5.2, REQ-101, REQ-202*
+**信頼性**: 🔵 *PRD §5.2, REQ-101, REQ-202, ⑦ A-1 + A-2*
 
 | 操作 | 可否 | 備考 |
 |------|:---:|------|
 | SELECT | 📖 | 自分が所属する Group のみ |
-| INSERT | ✍️ | 認証済みなら誰でも作成可（REQ-202、初回 Group 作成を許可するため） |
+| INSERT | 🚫 | **INSERT 不可。`create_group_with_owner` RPC 経由のみ。** (⑦ A-1 + A-2) |
 | UPDATE | 🔁 | 所属メンバーのみ |
 | DELETE | 🚫 | MVP 対象外 |
 
-**入力 (Insert)**: `{ name: string }` （`id`, `created_at`, `updated_at` は DB で自動設定）
-
-**注意**: Group 作成直後、作成者を `group_members` に追加する必要がある。
-RLS の都合上、同一トランザクションで 2 ステップ実行する:
+**Group 作成**: 直接 INSERT は RLS で禁止されている。`create_group_with_owner` RPC を呼び出す
+(groups INSERT + group_members INSERT が 1 トランザクションで原子化される)。
 
 ```ts
-// 1. groups INSERT
-const { data: group } = await supabase
-  .from('groups').insert({ name }).select().single()
-
-// 2. group_members INSERT (自分自身を追加)
-await supabase
-  .from('group_members')
-  .insert({ group_id: group.id, user_id: user.id })
+const { data: groupId, error } = await supabase.rpc(
+  'create_group_with_owner',
+  { group_name: '○○バドミントンクラブ' }
+)
 ```
-
-🟡 将来的には DB 関数 `create_group_with_owner(name)` に集約する案もあるが、
-MVP では 2 ステップで十分（auth-onboarding 単位で決定）。
 
 #### group_members 🔵
 
-**信頼性**: 🔵 *PRD §5.2, REQ-101*
+**信頼性**: 🔵 *PRD §5.2, REQ-101, ⑦ A-1 + A-2*
 
 | 操作 | 可否 | 備考 |
 |------|:---:|------|
 | SELECT | 📖 | 同じ Group のメンバー一覧を閲覧可 |
-| INSERT | ✍️ | `is_member_of(group_id) OR user_id = auth.uid()`（自分自身の追加は許可） |
+| INSERT | 🚫 | **INSERT 不可。`create_group_with_owner` または `join_group_with_code` RPC 経由のみ。** (⑦ A-1 + A-2) |
 | UPDATE | 🔁 | 通常は不要（MVP で使用しない） |
 
-**入力 (Insert)**: `{ group_id, user_id }`
-
-**通常は直接 INSERT しない**。招待コード経由は `join_group_with_code` RPC を使う。
-Group 作成直後の自己追加のみ直接 INSERT する。
+**理由**: 直接 INSERT を許す場合「任意の `group_id` に自分を勝手に追加できる」攻撃面 (UUID 推測前提) と
+「孤児 Group」(groups だけ作成して group_members 追加に失敗) リスクが残るため、両方の経路を RPC に閉じる。
 
 #### group_invitations 🔵
 
@@ -160,6 +149,50 @@ Group 作成直後の自己追加のみ直接 INSERT する。
 詳細な入力カラムは [database-schema.sql](database-schema.sql) の各テーブル定義を参照。
 これらのテーブルは **match-management / rally-recording 単位** で使用される。
 
+**スコア取得 (② B-7)**: `sets.score_team_a/b` および `rallies.score_team_a_after/b_after` は
+廃止されたため、スコアは `rallies.point_winner` の COUNT 集計で取得する。
+
+```ts
+// Team A の現在スコア (セット内、point_winner = 'A' のラリー数)
+const { count } = await supabase
+  .from('rallies')
+  .select('*', { count: 'exact', head: true })
+  .eq('set_id', setId)
+  .eq('point_winner', 'A')
+  .is('deleted_at', null)
+```
+
+**動画タイムスタンプ (⑥ B-14)**: `rallies.video_start_timestamp_ms` および `shots.video_timestamp_ms` は
+ms 単位 integer。フロントの `HTMLMediaElement.currentTime` (秒、double) は composable 境界で
+`Math.round(currentTime * 1000)` の 1 行変換を行う。
+
+#### recording_gaps 🔵
+
+**信頼性**: 🔵 *② B-7、設計原則 6*
+
+動画断絶イベント (per-rally フラグではなく独立テーブル) の CRUD。
+
+| 操作 | 可否 | 備考 |
+|------|:---:|------|
+| SELECT | 📖 | FK 経由 (sets → matches → group_id) で Group 判定 |
+| INSERT | ✍️ | 同上 |
+| UPDATE | 🔁 | 同上 |
+| DELETE | 🚫 | MVP 対象外 (REQ-402) |
+
+**入力 (Insert)**:
+```ts
+{
+  set_id: string                    // 対象セット
+  after_rally_number: number | null // NULL = セット冒頭での断絶
+  resumed_score_team_a: number | null // NULL = ユーザーも再開時スコア不明
+  resumed_score_team_b: number | null
+  note: string | null
+}
+```
+
+RLS は `is_member_of` 経由で、対象 set が属する match の group に所属していれば許可される。
+MVP UI ではこのテーブルは使わず、将来の分析ユースケース向けに枠だけ用意する。
+
 ### 共通の読み取りパターン 🔵
 
 **信頼性**: 🔵 *Supabase PostgREST 標準*
@@ -187,9 +220,49 @@ supabase
 
 ## RPC 関数 API
 
+### create_group_with_owner 🔵
+
+**信頼性**: 🔵 *⑦ A-1 + A-2, ⑩ A-3*
+
+新規 Group を作成し、呼び出しユーザを `group_members` に追加する操作を 1 トランザクションで原子化する。
+`groups` および `group_members` の直接 INSERT は RLS で禁止されており、Group 作成はこの RPC のみ。
+
+| 項目 | 内容 |
+|------|------|
+| 呼び出し | `supabase.rpc('create_group_with_owner', { group_name })` |
+| 引数 | `group_name: string` (1〜50 文字、trim 後) |
+| 戻り値 | `string` (新規 `group_id`、uuid) |
+| SECURITY | `SECURITY DEFINER`（内部で `auth.uid()` を参照） |
+
+**処理フロー**:
+1. `auth.uid() IS NULL` なら `not_authenticated` エラー
+2. `group_name` の長さ (trim 後 1〜50 文字) を検証 → NG なら `invalid_group_name` エラー
+3. `groups (name)` に INSERT
+4. `group_members (group_id, user_id)` に INSERT (作成者を追加)
+5. 新規 `group_id` を返す
+
+**エラー**:
+| メッセージ | 発生条件 |
+|-----------|---------|
+| `not_authenticated` | 未認証で呼び出された (`auth.uid()` が NULL) |
+| `invalid_group_name` | `group_name` が NULL / 空白のみ / 51 文字以上 |
+
+**クライアント例**:
+```ts
+const { data: groupId, error } = await supabase.rpc(
+  'create_group_with_owner',
+  { group_name: '○○バドミントンクラブ' }
+)
+if (error) {
+  if (error.message.includes('invalid_group_name')) { /* バリデーションエラー */ }
+  return
+}
+// groupId: 新規 Group の UUID。続けて navigateTo(`/groups/${groupId}`) 等
+```
+
 ### generate_invitation_code 🔵
 
-**信頼性**: 🔵 *REQ-102, NFR-103, EDGE-101, ヒアリング 2026-04-16 Q7*
+**信頼性**: 🔵 *REQ-102, NFR-103, EDGE-101, ヒアリング 2026-04-16 Q7, ⑧ B-12*
 
 Group 管理者が招待コードを発行する。
 
@@ -197,19 +270,22 @@ Group 管理者が招待コードを発行する。
 |------|------|
 | 呼び出し | `supabase.rpc('generate_invitation_code', { target_group_id })` |
 | 引数 | `target_group_id: string` (uuid) |
-| 戻り値 | `string` (8 文字の大文字英数字) |
+| 戻り値 | `string` (8 文字の大文字 hex) |
 | SECURITY | `SECURITY DEFINER`（内部で `auth.uid()` を参照） |
 
-**処理フロー**:
+**処理フロー (⑧ B-12)**:
 1. `is_member_of(target_group_id)` チェック → NG なら `not_a_member` エラー
-2. `md5(random() || clock_timestamp())` から 8 文字生成、大文字化
+2. CSPRNG (`gen_random_uuid()`) から 8 hex 文字を抽出し大文字化
 3. `group_invitations` に INSERT（`expires_at = now() + interval '7 days'`）
-4. 生成したコードを返す
+4. UNIQUE 衝突した場合は **最大 5 回までリトライ**（コード再生成 + 再 INSERT）
+5. 全リトライ失敗時は `invitation_code_collision_after_retry` エラー
+6. 成功したらコードを返す
 
 **エラー**:
 | メッセージ | 発生条件 |
 |-----------|---------|
 | `not_a_member` | 呼び出しユーザーが `target_group_id` に未所属 |
+| `invitation_code_collision_after_retry` | UNIQUE 衝突を 5 回連続で発生 (事実上ゼロ確率) |
 
 **クライアント例**:
 ```ts
@@ -219,6 +295,9 @@ const { data: code, error } = await supabase.rpc(
 )
 if (error) {
   if (error.message.includes('not_a_member')) { /* 権限エラー表示 */ }
+  if (error.message.includes('invitation_code_collision_after_retry')) {
+    /* 再試行を促す。実運用では発生しない想定 */
+  }
   return
 }
 // code: 'A7B3K9X2' 等
@@ -365,8 +444,8 @@ Supabase は Postgres Changes Realtime に対応するが、MVP では使用し�
 
 ## 信頼性レベルサマリー
 
-- 🔵 青信号: 14 項目（約 88%）
-- 🟡 黄信号: 2 項目（Group 作成の DB 関数化、エラーハンドリング UX、Realtime 未使用方針）
+- 🔵 青信号: 16 項目（約 94%）
+- 🟡 黄信号: 1 項目（Realtime 未使用方針）
 - 🔴 赤信号: 0 項目
 
 **品質評価**: 高品質
