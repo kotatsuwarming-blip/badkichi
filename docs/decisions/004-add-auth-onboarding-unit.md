@@ -8,7 +8,7 @@ Accepted (2026-04-17)
 ADR-002 では MVP を 7 単位に分割し、`data-foundation` に「認証」を含める方針とした。
 
 data-foundation の要件定義ヒアリング（`docs/spec/data-foundation/interview-record.md`）で、
-「認証 UI（ログイン画面・サインアップ画面・オンボーディング・Group 作成・招待コード入力）」を
+「認証 UI（ログイン画面・サインアップ画面・オンボーディング・Group 作成・招待リンク着地）」を
 data-foundation に含めるか別単位に分けるかを議論した。
 
 開発者から「data-foundation はデータ基盤の単位のはず。UI まで入ると責務が混ざる」との指摘があり、
@@ -25,7 +25,7 @@ MVP を **8 単位** に分割する（7 → 8）。`data-foundation` の直後�
 |---|------|----------|------|
 | 1 | **rule-engine** | 純 TypeScript ロジック。サーバー/レシーバー推論、スコア状態、レット処理、PositionOverride 消費 | なし |
 | 2 | **data-foundation** | Supabase プロジェクト作成、Supabase Auth 設定（Google OAuth 有効化）、全テーブルのスキーマ、Group/GroupMember マルチテナント基盤、RLS ポリシー、マイグレーション、Nuxt Supabase Client セットアップ、TypeScript 型自動生成、seed.sql 枠組み | なし |
-| 3 | **auth-onboarding** 🆕 | ログイン画面、サインアップ、オンボーディング、Group 作成画面、招待コード入力画面、Group 設定画面（招待コード発行） | data-foundation |
+| 3 | **auth-onboarding** 🆕 | ログイン画面、サインアップ、オンボーディング、Group 作成画面、招待リンク着地ページ、Group 設定画面（招待リンク発行） | data-foundation |
 | 4 | **player-management** | 選手 CRUD（名前・利き手） | data-foundation, auth-onboarding |
 | 5 | **match-management** | 試合作成（4人選択、初期立ち位置、動画ソース） | data-foundation, auth-onboarding, player-management |
 | 6 | **video-playback** | YouTube IFrame API + HTML5 Video API の統一インターフェース | なし |
@@ -37,7 +37,7 @@ MVP を **8 単位** に分割する（7 → 8）。`data-foundation` の直後�
 ```
 1. rule-engine（✅ 完了）
 2. data-foundation（Supabase 基盤、全スキーマ、認証基盤、型生成、seed枠組み）
-3. auth-onboarding（ログイン/Group作成/招待コード UI）
+3. auth-onboarding（ログイン/Group作成/招待リンク UI）
 4. player-management
 5. match-management
 6. video-playback

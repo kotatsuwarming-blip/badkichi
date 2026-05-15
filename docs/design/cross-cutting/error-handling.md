@@ -72,8 +72,8 @@ export const APP_ERROR_CODES = {
   NOT_AUTHENTICATED: 'not_authenticated',
   NOT_A_MEMBER: 'not_a_member',
   INVALID_GROUP_NAME: 'invalid_group_name',
-  // MVP: コード手入力フォームのみ。Phase 2 で着地ページ用 _BY_LINK を追加
-  INVITATION_NOT_FOUND_BY_CODE: 'invitation_not_found_by_code',
+  // MVP: URL 直リンク着地のみ。将来手入力フォームを追加する場合は _BY_CODE を別識別子として定義
+  INVITATION_NOT_FOUND_BY_LINK: 'invitation_not_found_by_link',
   INVITATION_EXPIRED: 'invitation_expired',
   INVITATION_CODE_COLLISION_AFTER_RETRY: 'invitation_code_collision_after_retry',
 } as const
@@ -154,8 +154,8 @@ export function useErrorMessage() {
       return t('errors.not_a_member')
     if (isAppError(error, APP_ERROR_CODES.INVALID_GROUP_NAME))
       return t('errors.invalid_group_name')
-    if (isAppError(error, APP_ERROR_CODES.INVITATION_NOT_FOUND_BY_CODE))
-      return t('errors.invitation_not_found_by_code')
+    if (isAppError(error, APP_ERROR_CODES.INVITATION_NOT_FOUND_BY_LINK))
+      return t('errors.invitation_not_found_by_link')
     if (isAppError(error, APP_ERROR_CODES.INVITATION_EXPIRED))
       return t('errors.invitation_expired')
     if (isAppError(error, APP_ERROR_CODES.INVITATION_CODE_COLLISION_AFTER_RETRY))
@@ -188,7 +188,7 @@ export function useErrorMessage() {
 
 例: 招待コードが見つからないケース
 - ❌ `INVITATION_NOT_FOUND` 1 つで context 出し分け
-- ✅ `INVITATION_NOT_FOUND_BY_CODE` (手入力フォーム) と `INVITATION_NOT_FOUND_BY_LINK` (Phase 2 で追加予定の着地ページ) を別識別子として定義
+- ✅ MVP は `INVITATION_NOT_FOUND_BY_LINK` (URL 直リンク着地) のみ定義。将来手入力フォームを追加する場合は `_BY_CODE` を別識別子として定義
 
 理由: page から context 文字列を完全に排除。grep で識別子→文言の使用箇所を一発追跡可能。
 DB 側の `RAISE EXCEPTION` も同じ識別子を出す。
@@ -212,7 +212,7 @@ PG SQLSTATE は構造上 context 不可避 (`23505` は name にも email にも
 
 ### 5.4 locale JSON 構造
 
-- **App 識別子はフラット**: `errors.invitation_not_found_by_code`
+- **App 識別子はフラット**: `errors.invitation_not_found_by_link`
 - **PG SQLSTATE はツリー**: `errors.unique_violation.{generic, join_group, create_group}`
 
 ```jsonc
@@ -223,7 +223,7 @@ PG SQLSTATE は構造上 context 不可避 (`23505` は name にも email にも
     "not_authenticated": "ログインが必要です",
     "not_a_member": "このグループのメンバーではありません",
     "invalid_group_name": "グループ名は 1〜50 文字で入力してください",
-    "invitation_not_found_by_code": "入力されたコードが見つかりません。発行者にご確認ください",
+    "invitation_not_found_by_link": "招待リンクが無効です。発行者にご確認ください",
     "invitation_expired": "招待コードの有効期限が切れています",
     "invitation_code_collision_after_retry": "招待コードの生成に失敗しました。再度お試しください",
     "rls_rejected": "操作する権限がありません",
@@ -270,7 +270,7 @@ export function useJoinGroup() {
 ```
 
 ```vue
-<!-- app/pages/groups/join.vue (page 側、context 文字列ゼロ) -->
+<!-- app/pages/join/[code].vue (招待リンク着地ページ、実パスは auth-onboarding 単位で確定、page 側は context 文字列ゼロ) -->
 <script setup lang="ts">
 const { join, errorMessage } = useJoinGroup()
 </script>
@@ -322,7 +322,7 @@ const { join, errorMessage } = useJoinGroup()
 |---|---|---|---|
 | 1 | inline (フィールド原因明確 / Zod) | グループ名 1〜50 文字 / 必須 | `<UFormGroup>` |
 | 2 | inline (フィールド原因明確 / RPC) | グループ作成 UNIQUE 違反 | `<UFormGroup>` |
-| 3 | `<UAlert>` フォーム上部 (フィールド特定不能) | 招待コード `INVITATION_NOT_FOUND_BY_CODE` / `INVITATION_EXPIRED` | `<UAlert>` |
+| 3 | `<UAlert>` ページ上部 (招待リンク着地、フィールド特定不能) | 招待リンク `INVITATION_NOT_FOUND_BY_LINK` / `INVITATION_EXPIRED` | `<UAlert>` |
 | 4 | 認証必須/セッション切れリダイレクト | `NOT_AUTHENTICATED` / セッション期限切れ | `navigateTo('/login')` + `useToast()` |
 | 5 | `useToast()` (フォーム外、一過性) | 権限エラー (`NOT_A_MEMBER` / `RLS_REJECTED`) / Rate limit | `useToast()` |
 | 6 | `<UAlert>` 画面上部 (永続通知) | offline 検出 | `<UAlert>` |
@@ -504,7 +504,7 @@ export default defineNuxtConfig({
     "not_authenticated": "",
     "not_a_member": "",
     "invalid_group_name": "",
-    "invitation_not_found_by_code": "",
+    "invitation_not_found_by_link": "",
     "invitation_expired": "",
     "invitation_code_collision_after_retry": "",
     "rls_rejected": "",

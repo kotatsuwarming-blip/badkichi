@@ -43,8 +43,9 @@ modern TS で非推奨化のため不採用。生文字列 (`'23505'` 等) の�
 文言は `locales/ja.json` に集約し、変換は `useErrorMessage` composable
 (`useI18n` の `t/te` を内部で呼ぶ) に閉じる。
 
-**App 識別子は 1:1 マッピング** (例: `INVITATION_NOT_FOUND_BY_CODE` /
-`_BY_LINK` を別識別子として定義)。**PG SQLSTATE のみ context で出し分け**
+**App 識別子は 1:1 マッピング** (例: MVP は URL 直リンク着地のみのため
+`INVITATION_NOT_FOUND_BY_LINK` のみ定義。将来手入力フォームを追加する場合は
+`_BY_CODE` を別識別子として定義する)。**PG SQLSTATE のみ context で出し分け**
 (`errors.unique_violation.{join_group, create_group, generic}`)。
 context 文字列は domain composable に閉じ、page 側に context リテラル禁止。
 
