@@ -37,7 +37,7 @@
 
 - **マルチテナント**: 全データに group_id を持たせ、PostgreSQL RLS で「自分の所属 Group のみ」に制限
 - **認証**: Supabase Auth の Google OAuth を利用。YouTube 動画アクセスと同アカウントで統一可能
-- **dev/prod 分離**: Supabase Cloud に 2 プロジェクト作成。ローカル Supabase は使わない
+- **dev/prd 分離**: Supabase Cloud に 2 プロジェクト作成。ローカル Supabase は使わない
 - **UI は別単位**: ログイン・サインアップ・招待リンク着地 UI は `auth-onboarding` 単位（ADR-004）
 - **削除ポリシー**: MVP では削除機能は実装しない。将来 deleted_at による論理削除に移行する前提で
   テーブル設計時にカラムを入れておくか判断が必要

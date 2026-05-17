@@ -18,9 +18,9 @@ data-foundation の責務は明確だが、Supabase 環境構築・認証方式�
 
 **質問日時**: 2026-04-16
 **カテゴリ**: 既存設計確認
-**背景**: PRD §5.1 で「Supabase（PostgreSQL）」とあるが、dev/prod の分離、ローカル vs クラウドが未定
+**背景**: PRD §5.1 で「Supabase（PostgreSQL）」とあるが、dev/prd の分離、ローカル vs クラウドが未定
 
-**回答**: **クラウドのみ（dev/prod プロジェクト分離）**
+**回答**: **クラウドのみ（dev/prd プロジェクト分離）**
 
 **信頼性への影響**: REQ-001 を 🔵 として確定。ローカル Supabase（Docker）は不要と判断、
 REQ-403 に制約として明記。
@@ -177,7 +177,7 @@ REQ-403 に制約として明記。
 **回答**:
 1. **deleted_at カラム**: 最初から全テーブルに入れる（MVP では常に NULL を維持）
 2. **Email/Password 認証**: 明示的に無効化する（Supabase Dashboard で disabled に設定）
-3. **prod 誤操作ガード**: `pnpm db:reset` にリンク先チェックを実装し、prod なら exit 1
+3. **prd 誤操作ガード**: `pnpm db:reset` にリンク先チェックを実装し、prd なら exit 1
 4. **招待コード文字数**: 8 文字（英数字）で開始。将来拡張可能な設計（DB は text 型）
 
 **信頼性への影響**:
@@ -194,7 +194,7 @@ REQ-403 に制約として明記。
 
 ### 確認できた事項
 
-- Supabase 環境戦略: クラウドのみ（dev/prod 分離）
+- Supabase 環境戦略: クラウドのみ（dev/prd 分離）
 - 認証方式: Google OAuth（YouTube 連携と統一）
 - Group 参加フロー: 招待コード方式（7 日有効、回数制限なし）
 - マイグレーション運用: Supabase CLI

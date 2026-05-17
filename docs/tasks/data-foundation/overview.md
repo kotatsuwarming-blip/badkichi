@@ -28,8 +28,8 @@
 |---------|---------|--------|:---:|:---:|--------|
 | Phase 1 | 1 週 | Supabase プロジェクト + Nuxt 接続基盤 | 4 件 | 9-14h | [TASK-0001〜0004](#phase-1-環境基盤構築) |
 | Phase 2 | 2 週 | スキーマ + RLS + RPC + 型生成 (dev 適用済) | 5 件 | 19-28h | [TASK-0005〜0009](#phase-2-スキーマ認証rpc-実装) |
-| Phase 3 | 1 週 | seed / db:reset / CI 改変検出 / prod 自動デプロイ | 3 件 | 10-14h | [TASK-0010〜0012](#phase-3-開発ci-運用整備) |
-| Phase 4 | 2-3 週 | 統合テスト + /confirm スタブ + prod 適用 + NFR-001 実測 | 5 件 | 20-29h | [TASK-0013〜0017](#phase-4-統合テスト検証) |
+| Phase 3 | 1 週 | seed / db:reset / CI 改変検出 / prd 自動デプロイ | 3 件 | 10-14h | [TASK-0010〜0012](#phase-3-開発ci-運用整備) |
+| Phase 4 | 2-3 週 | 統合テスト + /confirm スタブ + prd 適用 + NFR-001 実測 | 5 件 | 20-29h | [TASK-0013〜0017](#phase-4-統合テスト検証) |
 
 ## タスク番号管理
 
@@ -46,17 +46,17 @@
 
 ## マイルストーン
 
-- **M1: 環境基盤完成** (Phase 1 終了時): Supabase dev/prod プロジェクト + Nuxt 接続設定 + CLI リンク
+- **M1: 環境基盤完成** (Phase 1 終了時): Supabase dev/prd プロジェクト + Nuxt 接続設定 + CLI リンク
 - **M2: スキーマ完成** (Phase 2 終了時): 11 テーブル + RLS + 3 RPC が dev DB に適用済 + 型生成パイプライン動作
-- **M3: 運用基盤完成** (Phase 3 終了時): seed/reset + マイグレーション改変検出 + prod 自動適用 GitHub Actions
-- **M4: data-foundation 単位完了** (Phase 4 終了時): 統合テスト pass + Google ログインスモークテスト pass + prod 初回適用 + NFR-001 実測
+- **M3: 運用基盤完成** (Phase 3 終了時): seed/reset + マイグレーション改変検出 + prd 自動適用 GitHub Actions
+- **M4: data-foundation 単位完了** (Phase 4 終了時): 統合テスト pass + Google ログインスモークテスト pass + prd 初回適用 + NFR-001 実測
 
 ---
 
 ## Phase 1: 環境基盤構築
 
 **期間**: 約 1 週
-**目標**: Supabase Cloud 上に dev/prod プロジェクトを構築し、Nuxt から接続可能な状態にする
+**目標**: Supabase Cloud 上に dev/prd プロジェクトを構築し、Nuxt から接続可能な状態にする
 **成果物**: Supabase プロジェクト 2 つ、`nuxt.config.ts` modules 設定、`.env.*` テンプレート、`supabase/config.toml`
 
 ### タスク一覧
@@ -105,14 +105,14 @@ TASK-0004 → TASK-0005 → TASK-0006 → TASK-0007 → TASK-0008 → TASK-0009
 ## Phase 3: 開発・CI 運用整備
 
 **期間**: 約 1 週
-**目標**: seed/reset 運用、マイグレーション改変ガード、prod 自動デプロイの仕組みを整備
-**成果物**: `supabase/seed.sql` (枠)、`scripts/db-reset-guard.sh`、`scripts/check-migration-integrity.sh`、`.husky/`、`.github/workflows/ci.yml`、`.github/workflows/migrate-prod.yml`
+**目標**: seed/reset 運用、マイグレーション改変ガード、prd 自動デプロイの仕組みを整備
+**成果物**: `supabase/seed.sql` (枠)、`scripts/db-reset-guard.sh`、`scripts/check-migration-integrity.sh`、`.husky/`、`.github/workflows/ci.yml`、`.github/workflows/migrate-prd.yml`
 
 ### タスク一覧
 
-- [ ] [TASK-0010: seed.sql + db:reset スクリプト + prod 誤操作ガード](TASK-0010.md) — 3-4h (DIRECT) 🔵
+- [ ] [TASK-0010: seed.sql + db:reset スクリプト + prd 誤操作ガード](TASK-0010.md) — 3-4h (DIRECT) 🔵
 - [ ] [TASK-0011: マイグレーション改変検出 (pre-commit + GitHub Actions)](TASK-0011.md) — 4-6h (DIRECT) 🔵
-- [ ] [TASK-0012: prod 自動マイグレーション GitHub Actions](TASK-0012.md) — 3-4h (DIRECT) 🔵
+- [ ] [TASK-0012: prd 自動マイグレーション GitHub Actions](TASK-0012.md) — 3-4h (DIRECT) 🔵
 
 ### 依存関係
 
@@ -128,8 +128,8 @@ TASK-0010 と TASK-0011 は並行可能。TASK-0012 は TASK-0011 完了後。
 ## Phase 4: 統合テスト・検証
 
 **期間**: 約 2-3 週
-**目標**: RLS / RPC 統合テストを CI で自動化し、Google ログインスモークテスト + prod 初回適用 + NFR-001 実測を完了させる
-**成果物**: `tests/setup/create-test-users.ts`、`tests/integration/rls.test.ts`、`tests/integration/rpc.test.ts`、`app/pages/confirm.vue`、prod 環境のスキーマ適用済 DB
+**目標**: RLS / RPC 統合テストを CI で自動化し、Google ログインスモークテスト + prd 初回適用 + NFR-001 実測を完了させる
+**成果物**: `tests/setup/create-test-users.ts`、`tests/integration/rls.test.ts`、`tests/integration/rpc.test.ts`、`app/pages/confirm.vue`、prd 環境のスキーマ適用済 DB
 
 ### タスク一覧
 
@@ -137,7 +137,7 @@ TASK-0010 と TASK-0011 は並行可能。TASK-0012 は TASK-0011 完了後。
 - [ ] [TASK-0014: RLS 統合テスト](TASK-0014.md) — 6-8h (TDD) 🔵
 - [ ] [TASK-0015: RPC 統合テスト](TASK-0015.md) — 6-8h (TDD) 🔵
 - [ ] [TASK-0016: /confirm.vue 最小スタブ + スモークテスト](TASK-0016.md) — 2-3h (DIRECT) 🔵
-- [ ] [TASK-0017: prod 初回マイグレーション適用 + NFR-001 実測](TASK-0017.md) — 2-4h (DIRECT) 🔵
+- [ ] [TASK-0017: prd 初回マイグレーション適用 + NFR-001 実測](TASK-0017.md) — 2-4h (DIRECT) 🔵
 
 ### 依存関係
 

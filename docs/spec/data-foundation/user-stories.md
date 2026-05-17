@@ -19,12 +19,12 @@
 
 ## エピック1: Supabase 基盤の立ち上げ
 
-### ストーリー 1.1: dev/prod プロジェクトを分離する 🔵
+### ストーリー 1.1: dev/prd プロジェクトを分離する 🔵
 
 **信頼性**: 🔵 *ヒアリング 2026-04-16 Q1*
 
 **私は** 開発者 **として**
-**Supabase Cloud 上に dev プロジェクトと prod プロジェクトを別々に持ちたい**
+**Supabase Cloud 上に dev プロジェクトと prd プロジェクトを別々に持ちたい**
 **そうすることで** 開発中の破壊的変更が本番ユーザーに影響しないようにできる
 
 **関連要件**: REQ-001, REQ-403
@@ -32,9 +32,9 @@
 **詳細シナリオ**:
 1. Supabase Cloud にサインインする
 2. `badkichi-dev` プロジェクトを作成する
-3. `badkichi-prod` プロジェクトを作成する
+3. `badkichi-prd` プロジェクトを作成する
 4. 各プロジェクトの接続情報（URL / anon key / service_role key）を `.env.*` に保存する
-5. dev/prod それぞれに対して `supabase link --project-ref xxxxx` でリンクする
+5. dev/prd それぞれに対して `supabase link --project-ref xxxxx` でリンクする
 
 **前提条件**:
 - Supabase のアカウントが存在すること（prep.md の必須タスク）
@@ -48,7 +48,7 @@
 **信頼性**: 🔵 *ヒアリング 2026-04-16 Q2*
 
 **私は** 開発者 **として**
-**両プロジェクト（dev/prod）で Supabase Auth の Google OAuth を有効化したい**
+**両プロジェクト（dev/prd）で Supabase Auth の Google OAuth を有効化したい**
 **そうすることで** ユーザーが Google アカウントでログインできるようになる
 
 **関連要件**: REQ-002
@@ -56,7 +56,7 @@
 **詳細シナリオ**:
 1. Google Cloud Console で OAuth クライアント ID / Secret を取得する
 2. Supabase Dashboard の Auth → Providers → Google で有効化し、クライアント情報を設定する
-3. リダイレクト URL を設定する（dev: `http://localhost:3000/...`、prod: 実ドメイン）
+3. リダイレクト URL を設定する（dev: `http://localhost:3000/...`、prd: 実ドメイン）
 
 **前提条件**:
 - Google Cloud Console で OAuth アプリが作成されていること（prep.md の必須タスク）
@@ -75,7 +75,7 @@
 **PRD §5.2 で定義された全テーブル（groups, group_members, group_invitations, players,
 matches, sets, set_player_positions, rallies, shots, position_overrides）を
 Supabase CLI のマイグレーションとして管理したい**
-**そうすることで** スキーマ変更の履歴が git に残り、dev→prod への適用が再現可能になる
+**そうすることで** スキーマ変更の履歴が git に残り、dev→prd への適用が再現可能になる
 
 **関連要件**: REQ-003, REQ-004, NFR-302
 
@@ -235,7 +235,7 @@ seed.sql に追記していける
 
 ```
 エピック1: Supabase 基盤の立ち上げ
-├── 1.1 dev/prod プロジェクト分離 (🔵 Must)
+├── 1.1 dev/prd プロジェクト分離 (🔵 Must)
 └── 1.2 Google OAuth 有効化 (🔵 Must)
 
 エピック2: スキーマとマルチテナント基盤

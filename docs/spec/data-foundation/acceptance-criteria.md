@@ -12,7 +12,7 @@
 
 ---
 
-## REQ-001 / REQ-403: dev/prod プロジェクト分離 🔵
+## REQ-001 / REQ-403: dev/prd プロジェクト分離 🔵
 
 **信頼性**: 🔵 *ヒアリング 2026-04-16 Q1*
 
@@ -20,7 +20,7 @@
 - Supabase アカウントが存在する
 
 ### When
-- `badkichi-dev`, `badkichi-prod` の 2 プロジェクトを作成し、`supabase link` を dev 側で実施
+- `badkichi-dev`, `badkichi-prd` の 2 プロジェクトを作成し、`supabase link` を dev 側で実施
 
 ### Then
 - `supabase projects list` に両プロジェクトが表示される
@@ -29,9 +29,9 @@
 
 ### テストケース
 
-- [ ] **TC-001-01**: dev/prod 両プロジェクトが Supabase Dashboard に存在する 🔵
+- [ ] **TC-001-01**: dev/prd 両プロジェクトが Supabase Dashboard に存在する 🔵
 - [ ] **TC-001-02**: `.env.development` の `SUPABASE_URL` が dev プロジェクト URL と一致する 🔵
-- [ ] **TC-001-03**: `.env.production` の `SUPABASE_URL` が prod プロジェクト URL と一致する 🔵
+- [ ] **TC-001-03**: `.env.production` の `SUPABASE_URL` が prd プロジェクト URL と一致する 🔵
 
 ---
 
@@ -43,7 +43,7 @@
 - Google Cloud Console で OAuth クライアントが作成済み
 
 ### When
-- dev/prod 両プロジェクトの Supabase Auth → Providers → Google を有効化
+- dev/prd 両プロジェクトの Supabase Auth → Providers → Google を有効化
 
 ### Then
 - Dashboard 上で Google プロバイダが `enabled` 状態
@@ -53,7 +53,7 @@
 
 - [ ] **TC-002-01**: Supabase Dashboard の Google プロバイダが enabled 🔵
 - [ ] **TC-002-02**: dev プロジェクトの redirect URL に `http://localhost:3000/**` が含まれる 🔵
-- [ ] **TC-002-03**: prod プロジェクトの redirect URL に prod ドメインが含まれる 🔵
+- [ ] **TC-002-03**: prd プロジェクトの redirect URL に prd ドメインが含まれる 🔵
 - [ ] **TC-002-E01**: Email/Password プロバイダが Supabase Dashboard で disabled になっている 🔵 *ヒアリング 2026-04-17 確認済み*
 
 ---
@@ -171,7 +171,7 @@
 - [ ] **TC-008-01**: `supabase/seed.sql` ファイルが存在する 🔵
 - [ ] **TC-008-02**: `package.json` に `db:reset` スクリプトが記載されている 🔵
 - [ ] **TC-008-03**: `pnpm db:reset` 実行成功、終了コード 0 🔵
-- [ ] **TC-008-E01**: prod プロジェクトにリンクされた状態で `pnpm db:reset` を実行すると exit 1 でエラー終了する 🔵 *REQ-009, ヒアリング 2026-04-17*
+- [ ] **TC-008-E01**: prd プロジェクトにリンクされた状態で `pnpm db:reset` を実行すると exit 1 でエラー終了する 🔵 *REQ-009, ヒアリング 2026-04-17*
 - [ ] **TC-008-E02**: dev プロジェクトにリンクされた状態でのみ db:reset が成功する 🔵 *REQ-009*
 
 ---

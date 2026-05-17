@@ -24,7 +24,7 @@ data-foundation 実装に入る前に、開発者（kotatsu828）が手動で用
 ### 2. Supabase プロジェクトを 2 つ作成 🔵 *ヒアリング Q1*
 
 - [ ] `badkichi-dev` プロジェクト作成（リージョン: Asia Northeast Tokyo 推奨）
-- [ ] `badkichi-prod` プロジェクト作成
+- [ ] `badkichi-prd` プロジェクト作成
 - [ ] 各プロジェクトの以下の情報を控える:
   - プロジェクト URL（Settings → API）
   - anon public key
@@ -38,7 +38,7 @@ data-foundation 実装に入る前に、開発者（kotatsu828）が手動で用
   - Application type: **Web application**
   - Authorized redirect URIs に以下を追加:
     - `https://{supabase-dev-project-ref}.supabase.co/auth/v1/callback`
-    - `https://{supabase-prod-project-ref}.supabase.co/auth/v1/callback`
+    - `https://{supabase-prd-project-ref}.supabase.co/auth/v1/callback`
 - [ ] Client ID と Client Secret を控える
 - [ ] OAuth 同意画面（OAuth consent screen）の設定:
   - User Type: External
@@ -48,10 +48,10 @@ data-foundation 実装に入る前に、開発者（kotatsu828）が手動で用
 ### 4. Supabase Dashboard で Google OAuth プロバイダ設定 🔵 *ヒアリング Q2*
 
 - [ ] dev プロジェクト: Authentication → Providers → Google を有効化、Client ID / Secret を入力
-- [ ] prod プロジェクト: 同じく有効化、別の（or 同じ）Client ID / Secret を入力
+- [ ] prd プロジェクト: 同じく有効化、別の（or 同じ）Client ID / Secret を入力
 - [ ] Redirect URLs に以下を追加:
   - dev: `http://localhost:3000/confirm` など Nuxt 側の callback URL
-  - prod: 実ドメインの callback URL
+  - prd: 実ドメインの callback URL
 - 関連要件: REQ-002
 
 ### 5. Supabase CLI インストール 🔵 *ヒアリング Q4*
@@ -79,14 +79,14 @@ data-foundation 実装に入る前に、開発者（kotatsu828）が手動で用
 ### 7. 本番ドメイン取得 🟡
 
 - [ ] badkichi のデプロイ先ドメインを決める（例: Vercel の自動ドメイン or 独自ドメイン）
-- [ ] 取得後、Google OAuth の redirect URI と Supabase prod の Site URL に追記
+- [ ] 取得後、Google OAuth の redirect URI と Supabase prd の Site URL に追記
 - 必要になるフェーズ: MVP リリース前（data-foundation 完了までは後回し可）
 - 関連要件: REQ-002
 
-### 8. prod への初回マイグレーション適用判断 🟡
+### 8. prd への初回マイグレーション適用判断 🟡
 
-- [ ] dev で一通り検証完了後、prod に `supabase db push` を適用するタイミングを決める
-- [ ] prod 適用前にバックアップ取得（Supabase Dashboard の Database → Backups）
+- [ ] dev で一通り検証完了後、prd に `supabase db push` を適用するタイミングを決める
+- [ ] prd 適用前にバックアップ取得（Supabase Dashboard の Database → Backups）
 - 必要になるフェーズ: data-foundation タスク終盤
 - 関連要件: REQ-003
 

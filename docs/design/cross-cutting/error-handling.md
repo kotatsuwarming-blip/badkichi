@@ -522,7 +522,7 @@ export default defineNuxtConfig({
 - URL クエリ: `?locale=en`
 - Vue DevTools コンソールから: `useI18n().setLocale('en')`
 
-prod では切替 UI を提供しない (社内ツール 1 言語固定)。
+prd では切替 UI を提供しない (社内ツール 1 言語固定)。
 
 ### 7.5 Nuxt UI v3 統合
 
@@ -568,7 +568,7 @@ NUXT_PUBLIC_SENTRY_DSN=
 NUXT_PUBLIC_ENV=development
 ```
 
-prod デプロイ環境では `NUXT_PUBLIC_ENV=production` を設定する。
+prd デプロイ環境では `NUXT_PUBLIC_ENV=production` を設定する。
 
 ### 8.4 報告ポイント
 

@@ -30,15 +30,15 @@ UI（ログイン画面、オンボーディング、Group 作成、招待リン
 
 ### 通常要件
 
-- REQ-001: システムは Supabase Cloud 上に dev 用と prod 用の 2 プロジェクトを分離して保持しなければならない 🔵 *ヒアリング 2026-04-16（環境戦略）*
+- REQ-001: システムは Supabase Cloud 上に dev 用と prd 用の 2 プロジェクトを分離して保持しなければならない 🔵 *ヒアリング 2026-04-16（環境戦略）*
 - REQ-002: システムは Supabase Auth の Google OAuth プロバイダを有効化しなければならない 🔵 *ヒアリング 2026-04-16（認証方式）*
-- REQ-003: システムは PRD §5.2 で定義された全テーブル（groups, group_members, group_invitations, players, matches, sets, set_player_positions, rallies, shots, position_overrides）を dev/prod 両プロジェクトに作成しなければならない 🔵 *PRD §5.2*
+- REQ-003: システムは PRD §5.2 で定義された全テーブル（groups, group_members, group_invitations, players, matches, sets, set_player_positions, rallies, shots, position_overrides）を dev/prd 両プロジェクトに作成しなければならない 🔵 *PRD §5.2*
 - REQ-004: システムは Supabase CLI のマイグレーション機構（`supabase/migrations/` 配下の連番 SQL）によりスキーマ変更を管理しなければならない 🔵 *ヒアリング 2026-04-16（マイグレーション）*
 - REQ-005: システムは Nuxt アプリから Supabase に接続するためのクライアント設定（`@nuxtjs/supabase` モジュールまたは同等）を持たなければならない 🔵 *PRD §5.1 アーキテクチャ*
 - REQ-006: システムは全 DB テーブルの TypeScript 型定義を `supabase gen types typescript` で自動生成し、リポジトリに保持しなければならない 🔵 *ヒアリング 2026-04-16（型定義）*
 - REQ-007: システムは Zod を依存関係に追加しなければならない 🔵 *ヒアリング 2026-04-16（バリデーション）*
 - REQ-008: システムは `supabase/seed.sql` ファイルと、`pnpm db:reset` 相当のコマンドスクリプトを整備しなければならない 🔵 *ヒアリング 2026-04-17（シードデータ）*
-- REQ-009: システムは `pnpm db:reset` スクリプトに、リンク先が prod プロジェクトの場合に実行を拒否するガード（リンク先名を検査して非 dev なら exit 1）を実装しなければならない 🔵 *ヒアリング 2026-04-17（prod 誤操作ガード）*
+- REQ-009: システムは `pnpm db:reset` スクリプトに、リンク先が prd プロジェクトの場合に実行を拒否するガード（リンク先名を検査して非 dev なら exit 1）を実装しなければならない 🔵 *ヒアリング 2026-04-17（prd 誤操作ガード）*
 - REQ-010: システムは Supabase Auth の Email/Password プロバイダを明示的に **無効化** しなければならない 🔵 *ヒアリング 2026-04-17（Email 認証無効化）*
 - REQ-011: システムは CI または pre-commit フックにおいて、`supabase/migrations/` 配下の既存マイグレーションファイルが変更された場合に警告またはエラーを出す仕組みを持たなければならない 🔵 *ヒアリング 2026-04-17（CI/CD 早期充実方針）*
 

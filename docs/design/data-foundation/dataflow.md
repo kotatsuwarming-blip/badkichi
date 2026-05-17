@@ -229,7 +229,7 @@ Group メンバー      Nuxt                Supabase (PostgreSQL)
   │  pnpm db:reset   │                     │
   │─────────────────→│                     │
   │                  │  ① リンク先チェック   │
-  │                  │  prod なら exit 1    │
+  │                  │  prd なら exit 1    │
   │                  │                     │
   │                  │  supabase db reset   │
   │                  │  --linked            │

@@ -59,7 +59,7 @@ UI は含まない。後続の auth-onboarding / player-management / match-manag
 RLS ポリシーによって「自分の所属 Group のデータのみ」に自動フィルタされる。
 
 ```
-Supabase Cloud (dev)               Supabase Cloud (prod)
+Supabase Cloud (dev)               Supabase Cloud (prd)
 ┌───────────────────────┐          ┌───────────────────────┐
 │  PostgreSQL            │          │  PostgreSQL            │
 │  ┌─────────────────┐  │          │  ┌─────────────────┐  │
@@ -95,9 +95,9 @@ Supabase Cloud (dev)               Supabase Cloud (prod)
 
 **信頼性**: 🔵 *ヒアリング 2026-04-16 Q1*
 
-| 項目 | dev | prod |
+| 項目 | dev | prd |
 |------|-----|------|
-| プロジェクト名 | badkichi-dev | badkichi-prod |
+| プロジェクト名 | badkichi-dev | badkichi-prd |
 | 用途 | 開発・検証 | 本番 |
 | Auth provider | Google OAuth | Google OAuth |
 | Email/Password | **disabled** | **disabled** |
@@ -241,8 +241,8 @@ supabase/
 - 変更検出: pre-commit フック + GitHub Actions の二重ガード（REQ-011）
 - dev 適用: `supabase db push`
 - dev リセット: `pnpm db:reset`（seed.sql 再投入）
-- prod 適用 (⑮ C-17): `main` ブランチへの merge を契機に GitHub Actions
-  (`.github/workflows/migrate-prod.yml`) が自動実行する。発火条件は
+- prd 適用 (⑮ C-17): `main` ブランチへの merge を契機に GitHub Actions
+  (`.github/workflows/migrate-prd.yml`) が自動実行する。発火条件は
   `supabase/migrations/**` パス変更時のみ。バックアップは Supabase 標準の日次自動バックアップに依存し、
   適用直前バックアップは追加しない。失敗時は通知 (Slack / GitHub Issue 等) のみ。
 
@@ -261,9 +261,9 @@ supabase/
 | ツール | 用途 | 実装場所 |
 |--------|------|---------|
 | pre-commit フック | マイグレーション改変検出 + 既存 lint/typecheck/test | `.husky/pre-commit` |
-| GitHub Actions | マイグレーション改変検出（セーフティネット） + main merge 時の prod 自動適用 | `.github/workflows/` (`ci.yml`, `migrate-prod.yml`) |
+| GitHub Actions | マイグレーション改変検出（セーフティネット） + main merge 時の prd 自動適用 | `.github/workflows/` (`ci.yml`, `migrate-prd.yml`) |
 | `pnpm db:push` | dev にマイグレーション適用 | `package.json` scripts |
-| `pnpm db:reset` | dev をリセット（prod ガード付き） | `package.json` scripts |
+| `pnpm db:reset` | dev をリセット（prd ガード付き） | `package.json` scripts |
 | `pnpm db:types` | TypeScript 型再生成 | `package.json` scripts |
 | `pnpm test:integration` | RLS 統合テスト + RPC テスト (Supabase Admin API でテスト用ユーザを自動生成して RLS の境界・RPC の挙動を検証) | `package.json` scripts |
 
@@ -303,7 +303,7 @@ badkichi/
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml                ← 🆕 マイグレーション改変検出 + RLS/RPC 統合テスト
-│       └── migrate-prod.yml      ← 🆕 main merge 時に prod 自動適用 (⑮ C-17)
+│       └── migrate-prd.yml       ← 🆕 main merge 時に prd 自動適用 (⑮ C-17)
 ├── app/
 │   └── pages/
 │       └── confirm.vue           ← 🆕 OAuth callback 最小スタブ (⑬ C-15、auth-onboarding で置換)
