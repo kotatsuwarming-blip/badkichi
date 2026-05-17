@@ -30,8 +30,8 @@
 ### テストケース
 
 - [ ] **TC-001-01**: dev/prd 両プロジェクトが Supabase Dashboard に存在する 🔵
-- [ ] **TC-001-02**: `.env.development` の `SUPABASE_URL` が dev プロジェクト URL と一致する 🔵
-- [ ] **TC-001-03**: `.env.production` の `SUPABASE_URL` が prd プロジェクト URL と一致する 🔵
+- [ ] **TC-001-02**: `.env.development` の `NUXT_PUBLIC_SUPABASE_URL` が dev プロジェクト URL と一致する 🔵
+- [ ] **TC-001-03**: `.env.production` の `NUXT_PUBLIC_SUPABASE_URL` が prd プロジェクト URL と一致する 🔵
 
 ---
 
@@ -91,19 +91,19 @@
 **信頼性**: 🔵 *PRD §5.1*
 
 ### Given
-- Supabase の URL と anon key が取得可能
+- Supabase の URL と publishable key が取得可能
 
 ### When
 - Nuxt アプリを `pnpm dev` で起動し、Supabase client を import する
 
 ### Then
-- クライアント側コードで anon key が利用できる
-- クライアント側バンドルに service_role key が含まれていない
+- クライアント側コードで publishable key が利用できる
+- クライアント側バンドルに secret key が含まれていない
 
 ### テストケース
 
 - [ ] **TC-005-01**: `nuxt.config.ts` の modules に `@nuxtjs/supabase` が登録されている 🔵
-- [ ] **TC-005-02**: `runtimeConfig.public` に `SUPABASE_URL` と anon key が設定されている 🔵
+- [ ] **TC-005-02**: `runtimeConfig.public` に `NUXT_PUBLIC_SUPABASE_URL` と publishable key が設定されている 🔵
 - [ ] **TC-005-03**: ブラウザでビルド成果物を検索して `service_role` 文字列が出現しない 🔵 (セキュリティ境界値)
 - [ ] **TC-005-04**: `useSupabaseClient()` が正常に client を返す 🔵
 

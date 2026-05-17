@@ -27,8 +27,8 @@ data-foundation 実装に入る前に、開発者（kotatsu828）が手動で用
 - [ ] `badkichi-prd` プロジェクト作成
 - [ ] 各プロジェクトの以下の情報を控える:
   - プロジェクト URL（Settings → API）
-  - anon public key
-  - service_role key（サーバーサイドでのみ使用、漏洩厳禁）
+  - publishable key
+  - secret key（サーバーサイドでのみ使用、漏洩厳禁）
 - 関連要件: REQ-001
 
 ### 3. Google Cloud Console で OAuth クライアント ID を作成 🔵 *ヒアリング Q2*
@@ -65,8 +65,8 @@ data-foundation 実装に入る前に、開発者（kotatsu828）が手動で用
 
 - [ ] `.env.development` を作成（git 管理外）、以下を記載:
   ```
-  SUPABASE_URL=https://xxxx.supabase.co
-  SUPABASE_KEY=eyJxxx...（anon key）
+  NUXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+  NUXT_PUBLIC_SUPABASE_KEY=sb_publishable_xxx...（publishable key）
   ```
 - [ ] `.env.production` を作成（デプロイ環境で設定）
 - [ ] `.gitignore` に `.env.*` が含まれていることを確認（既存 Nuxt `.gitignore` で既に除外されている想定）

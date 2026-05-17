@@ -117,12 +117,12 @@ nuxt.config.ts
         └── callback: '/confirm'
 
 .env.development
-├── SUPABASE_URL=https://xxxx.supabase.co
-└── SUPABASE_KEY=eyJxxx...  (anon key)
+├── NUXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+└── NUXT_PUBLIC_SUPABASE_KEY=sb_publishable_xxx...  (publishable key)
 
 .env.production
-├── SUPABASE_URL=https://yyyy.supabase.co
-└── SUPABASE_KEY=eyJyyy...  (anon key)
+├── NUXT_PUBLIC_SUPABASE_URL=https://yyyy.supabase.co
+└── NUXT_PUBLIC_SUPABASE_KEY=sb_publishable_yyy...  (publishable key)
 ```
 
 `@nuxtjs/supabase` が自動的に環境変数を読み込み、`useSupabaseClient()` / `useSupabaseUser()` composable を提供する。

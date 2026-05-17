@@ -33,7 +33,7 @@
 1. Supabase Cloud にサインインする
 2. `badkichi-dev` プロジェクトを作成する
 3. `badkichi-prd` プロジェクトを作成する
-4. 各プロジェクトの接続情報（URL / anon key / service_role key）を `.env.*` に保存する
+4. 各プロジェクトの接続情報（URL / publishable key / secret key）を `.env.*` に保存する
 5. dev/prd それぞれに対して `supabase link --project-ref xxxxx` でリンクする
 
 **前提条件**:
@@ -155,7 +155,7 @@ Supabase CLI のマイグレーションとして管理したい**
 **詳細シナリオ**:
 1. `@nuxtjs/supabase` モジュールを追加する
 2. `nuxt.config.ts` で `supabase` モジュールを有効化
-3. `.env.development` / `.env.production` に `SUPABASE_URL` / `SUPABASE_KEY`（anon）を設定
+3. `.env.development` / `.env.production` に `NUXT_PUBLIC_SUPABASE_URL` / `NUXT_PUBLIC_SUPABASE_KEY`（anon）を設定
 4. `runtimeConfig.public` に公開可能な値だけを渡す
 5. `service_role` キーはサーバーサイドのみで参照可能な環境変数にする
 
