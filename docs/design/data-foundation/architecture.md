@@ -331,8 +331,8 @@ badkichi/
 
 **信頼性**: 🔵 *NFR-101〜104*
 
-- `service_role` キー: `.env.*` にのみ保存、クライアントバンドルに含めない
-- `anon` キー: `runtimeConfig.public` 経由（ブラウザに露出するが RLS で保護）
+- secret キー (`sb_secret_*`): **`.env.*` には書かない**。パスワードマネージャ保管 + シェル env で必要時のみ渡す。クライアントバンドルに含めない。CI/CD では GitHub Actions Secrets 等に登録
+- publishable キー (`sb_publishable_*`): `runtimeConfig.public` 経由（ブラウザに露出するが RLS で保護）
 - RLS: 全テーブルで有効化。anon ロールは全拒否
 - 招待コード: 8 文字英数字、text 型（将来拡張可能）
 - Email/Password: 明示的に disabled
