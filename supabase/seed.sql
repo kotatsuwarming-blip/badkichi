@@ -1,0 +1,3 @@
+-- 本プロジェクトでは seed は使用しない。
+-- 詳細は docs/design/data-foundation/architecture.md "seed.sql 方針 (⑭ C-16)" を参照。
+-- テスト用ユーザは tests/setup/create-test-users.ts で動的生成する。
