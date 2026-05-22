@@ -90,6 +90,29 @@ data-foundation 実装に入る前に、開発者（kotatsu828）が手動で用
 - 必要になるフェーズ: data-foundation タスク終盤
 - 関連要件: REQ-003
 
+### 9. GitHub Secrets 登録 🔵 *TASK-0011 / TASK-0012 で利用*
+
+`.github/workflows/ci.yml` の `db-lint` ジョブと `.github/workflows/migrate-prd.yml`
+が Supabase CLI で dev/prd にリンクするため、以下の Secrets を GitHub リポジトリの
+**Settings → Secrets and variables → Actions** に登録する。
+
+| Secret 名 | 用途 | 値の取得元 |
+|----------|------|-----------|
+| `SUPABASE_ACCESS_TOKEN` | Supabase CLI 認証 (dev/prd 共通) | https://supabase.com/dashboard/account/tokens で発行 |
+| `SUPABASE_DEV_PROJECT_REF` | dev プロジェクト Ref (`db-lint` ジョブで使用) | Supabase Dashboard (dev) → Project Settings → General |
+| `SUPABASE_DB_PASSWORD` | dev DB password (`db-lint` の `supabase link` で要求される場合あり) | TASK-0001 で設定したパスワード |
+| `SUPABASE_PRD_PROJECT_REF` | prd プロジェクト Ref (`migrate-prd` ジョブで使用) | Supabase Dashboard (prd) → Project Settings → General |
+| `SUPABASE_PRD_DB_PASSWORD` | prd DB password (`migrate-prd` の `supabase link` で使用) | TASK-0001 で設定したパスワード |
+
+**注意**:
+
+- これらは dev / prd 環境への書き込み権限を持つため漏洩厳禁。
+- リポジトリ運用が本格化したら、`production` Environment を切って Environment Secrets +
+  Required reviewers の承認ゲートを追加することを検討（MVP では Repository Secrets で開始）。
+- `SUPABASE_ACCESS_TOKEN` を発行した開発者が退職等で抜けた場合は token を revoke して再発行
+  する。本番運用時は Bot ユーザでの発行を推奨（MVP では個人 token で OK）。
+- 関連要件: REQ-003, REQ-011
+
 ---
 
 ## 確認事項（判断が必要）
@@ -114,7 +137,7 @@ data-foundation 実装に入る前に、開発者（kotatsu828）が手動で用
 | 優先度 | 件数 | 🔵 | 🟡 | 🔴 |
 |--------|------|-----|-----|-----|
 | 必須 | 6 | 6 | 0 | 0 |
-| 推奨 | 2 | 0 | 2 | 0 |
+| 推奨 | 3 | 1 | 2 | 0 |
 | 確認事項 | 2 | 0 | 0 | 1 |
 
 ## 関連文書

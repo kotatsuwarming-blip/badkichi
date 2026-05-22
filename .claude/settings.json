@@ -1,5 +1,63 @@
 {
   "enabledPlugins": {
     "tsumiki@tsumiki": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(pnpm test)",
+      "Bash(pnpm test *)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm typecheck *)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm lint *)",
+      "Bash(pnpm vitest)",
+      "Bash(pnpm vitest *)",
+      "Bash(pnpm db:types)",
+      "Bash(pnpm lint:actions)",
+      "Bash(pnpm simple-git-hooks)",
+      "Bash(pnpm install)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm add *)",
+      "Bash(pnpm remove *)",
+
+      "Bash(supabase status)",
+      "Bash(supabase status *)",
+      "Bash(supabase migration list)",
+      "Bash(supabase migration list *)",
+      "Bash(supabase projects list)",
+      "Bash(supabase inspect *)",
+      "Bash(supabase --help)",
+      "Bash(supabase --version)",
+
+      "Bash(./scripts/*.sh)",
+      "Bash(./scripts/*.sh:*)",
+      "Bash(actionlint)",
+      "Bash(actionlint *)",
+
+      "Bash(chmod +x *)",
+      "Bash(mkdir -p *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+
+      "Bash(git diff)",
+      "Bash(git diff *)",
+      "Bash(git status)",
+      "Bash(git status *)",
+      "Bash(git log)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git branch)",
+      "Bash(git branch *)"
+    ],
+    "deny": [
+      "Bash(supabase db push *)",
+      "Bash(supabase db reset *)",
+      "Bash(pnpm db:push)",
+      "Bash(pnpm db:reset)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git reset --hard *)",
+      "Bash(rm -rf *)"
+    ]
   }
 }

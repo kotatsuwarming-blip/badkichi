@@ -39,9 +39,9 @@
 
 ## 全体進捗
 
-- [ ] Phase 1: 環境基盤構築
-- [ ] Phase 2: スキーマ・認証・RPC 実装
-- [ ] Phase 3: 開発・CI 運用整備
+- [x] Phase 1: 環境基盤構築 ✅ 完了 (2026-05-19)
+- [x] Phase 2: スキーマ・認証・RPC 実装 ✅ 完了 (2026-05-19)
+- [x] Phase 3: 開発・CI 運用整備 ✅ 完了 (2026-05-20)
 - [ ] Phase 4: 統合テスト・検証
 
 ## マイルストーン
@@ -61,10 +61,10 @@
 
 ### タスク一覧
 
-- [ ] [TASK-0001: Supabase プロジェクト作成 + Google OAuth 有効化](TASK-0001.md) — 2-4h (DIRECT) 🔵
-- [ ] [TASK-0002: Nuxt 依存パッケージ追加 + nuxt.config 設定](TASK-0002.md) — 2-3h (DIRECT) 🔵
-- [ ] [TASK-0003: 環境変数管理 (.env.* + runtimeConfig)](TASK-0003.md) — 2-3h (DIRECT) 🔵
-- [ ] [TASK-0004: Supabase CLI 初期化 + プロジェクトリンク](TASK-0004.md) — 3-4h (DIRECT) 🔵
+- [x] [TASK-0001: Supabase プロジェクト作成 + Google OAuth 有効化](TASK-0001.md) ✅ 完了 (2026-05-18, user manual) — 2-4h (DIRECT) 🔵
+- [x] [TASK-0002: Nuxt 依存パッケージ追加 + nuxt.config 設定](TASK-0002.md) ✅ 完了 (2026-05-17, commit edac2d0) — 2-3h (DIRECT) 🔵
+- [x] [TASK-0003: 環境変数管理 (.env.* + runtimeConfig)](TASK-0003.md) ✅ 完了 (2026-05-19, commits 94405e7 + 22c75c2) — 2-3h (DIRECT) 🔵
+- [x] [TASK-0004: Supabase CLI 初期化 + プロジェクトリンク](TASK-0004.md) ✅ 完了 (2026-05-19, commit 68b04d2) — 3-4h (DIRECT) 🔵
 
 ### 依存関係
 
@@ -86,11 +86,11 @@ TASK-0001 と TASK-0002 は並行可能。
 
 ### タスク一覧
 
-- [ ] [TASK-0005: 初回マイグレーション — 全 11 テーブル DDL](TASK-0005.md) — 6-8h (DIRECT) 🔵
-- [ ] [TASK-0006: RLS ヘルパー関数 + 全テーブル RLS ポリシー](TASK-0006.md) — 4-6h (DIRECT) 🔵
-- [ ] [TASK-0007: RPC 関数定義 (3 RPC)](TASK-0007.md) — 4-6h (DIRECT) 🔵
-- [ ] [TASK-0008: 型自動生成パイプライン + npm scripts](TASK-0008.md) — 3-4h (DIRECT) 🔵
-- [ ] [TASK-0009: dev マイグレーション初回適用 + 動作確認](TASK-0009.md) — 2-4h (DIRECT) 🔵
+- [x] [TASK-0005: 初回マイグレーション — 全 11 テーブル DDL](TASK-0005.md) ✅ 完了 (2026-05-19) — 6-8h (DIRECT) 🔵
+- [x] [TASK-0006: RLS ヘルパー関数 + 全テーブル RLS ポリシー](TASK-0006.md) ✅ 完了 (2026-05-19) — 4-6h (DIRECT) 🔵
+- [x] [TASK-0007: RPC 関数定義 (3 RPC)](TASK-0007.md) ✅ 完了 (2026-05-19) — 4-6h (DIRECT) 🔵
+- [x] [TASK-0008: 型自動生成パイプライン + npm scripts](TASK-0008.md) ✅ 完了 (2026-05-19) — 3-4h (DIRECT) 🔵
+- [x] [TASK-0009: dev マイグレーション初回適用 + 動作確認](TASK-0009.md) ✅ 完了 (2026-05-19) — 2-4h (DIRECT) 🔵
 
 ### 依存関係
 
@@ -110,9 +110,9 @@ TASK-0004 → TASK-0005 → TASK-0006 → TASK-0007 → TASK-0008 → TASK-0009
 
 ### タスク一覧
 
-- [ ] [TASK-0010: seed.sql + db:reset スクリプト + prd 誤操作ガード](TASK-0010.md) — 3-4h (DIRECT) 🔵
-- [ ] [TASK-0011: マイグレーション改変検出 (pre-commit + GitHub Actions)](TASK-0011.md) — 4-6h (DIRECT) 🔵
-- [ ] [TASK-0012: prd 自動マイグレーション GitHub Actions](TASK-0012.md) — 3-4h (DIRECT) 🔵
+- [x] [TASK-0010: seed.sql + db:reset スクリプト + prd 誤操作ガード](TASK-0010.md) ✅ 完了 (2026-05-19) — 3-4h (DIRECT) 🔵
+- [x] [TASK-0011: マイグレーション改変検出 (pre-commit + GitHub Actions)](TASK-0011.md) ✅ 完了 (2026-05-20) — 4-6h (DIRECT) 🔵
+- [x] [TASK-0012: prd 自動マイグレーション GitHub Actions](TASK-0012.md) ✅ 完了 (2026-05-20) — 3-4h (DIRECT) 🔵
 
 ### 依存関係
 

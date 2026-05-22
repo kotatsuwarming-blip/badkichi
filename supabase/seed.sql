@@ -1,3 +1,18 @@
--- 本プロジェクトでは seed は使用しない。
--- 詳細は docs/design/data-foundation/architecture.md "seed.sql 方針 (⑭ C-16)" を参照。
--- テスト用ユーザは tests/setup/create-test-users.ts で動的生成する。
+-- supabase/seed.sql
+--
+-- 本ファイルは `pnpm db:reset` で適用される dev 用シードデータの枠ファイルである。
+-- 現時点では INSERT 文を含まない（空ファイル）。
+--
+-- 理由 (スキーマレビュー ⑭ C-16):
+--   - Group / group_members は auth.uid() 紐付けが必要であり、
+--     メンバーなしの Group を seed しても RLS により誰にも見えない。
+--   - 意味のあるテストデータ作成には本物の auth ユーザが必要。
+--   - そのため、テストデータは CI 内の setup スクリプト
+--     (tests/setup/create-test-users.ts) から Supabase Admin API 経由で生成し、
+--     auth.uid() 依存により実データ投入は CI 内 setup スクリプトに委譲する。
+--
+-- 将来 (RLS を介さない dev 用 fixture が必要になった場合) はここに INSERT を追加する。
+--
+-- 参照:
+--   - docs/design/data-foundation/architecture.md "seed.sql 方針 (⑭ C-16)"
+--   - docs/spec/data-foundation/requirements.md REQ-008

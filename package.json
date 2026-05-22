@@ -9,9 +9,13 @@
     "preview": "nuxt preview --dotenv .env.production",
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
+    "lint:actions": "actionlint .github/workflows/",
     "typecheck": "nuxt typecheck --dotenv .env.development",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:push": "supabase db push --linked",
+    "db:reset": "./scripts/db-reset-guard.sh && supabase db reset --linked",
+    "db:types": "supabase gen types typescript --linked > app/types/supabase.ts"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.98",
@@ -33,7 +37,7 @@
     "vue-tsc": "^3.2.5"
   },
   "simple-git-hooks": {
-    "pre-commit": "pnpm lint-staged && pnpm typecheck && pnpm test"
+    "pre-commit": "pnpm lint-staged && pnpm typecheck && pnpm test && ./scripts/check-migration-integrity.sh pre-commit"
   },
   "lint-staged": {
     "*.{ts,vue}": [
