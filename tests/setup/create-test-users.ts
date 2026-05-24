@@ -61,13 +61,22 @@ export async function teardownTestUsers(): Promise<void> {
 
 /**
  * afterEach 用 cleanup (B3 確定方針, 2026-05-13)。
- * groups の owner / group_members の user_id で User A/B 系のテストデータを削除し、
+ * group_members の user_id でテストユーザが属する Group を特定して削除し、
  * auth.users 自体は残す (globalSetup の作成済みを再利用するため)。
+ * 注: groups テーブルに owner_user_id カラムはないため group_members 経由で削除。
  */
 export async function cleanupTestUserData(): Promise<void> {
   if (createdUserIds.length === 0) return
   const client = getAdminClient()
-  await client.from('groups').delete().in('owner_user_id', createdUserIds)
+  // テストユーザが所属する group_id を取得して groups を削除（CASCADE で配下データも消える）
+  const { data: memberships } = await client
+    .from('group_members')
+    .select('group_id')
+    .in('user_id', createdUserIds)
+  if (memberships && memberships.length > 0) {
+    const groupIds = memberships.map((m: { group_id: string }) => m.group_id)
+    await client.from('groups').delete().in('id', groupIds)
+  }
   await client.from('group_members').delete().in('user_id', createdUserIds)
 }
 

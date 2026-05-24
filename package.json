@@ -30,6 +30,7 @@
   "devDependencies": {
     "@nuxt/eslint": "^1.15.2",
     "@nuxt/test-utils": "^4.0.2",
+    "@supabase/supabase-js": "^2.105.4",
     "eslint": "^10.0.3",
     "lint-staged": "^16.4.0",
     "simple-git-hooks": "^2.13.1",

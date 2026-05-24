@@ -2,8 +2,8 @@
 
 **作成日**: 2026-05-13
 **プロジェクト期間目安**: 2026-07-01 〜 2026-08-31 (副業 10-15h/週で 5-8 週)
-**推定工数**: 58-89h (中央 ≒ 73h)
-**総タスク数**: 17 件
+**推定工数**: 61-94h (中央 ≒ 77h、ADR-006 適用 TASK-0018 含む)
+**総タスク数**: 18 件
 **フェーズ数**: 4
 
 ## 関連文書
@@ -21,6 +21,7 @@
   - [ADR-003: ハーネス整備アプローチ](../../decisions/003-harness-engineering-approach.md)
   - [ADR-004: auth-onboarding 単位の追加](../../decisions/004-add-auth-onboarding-unit.md)
   - [ADR-005: エラーハンドリング戦略](../../decisions/005-error-handling-strategy.md)
+  - [ADR-006: 1 ユーザー = 1 Group 制約 (MVP)](../../decisions/006-single-group-per-user-mvp.md)
 
 ## フェーズ構成
 
@@ -29,12 +30,12 @@
 | Phase 1 | 1 週 | Supabase プロジェクト + Nuxt 接続基盤 | 4 件 | 9-14h | [TASK-0001〜0004](#phase-1-環境基盤構築) |
 | Phase 2 | 2 週 | スキーマ + RLS + RPC + 型生成 (dev 適用済) | 5 件 | 19-28h | [TASK-0005〜0009](#phase-2-スキーマ認証rpc-実装) |
 | Phase 3 | 1 週 | seed / db:reset / CI 改変検出 / prd 自動デプロイ | 3 件 | 10-14h | [TASK-0010〜0012](#phase-3-開発ci-運用整備) |
-| Phase 4 | 2-3 週 | 統合テスト + /confirm スタブ + prd 適用 + NFR-001 実測 | 5 件 | 20-29h | [TASK-0013〜0017](#phase-4-統合テスト検証) |
+| Phase 4 | 2-3 週 | 統合テスト + /confirm スタブ + prd 適用 + NFR-001 実測 + ADR-006 適用 | 6 件 | 23-34h | [TASK-0013〜0018](#phase-4-統合テスト検証) |
 
 ## タスク番号管理
 
-- **使用済みタスク番号**: TASK-0001 〜 TASK-0017 (data-foundation 専用)
-- **次回開始番号**: TASK-0018 (data-foundation 内で追加が必要になった場合)
+- **使用済みタスク番号**: TASK-0001 〜 TASK-0018 (data-foundation 専用)
+- **次回開始番号**: TASK-0019 (data-foundation 内で追加が必要になった場合)
 - **他単位との分離**: rule-engine は `docs/tasks/rule-engine/` に独立 (TASK 番号は単位毎に独立)
 
 ## 全体進捗
@@ -134,21 +135,24 @@ TASK-0010 と TASK-0011 は並行可能。TASK-0012 は TASK-0011 完了後。
 ### タスク一覧
 
 - [x] [TASK-0013: テストユーザ作成セットアップスクリプト](TASK-0013.md) ✅ 完了 (2026-05-23) — 4-6h (TDD) 🔵
-- [ ] [TASK-0014: RLS 統合テスト](TASK-0014.md) — 6-8h (TDD) 🔵
-- [ ] [TASK-0015: RPC 統合テスト](TASK-0015.md) — 6-8h (TDD) 🔵
+- [ ] [TASK-0014: RLS 統合テスト](TASK-0014.md) — 6-8h (TDD) 🔵 ※ADR-006 由来 TC-14-30/31 を TASK-0018 で追加後に再完了マーク
+- [ ] [TASK-0015: RPC 統合テスト](TASK-0015.md) — 6-8h (TDD) 🔵 ※ADR-006 由来 TC-15-12 を TASK-0018 で追加後に着手
 - [ ] [TASK-0016: /confirm.vue 最小スタブ + スモークテスト](TASK-0016.md) — 2-3h (DIRECT) 🔵
 - [ ] [TASK-0017: prd 初回マイグレーション適用 + NFR-001 実測](TASK-0017.md) — 2-4h (DIRECT) 🔵
+- [x] [TASK-0018: ADR-006 適用 + dev 自動マイグレーション CI](TASK-0018.md) ✅ 文書/コード完了 (2026-05-24)、dev push + CI 動作確認はユーザ手動 — 3-5h (DIRECT) 🔵
 
 ### 依存関係
 
 ```
 TASK-0009 ──┬─→ TASK-0013 ──┬─→ TASK-0014 ──┐
-            │               └─→ TASK-0015 ──┤
-            └─→ TASK-0016 ──────────────────┤
-TASK-0012 ──────────────────────────────────┴─→ TASK-0017
+            │               │                ├─→ TASK-0018 (ADR-006) ──┐
+            │               └─→ TASK-0015 ──┘                          │
+            └─→ TASK-0016 ─────────────────────────────────────────────┤
+TASK-0012 ─────────────────────────────────────────────────────────────┴─→ TASK-0017
 ```
 
 TASK-0013 完了後、TASK-0014 と TASK-0015 は並行可能。TASK-0016 は TASK-0009 完了後すぐ着手可。
+TASK-0018 は ADR-006 適用 (追記 migration + dev 自動マイグレーション CI) で、TASK-0014 完了マークの再付与と TASK-0015 着手の前提となる。
 
 ---
 

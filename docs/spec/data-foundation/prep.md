@@ -90,19 +90,23 @@ data-foundation 実装に入る前に、開発者（kotatsu828）が手動で用
 - 必要になるフェーズ: data-foundation タスク終盤
 - 関連要件: REQ-003
 
-### 9. GitHub Secrets 登録 🔵 *TASK-0011 / TASK-0012 で利用*
+### 9. GitHub Secrets 登録 🔵 *TASK-0011 / TASK-0012 / TASK-0018 で利用*
 
-`.github/workflows/ci.yml` の `db-lint` ジョブと `.github/workflows/migrate-prd.yml`
-が Supabase CLI で dev/prd にリンクするため、以下の Secrets を GitHub リポジトリの
+`.github/workflows/ci.yml` の `db-lint` ジョブ、`.github/workflows/migrate-prd.yml`、
+`.github/workflows/migrate-dev.yml` (TASK-0018, ADR-006 適用) が Supabase CLI で
+dev/prd にリンクするため、以下の Secrets を GitHub リポジトリの
 **Settings → Secrets and variables → Actions** に登録する。
 
 | Secret 名 | 用途 | 値の取得元 |
 |----------|------|-----------|
 | `SUPABASE_ACCESS_TOKEN` | Supabase CLI 認証 (dev/prd 共通) | https://supabase.com/dashboard/account/tokens で発行 |
-| `SUPABASE_DEV_PROJECT_REF` | dev プロジェクト Ref (`db-lint` ジョブで使用) | Supabase Dashboard (dev) → Project Settings → General |
-| `SUPABASE_DB_PASSWORD` | dev DB password (`db-lint` の `supabase link` で要求される場合あり) | TASK-0001 で設定したパスワード |
+| `SUPABASE_DEV_PROJECT_REF` | dev プロジェクト Ref (`db-lint` / `migrate-dev` ジョブで使用) | Supabase Dashboard (dev) → Project Settings → General |
+| `SUPABASE_DB_PASSWORD` | dev DB password (`db-lint` / `migrate-dev` の `supabase link` で使用) | TASK-0001 で設定したパスワード |
 | `SUPABASE_PRD_PROJECT_REF` | prd プロジェクト Ref (`migrate-prd` ジョブで使用) | Supabase Dashboard (prd) → Project Settings → General |
 | `SUPABASE_PRD_DB_PASSWORD` | prd DB password (`migrate-prd` の `supabase link` で使用) | TASK-0001 で設定したパスワード |
+
+> **命名の不整合メモ**: dev は `SUPABASE_DB_PASSWORD`、prd は `SUPABASE_PRD_DB_PASSWORD` と非対称。
+> 既存 ci.yml との互換性のため現状維持。将来整理する際は `SUPABASE_DEV_DB_PASSWORD` にリネーム + ci.yml / migrate-dev.yml 同時更新が必要。
 
 **注意**:
 
