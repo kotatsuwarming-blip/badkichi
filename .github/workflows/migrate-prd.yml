@@ -23,6 +23,9 @@ jobs:
   migrate:
     runs-on: ubuntu-latest
 
+    # Environment Secrets を利用 (env prefix を Secret 名に含めない方針)
+    environment: prd
+
     # GITHUB_TOKEN に Issue 作成権限を付与 (失敗通知用)
     permissions:
       contents: read
@@ -30,8 +33,8 @@ jobs:
 
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_PRD_DB_PASSWORD: ${{ secrets.SUPABASE_PRD_DB_PASSWORD }}
-      SUPABASE_PRD_PROJECT_REF: ${{ secrets.SUPABASE_PRD_PROJECT_REF }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
 
     steps:
       - name: Checkout
@@ -45,8 +48,8 @@ jobs:
       - name: Link to prd project
         run: |
           supabase link \
-            --project-ref "${SUPABASE_PRD_PROJECT_REF}" \
-            --password "${SUPABASE_PRD_DB_PASSWORD}"
+            --project-ref "${SUPABASE_PROJECT_REF}" \
+            --password "${SUPABASE_DB_PASSWORD}"
 
       - name: Push migrations to prd
         run: supabase db push --linked
