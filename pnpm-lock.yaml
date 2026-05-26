@@ -36,6 +36,9 @@ importers:
       '@nuxt/test-utils':
         specifier: ^4.0.2
         version: 4.0.2(magicast@0.5.2)(typescript@5.9.3)(vite@7.3.1(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.0)(yaml@2.8.2))(vitest@4.1.4(vite@7.3.1(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.0)(yaml@2.8.2)))
+      '@supabase/supabase-js':
+        specifier: ^2.105.4
+        version: 2.105.4
       eslint:
         specifier: ^10.0.3
         version: 10.0.3(jiti@2.6.1)
