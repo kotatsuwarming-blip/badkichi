@@ -14,9 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "db:push": "supabase db push --linked",
-    "db:reset": "./scripts/db-reset-guard.sh && supabase db reset --linked",
-    "db:types": "supabase gen types typescript --linked > app/types/supabase.ts"
+    "db:types": "set -a && . .env.development && set +a && supabase gen types typescript --project-id $SUPABASE_PROJECT_REF > app/types/supabase.ts"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.98",

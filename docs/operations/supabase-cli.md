@@ -50,9 +50,10 @@ supabase status --linked  # dev に戻ったことを確認
 
 ## ⚠️ 禁止事項
 
-- `pnpm db:reset` を **prd link 状態で絶対に実行しないこと** (REQ-009 ガードでも停止するが、念のため)
+- `supabase db push` / `supabase db reset` の **ローカル実行は原則禁止** — CI (`migrate-dev.yml` / `migrate-prd.yml`) 経由で実行する。ローカルから直接叩くと DB password の取り扱いリスクが発生する
 - `supabase start` (ローカル Docker Supabase 起動) は **使わない** (REQ-403)
 - secret key (`sb_secret_*`) を `.env.*` に書かない ([feedback_strict_secret_policy](../../README.md) 参照)
+- DB password (`SUPABASE_DB_PASSWORD`) を `.env.*` / shell history に書かない — `migrate-*.yml` の Environment Secret 経由のみで使う
 
 ## 認知負荷対策
 
