@@ -2,9 +2,9 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
 
 jobs:
   # ガード 1: 既存マイグレーションファイルが改変されていないか git diff (HEAD~1..HEAD) で検証
@@ -98,3 +98,38 @@ jobs:
 
       - name: Test
         run: pnpm run test
+
+  # 統合テスト: dev DB に対して RLS / RPC の境界値テストを実行
+  # 必要な Environment Secrets (dev):
+  #   - SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY / SUPABASE_SECRET_KEY
+  # 注: dev DB を共有するため並行実行を抑止 (concurrency)
+  integration-test:
+    runs-on: ubuntu-latest
+    environment: dev
+    concurrency:
+      group: integration-test-dev
+      cancel-in-progress: false
+    env:
+      NUXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      NUXT_PUBLIC_SUPABASE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      NUXT_SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          version: 10
+
+      - name: Install node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run integration tests
+        run: pnpm test:integration
