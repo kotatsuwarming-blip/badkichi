@@ -32,7 +32,7 @@ jobs:
         uses: reviewdog/action-actionlint@v1
         with:
           reporter: github-check
-          fail_on_error: true
+          fail_level: error
 
   # ガード 2: supabase db lint で SECURITY DEFINER 関数の search_path 未固定や RLS 未設定など
   # セキュリティアンチパターンを検出 (B2 確定方針, dev プロジェクトに対して実行)
@@ -78,8 +78,6 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v5
-        with:
-          version: 10
 
       - name: Install node
         uses: actions/setup-node@v6
@@ -119,8 +117,6 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v5
-        with:
-          version: 10
 
       - name: Install node
         uses: actions/setup-node@v6
