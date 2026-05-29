@@ -67,24 +67,36 @@ export async function teardownTestUsers(): Promise<void> {
 
 /**
  * afterEach 用 cleanup (B3 確定方針, 2026-05-13)。
- * 指定された user_id 群が所属する groups を削除し (CASCADE で配下データも消える)、
- * group_members から該当ユーザ行を削除。auth.users 自体は残す。
- * 注: groups テーブルに owner_user_id カラムはないため group_members 経由で削除。
+ * 指定された user_id 群が所属する groups と group_members を削除し、
+ * auth.users 自体は残す (globalSetup の作成済みを再利用するため)。
+ * 注: groups テーブルに owner_user_id カラムはないため group_members 経由で特定。
+ * FK ON DELETE CASCADE が schema に無いため、子テーブル → 親テーブル の順で削除。
  *
  * @param userIds 対象ユーザ ID 配列 (vitest worker process では inject 経由で取得)
  */
 export async function cleanupTestUserData(userIds: string[]): Promise<void> {
   if (userIds.length === 0) return
   const client = getAdminClient()
+
+  // 1. 対象ユーザが所属する group_id を抽出
   const { data: memberships } = await client
     .from('group_members')
     .select('group_id')
     .in('user_id', userIds)
-  if (memberships && memberships.length > 0) {
-    const groupIds = memberships.map((m: { group_id: string }) => m.group_id)
+  const groupIds = [...new Set((memberships ?? []).map((m: { group_id: string }) => m.group_id))]
+
+  // 2. group_invitations を削除 (groups の子、FK CASCADE 未設定)
+  if (groupIds.length > 0) {
+    await client.from('group_invitations').delete().in('group_id', groupIds)
+  }
+
+  // 3. group_members を削除 (groups の子)
+  await client.from('group_members').delete().in('user_id', userIds)
+
+  // 4. groups 自体を削除
+  if (groupIds.length > 0) {
     await client.from('groups').delete().in('id', groupIds)
   }
-  await client.from('group_members').delete().in('user_id', userIds)
 }
 
 /**
