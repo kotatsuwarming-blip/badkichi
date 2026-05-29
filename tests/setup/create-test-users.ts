@@ -33,7 +33,23 @@ function getAdminClient(): SupabaseClient {
   return adminClient
 }
 
+async function deleteExistingByEmail(client: SupabaseClient, email: string): Promise<void> {
+  // 前回 run の teardown が走らずに残った同 email のユーザを冪等に削除する。
+  // listUsers は perPage 1000 が上限のためメイン候補のみで十分 (テスト email は 2 件想定)。
+  const { data, error } = await client.auth.admin.listUsers({ page: 1, perPage: 1000 })
+  if (error) throw new Error(`listUsers failed: ${error.message}`)
+  for (const u of data.users) {
+    if (u.email === email) {
+      const { error: delErr } = await client.auth.admin.deleteUser(u.id)
+      if (delErr) throw new Error(`pre-cleanup deleteUser failed for ${email}: ${delErr.message}`)
+    }
+  }
+}
+
 async function createOne(client: SupabaseClient, email: string): Promise<TestUser> {
+  // 冪等性確保: 前回 run 由来の同 email ユーザが残っていれば先に削除
+  await deleteExistingByEmail(client, email)
+
   const password = `test-${globalThis.crypto.randomUUID()}`
   const { data, error } = await client.auth.admin.createUser({
     email,

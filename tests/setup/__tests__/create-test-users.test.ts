@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 
-const { mockCreateUser, mockDeleteUser } = vi.hoisted(() => ({
+const { mockCreateUser, mockDeleteUser, mockListUsers } = vi.hoisted(() => ({
   mockCreateUser: vi.fn(),
-  mockDeleteUser: vi.fn()
+  mockDeleteUser: vi.fn(),
+  mockListUsers: vi.fn()
 }))
 
 vi.mock('@supabase/supabase-js', () => ({
@@ -10,7 +11,8 @@ vi.mock('@supabase/supabase-js', () => ({
     auth: {
       admin: {
         createUser: mockCreateUser,
-        deleteUser: mockDeleteUser
+        deleteUser: mockDeleteUser,
+        listUsers: mockListUsers
       }
     }
   }))
@@ -20,6 +22,9 @@ beforeEach(() => {
   vi.resetModules()
   mockCreateUser.mockReset()
   mockDeleteUser.mockReset()
+  mockListUsers.mockReset()
+  // setupTestUsers の冪等性 pre-cleanup 用のデフォルト: 既存ユーザなし
+  mockListUsers.mockResolvedValue({ data: { users: [] }, error: null })
   vi.stubEnv('NUXT_PUBLIC_SUPABASE_URL', 'https://stub.supabase.co')
   vi.stubEnv('NUXT_SUPABASE_SECRET_KEY', 'sb_secret_stub')
   vi.stubEnv('TEST_USER_A_EMAIL', '')
