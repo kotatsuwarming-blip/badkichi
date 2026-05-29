@@ -84,8 +84,19 @@ describe.skipIf(skip)('RLS 統合テスト: TASK-0014', () => {
       auth: { autoRefreshToken: false, persistSession: false }
     })
 
+    // DEBUG
+    console.log('[beforeAll DEBUG] userBId from inject:', userBId)
+
     // 【初期条件設定】: User B 名義で Group + 配下 11 種データを service_role で投入
     userBGroupId = await createGroupForUserB(serviceClient, userBId)
+
+    // DEBUG: confirm group_members for User B exists right after createGroupForUserB
+    const { data: gmAfter, error: gmErr } = await serviceClient
+      .from('group_members')
+      .select('id, group_id, user_id, deleted_at')
+      .eq('user_id', userBId)
+    console.log('[beforeAll DEBUG] gm after createGroupForUserB err:', JSON.stringify(gmErr))
+    console.log('[beforeAll DEBUG] gm after createGroupForUserB rows:', JSON.stringify(gmAfter, null, 2))
 
     // matches には 4 名の選手が必要（全員別人・同一 Group）
     const p1 = await createPlayer(serviceClient, userBGroupId)
@@ -633,11 +644,18 @@ describe.skipIf(skip)('RLS 統合テスト: TASK-0014', () => {
       }
 
       // DEBUG: confirm User B membership state before insert
+      console.log('[TC-14-30 DEBUG] userBId at TC-14-30:', userBId)
+      console.log('[TC-14-30 DEBUG] userBGroupId at TC-14-30:', userBGroupId)
       const { data: gmBefore } = await serviceClient
         .from('group_members')
         .select('id, group_id, user_id, deleted_at')
         .eq('user_id', userBId)
       console.log('[TC-14-30 DEBUG] group_members rows for User B before insert:', JSON.stringify(gmBefore, null, 2))
+      // DEBUG: also dump ALL group_members rows (no filter) to see what's actually there
+      const { data: gmAll } = await serviceClient
+        .from('group_members')
+        .select('id, group_id, user_id, deleted_at')
+      console.log('[TC-14-30 DEBUG] ALL group_members rows:', JSON.stringify(gmAll, null, 2))
 
       // 【実際の処理実行】: User B を 2 件目の Group に所属させようとする
       const { data: insertData, error } = await serviceClient
