@@ -632,10 +632,22 @@ describe.skipIf(skip)('RLS 統合テスト: TASK-0014', () => {
         throw new Error(`TC-14-30 setup failed: ${groupErr?.message}`)
       }
 
+      // DEBUG: confirm User B membership state before insert
+      const { data: gmBefore } = await serviceClient
+        .from('group_members')
+        .select('id, group_id, user_id, deleted_at')
+        .eq('user_id', userBId)
+      console.log('[TC-14-30 DEBUG] group_members rows for User B before insert:', JSON.stringify(gmBefore, null, 2))
+
       // 【実際の処理実行】: User B を 2 件目の Group に所属させようとする
-      const { error } = await serviceClient
+      const { data: insertData, error } = await serviceClient
         .from('group_members')
         .insert({ group_id: secondGroup.id, user_id: userBId })
+        .select()
+
+      // DEBUG: dump full error and insert result
+      console.log('[TC-14-30 DEBUG] insert error:', JSON.stringify(error, null, 2))
+      console.log('[TC-14-30 DEBUG] insert data:', JSON.stringify(insertData, null, 2))
 
       // 【結果検証】: UNIQUE(user_id) 違反で 23505 が返る
       expect(error?.code).toBe('23505') // 【確認内容】: PG unique_violation 🔵

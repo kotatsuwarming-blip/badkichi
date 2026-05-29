@@ -56,9 +56,23 @@ describe.skipIf(skip)('cleanupTestUserData (integration)', () => {
     // 【検証 1】: 作成した group が削除されている (CASCADE で配下も)
     const { data: remainingGroup } = await serviceClient
       .from('groups')
-      .select('id')
+      .select('id, name, deleted_at')
       .eq('id', group!.id)
       .maybeSingle()
+    // DEBUG: dump remaining state to understand what cleanupTestUserData left
+    if (remainingGroup) {
+      const { data: remainingMembersAll } = await serviceClient
+        .from('group_members')
+        .select('id, group_id, user_id, deleted_at')
+        .eq('group_id', group!.id)
+      console.log('[cleanupTestUserData DEBUG] remainingGroup:', JSON.stringify(remainingGroup, null, 2))
+      console.log('[cleanupTestUserData DEBUG] remainingMembers for that group:', JSON.stringify(remainingMembersAll, null, 2))
+      const { data: allUserMembers } = await serviceClient
+        .from('group_members')
+        .select('id, group_id, user_id, deleted_at')
+        .in('user_id', [userAId, userBId])
+      console.log('[cleanupTestUserData DEBUG] all group_members for test users:', JSON.stringify(allUserMembers, null, 2))
+    }
     expect(remainingGroup).toBeNull()
 
     // 【検証 2】: group_members から user_a 関連が消えている
