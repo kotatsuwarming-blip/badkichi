@@ -21,6 +21,10 @@ export default defineConfig({
     testTimeout: 30_000,
     pool: 'forks',
     // Vitest 4: poolOptions は非推奨。singleFork は forks プールのトップレベルオプション
-    forks: { singleFork: true }
+    forks: { singleFork: true },
+    // 複数ファイルの並列実行を禁止する。dev DB を共有しているため、ファイル A の
+    // afterAll がファイル B の beforeAll 投入データを削除する cross-file interference を防ぐ
+    // (例: create-test-users の afterAll が rls の userB 行まで削除し TC-14-30 が失敗)。
+    fileParallelism: false
   }
 })
