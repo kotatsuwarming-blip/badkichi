@@ -40,6 +40,10 @@ async function deleteExistingByEmail(client: SupabaseClient, email: string): Pro
   if (error) throw new Error(`listUsers failed: ${error.message}`)
   for (const u of data.users) {
     if (u.email === email) {
+      // auth.users への FK 参照 (group_members.user_id, group_invitations.created_by) を
+      // 先に消さないと admin.deleteUser が "Database error deleting user" で失敗する
+      await client.from('group_invitations').delete().eq('created_by', u.id)
+      await client.from('group_members').delete().eq('user_id', u.id)
       const { error: delErr } = await client.auth.admin.deleteUser(u.id)
       if (delErr) throw new Error(`pre-cleanup deleteUser failed for ${email}: ${delErr.message}`)
     }
