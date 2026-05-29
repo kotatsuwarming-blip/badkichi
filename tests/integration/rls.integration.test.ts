@@ -12,9 +12,8 @@
  * - 自 Group へのアクセス成功確認は TASK-0015 (RPC テスト) でカバー
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, inject } from 'vitest'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { getCurrentTestUsers } from '../setup/create-test-users'
 import {
   createGroupForUserB,
   createPlayer,
@@ -73,9 +72,9 @@ describe.skipIf(skip)('RLS 統合テスト: TASK-0014', () => {
   // ========================================
 
   beforeAll(async () => {
-    // 【テスト前準備】: TASK-0013 globalSetup が作成済みの User A/B を取得
+    // 【テスト前準備】: TASK-0013 globalSetup が作成し provide した User A/B を取得
     // 【環境初期化】: dev プロジェクトに対する RLS 統合テストの全 fixture を構築
-    const { userA, userB } = getCurrentTestUsers()
+    const { userA, userB } = inject('users')
     userAEmail = userA.email
     userAPassword = userA.password
     userBId = userB.id

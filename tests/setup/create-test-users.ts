@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { TestProject } from 'vitest/node'
 
 export interface TestUser {
   id: string
@@ -6,9 +7,16 @@ export interface TestUser {
   password: string
 }
 
+// Vitest provide/inject 用の型拡張。globalSetup が provide した値をテスト側で
+// inject('users') の型として参照可能にする。
+declare module 'vitest' {
+  export interface ProvidedContext {
+    users: { userA: TestUser, userB: TestUser }
+  }
+}
+
 let adminClient: SupabaseClient | null = null
 let createdUserIds: string[] = []
-let currentUsers: { userA: TestUser, userB: TestUser } | null = null
 
 function getAdminClient(): SupabaseClient {
   if (adminClient) return adminClient
@@ -45,8 +53,7 @@ export async function setupTestUsers(): Promise<{ userA: TestUser, userB: TestUs
   const emailB = process.env.TEST_USER_B_EMAIL || 'test-b@example.com'
   const userA = await createOne(client, emailA)
   const userB = await createOne(client, emailB)
-  currentUsers = { userA, userB }
-  return currentUsers
+  return { userA, userB }
 }
 
 export async function teardownTestUsers(): Promise<void> {
@@ -56,39 +63,39 @@ export async function teardownTestUsers(): Promise<void> {
     await client.auth.admin.deleteUser(id)
   }
   createdUserIds = []
-  currentUsers = null
 }
 
 /**
  * afterEach 用 cleanup (B3 確定方針, 2026-05-13)。
- * group_members の user_id でテストユーザが属する Group を特定して削除し、
- * auth.users 自体は残す (globalSetup の作成済みを再利用するため)。
+ * 指定された user_id 群が所属する groups を削除し (CASCADE で配下データも消える)、
+ * group_members から該当ユーザ行を削除。auth.users 自体は残す。
  * 注: groups テーブルに owner_user_id カラムはないため group_members 経由で削除。
+ *
+ * @param userIds 対象ユーザ ID 配列 (vitest worker process では inject 経由で取得)
  */
-export async function cleanupTestUserData(): Promise<void> {
-  if (createdUserIds.length === 0) return
+export async function cleanupTestUserData(userIds: string[]): Promise<void> {
+  if (userIds.length === 0) return
   const client = getAdminClient()
-  // テストユーザが所属する group_id を取得して groups を削除（CASCADE で配下データも消える）
   const { data: memberships } = await client
     .from('group_members')
     .select('group_id')
-    .in('user_id', createdUserIds)
+    .in('user_id', userIds)
   if (memberships && memberships.length > 0) {
     const groupIds = memberships.map((m: { group_id: string }) => m.group_id)
     await client.from('groups').delete().in('id', groupIds)
   }
-  await client.from('group_members').delete().in('user_id', createdUserIds)
+  await client.from('group_members').delete().in('user_id', userIds)
 }
 
-export function getCurrentTestUsers(): { userA: TestUser, userB: TestUser } {
-  if (!currentUsers) {
-    throw new Error('setupTestUsers() が未実行です (vitest globalSetup を確認)')
-  }
-  return currentUsers
-}
-
-export default async function globalSetup(): Promise<() => Promise<void>> {
-  await setupTestUsers()
+/**
+ * Vitest globalSetup エントリポイント。
+ * メインプロセスでテストユーザを作成し、provide('users', ...) で worker process に
+ * 共有する。worker process 側は `inject('users')` で値を取得する
+ * (worker は別プロセスのためモジュール変数は共有されない)。
+ */
+export default async function globalSetup({ provide }: TestProject): Promise<() => Promise<void>> {
+  const users = await setupTestUsers()
+  provide('users', users)
   return async () => {
     await teardownTestUsers()
   }

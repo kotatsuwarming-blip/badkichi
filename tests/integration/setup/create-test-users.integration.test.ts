@@ -1,9 +1,6 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, inject } from 'vitest'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import {
-  cleanupTestUserData,
-  getCurrentTestUsers
-} from '../../setup/create-test-users'
+import { cleanupTestUserData } from '../../setup/create-test-users'
 
 const url = process.env.NUXT_PUBLIC_SUPABASE_URL
 const serviceRoleKey = process.env.NUXT_SUPABASE_SECRET_KEY
@@ -19,31 +16,59 @@ describe.skipIf(skip)('cleanupTestUserData (integration)', () => {
     serviceClient = createClient(url!, serviceRoleKey!, {
       auth: { autoRefreshToken: false, persistSession: false }
     })
-    const users = getCurrentTestUsers()
+    const users = inject('users')
     userAId = users.userA.id
     userBId = users.userB.id
   })
 
   afterAll(async () => {
-    await serviceClient.from('groups').delete().in('owner_user_id', [userAId, userBId])
+    // 念のためテスト由来の group_members / groups を掃除
+    const { data: memberships } = await serviceClient
+      .from('group_members')
+      .select('group_id')
+      .in('user_id', [userAId, userBId])
+    if (memberships && memberships.length > 0) {
+      const groupIds = memberships.map((m: { group_id: string }) => m.group_id)
+      await serviceClient.from('groups').delete().in('id', groupIds)
+    }
+    await serviceClient.from('group_members').delete().in('user_id', [userAId, userBId])
   })
 
-  it('User A が作成した groups を削除し auth.users は残す', async () => {
-    const { error: insertErr } = await serviceClient.from('groups').insert({
-      name: 'TC-13-05 sandbox group',
-      owner_user_id: userAId
-    })
+  it('cleanupTestUserData は user 所属 groups と group_members を削除し auth.users は残す', async () => {
+    // 【初期条件】: User A 名義の Group を service_role で作成し group_members に登録
+    const { data: group, error: insertErr } = await serviceClient
+      .from('groups')
+      .insert({ name: 'TC-13-05 sandbox group' })
+      .select('id')
+      .single()
     expect(insertErr).toBeNull()
+    expect(group?.id).toBeTruthy()
 
-    await cleanupTestUserData()
+    const { error: memberErr } = await serviceClient.from('group_members').insert({
+      group_id: group!.id,
+      user_id: userAId
+    })
+    expect(memberErr).toBeNull()
 
-    const { data: remainingGroups, error: selectErr } = await serviceClient
+    // 【実行】: cleanupTestUserData に対象ユーザ ID を渡す
+    await cleanupTestUserData([userAId, userBId])
+
+    // 【検証 1】: 作成した group が削除されている (CASCADE で配下も)
+    const { data: remainingGroup } = await serviceClient
       .from('groups')
       .select('id')
-      .eq('owner_user_id', userAId)
-    expect(selectErr).toBeNull()
-    expect(remainingGroups ?? []).toEqual([])
+      .eq('id', group!.id)
+      .maybeSingle()
+    expect(remainingGroup).toBeNull()
 
+    // 【検証 2】: group_members から user_a 関連が消えている
+    const { data: remainingMembers } = await serviceClient
+      .from('group_members')
+      .select('id')
+      .in('user_id', [userAId, userBId])
+    expect(remainingMembers ?? []).toEqual([])
+
+    // 【検証 3】: auth.users 自体は残る (globalSetup の再利用前提)
     const { data: usersListing, error: listErr } = await serviceClient.auth.admin.listUsers({
       page: 1,
       perPage: 1000
