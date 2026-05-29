@@ -136,7 +136,7 @@ TASK-0010 と TASK-0011 は並行可能。TASK-0012 は TASK-0011 完了後。
 
 - [x] [TASK-0013: テストユーザ作成セットアップスクリプト](TASK-0013.md) ✅ 完了 (2026-05-23) — 4-6h (TDD) 🔵
 - [x] [TASK-0014: RLS 統合テスト](TASK-0014.md) ✅ CI 統合完了 (2026-05-29)、TC-14-01〜31 全 pass — 6-8h (TDD) 🔵
-- [x] [TASK-0015: RPC 統合テスト](TASK-0015.md) ✅ ローカル静的検証完了 (typecheck/lint, 2026-05-29)、CI integration-test での全 pass 確認は次 push 後 — 6-8h (TDD) 🔵
+- [x] [TASK-0015: RPC 統合テスト](TASK-0015.md) ✅ CI 統合完了 (2026-05-29)、TC-15-01〜TC-15-11 全 pass — 6-8h (TDD) 🔵
 - [ ] [TASK-0016: /confirm.vue 最小スタブ + スモークテスト](TASK-0016.md) — 2-3h (DIRECT) 🔵
 - [ ] [TASK-0017: prd 初回マイグレーション適用 + NFR-001 実測](TASK-0017.md) — 2-4h (DIRECT) 🔵
 - [x] [TASK-0018: ADR-006 適用 + dev 自動マイグレーション CI](TASK-0018.md) ✅ 文書/コード完了 (2026-05-24)、dev push + CI 動作確認はユーザ手動 — 3-5h (DIRECT) 🔵
