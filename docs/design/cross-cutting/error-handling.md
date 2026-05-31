@@ -284,7 +284,7 @@ const { join, errorMessage } = useJoinGroup()
 
 | # | チャネル | 表示位置 | 自動消滅 | 使い所 |
 |---|---|---|---|---|
-| 1 | `<UFormGroup>` inline error | フォームのフィールド直下 | ❌ (再入力でクリア) | フィールド単位の入力検証/サーバエラー |
+| 1 | `<UFormField>` inline error | フォームのフィールド直下 | ❌ (再入力でクリア) | フィールド単位の入力検証/サーバエラー |
 | 2 | `useToast()` | 画面右上 (デフォルト) | ✅ (数秒) | 一過性の通知 |
 | 3 | `<UAlert>` | ページ内任意 (普通は上部) | ❌ (明示クリアまで) | 永続的な状態通知 |
 | 4 | `<NuxtErrorBoundary>` | 子要素の場所 (catch 時に fallback で置換) | — | セクション単位 catch |
@@ -299,7 +299,7 @@ const { join, errorMessage } = useJoinGroup()
   ├─ フォーム内?
   │    │
   │    ├─ Yes → フィールド原因が特定可能?
-  │    │         ├─ Yes → ① <UFormGroup> inline
+  │    │         ├─ Yes → ① <UFormField> inline
   │    │         └─ No  → ② <UAlert> (フォーム上部)
   │    │
   │    └─ No  → 永続的に表示すべき (offline / メンテ等)?
@@ -320,8 +320,8 @@ const { join, errorMessage } = useJoinGroup()
 
 | # | 決定木の分岐 | 発生源 | 推奨チャネル |
 |---|---|---|---|
-| 1 | inline (フィールド原因明確 / Zod) | グループ名 1〜50 文字 / 必須 | `<UFormGroup>` |
-| 2 | inline (フィールド原因明確 / RPC) | グループ作成 UNIQUE 違反 | `<UFormGroup>` |
+| 1 | inline (フィールド原因明確 / Zod) | グループ名 1〜50 文字 / 必須 | `<UFormField>` |
+| 2 | inline (フィールド原因明確 / RPC) | グループ作成 `invalid_group_name` (RPC 側検証、REQ-109) | `<UFormField>` |
 | 3 | `<UAlert>` ページ上部 (招待リンク着地、フィールド特定不能) | 招待リンク `INVITATION_NOT_FOUND_BY_LINK` / `INVITATION_EXPIRED` | `<UAlert>` |
 | 4 | 認証必須/セッション切れリダイレクト | `NOT_AUTHENTICATED` / セッション期限切れ | `navigateTo('/login')` + `useToast()` |
 | 5 | `useToast()` (フォーム外、一過性) | 権限エラー (`NOT_A_MEMBER` / `RLS_REJECTED`) / Rate limit | `useToast()` |
@@ -334,7 +334,7 @@ const { join, errorMessage } = useJoinGroup()
 **型でチャネルを強制** することで決定木の判断ミスを防ぐ。
 
 ```ts
-// app/composables/useFormErrors.ts (<UFormGroup> inline 用)
+// app/composables/useFormErrors.ts (<UFormField> inline 用)
 import type { ErrorContext } from '~/types/error-codes'
 
 export function useFormErrors() {
@@ -524,9 +524,9 @@ export default defineNuxtConfig({
 
 prd では切替 UI を提供しない (社内ツール 1 言語固定)。
 
-### 7.5 Nuxt UI v3 統合
+### 7.5 Nuxt UI v4 統合
 
-Nuxt UI v3 は `@nuxtjs/i18n` と統合済 (`ui.locale.messages.ja` 等)。
+Nuxt UI v4 は `@nuxtjs/i18n` と統合済 (`ui.locale.messages.ja` 等)。
 別途設定不要だが、実装時に `@nuxt/ui` 公式ドキュメントで再確認すること。
 
 ---
@@ -653,7 +653,7 @@ dsn: process.env.NODE_ENV === 'production'
 |---|---|---|
 | `app/types/error-codes.ts` | 識別子定数 + 型 + ガード | §4 |
 | `app/composables/useErrorMessage.ts` | 識別子 → 文言変換 (i18n + Sentry fallthrough) | §5.1 |
-| `app/composables/useFormErrors.ts` | `<UFormGroup>` inline 用 | §6.4 |
+| `app/composables/useFormErrors.ts` | `<UFormField>` inline 用 | §6.4 |
 | `app/composables/useNoticeErrors.ts` | `<UAlert>` 用 | §6.4 |
 | `app/composables/useToastErrors.ts` | `useToast` 用 | §6.4 |
 | `app/composables/use{Domain}.ts` | 各 domain composable (chain 別 composable を内部で呼ぶ) | §5.5, §6.5 |

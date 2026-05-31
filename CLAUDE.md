@@ -8,7 +8,7 @@ Always communicate with the user in Japanese. CLAUDE.md itself must be written i
 
 ## Project
 
-Badminton analytics app for team use. Built with Nuxt 3 (Vue 3) + Nuxt UI + TypeScript.
+Badminton analytics app for team use. Built with Nuxt 4 (Vue 3) + Nuxt UI + TypeScript.
 
 ## Commands
 

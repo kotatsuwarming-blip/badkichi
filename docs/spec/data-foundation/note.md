@@ -4,7 +4,7 @@
 
 ## 技術スタック
 
-- Nuxt 3 (Vue 3 + TypeScript strict mode)
+- Nuxt 4 (Vue 3 + TypeScript strict mode)
 - pnpm
 - Supabase（PostgreSQL + Auth）
 - Supabase CLI（マイグレーション運用）

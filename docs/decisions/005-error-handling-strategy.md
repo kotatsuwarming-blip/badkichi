@@ -57,7 +57,7 @@ context 文字列は domain composable に閉じ、page 側に context リテラ
 保守不能になるため)。代表例は MVP スコープ分の 7 行のみ残す。
 
 ユーザが能動的にエラーをセットするチャネル (3 つ) ごとに composable を提供:
-- `useFormErrors` (`<UFormGroup>` inline 用)
+- `useFormErrors` (`<UFormField>` inline 用)
 - `useNoticeErrors` (`<UAlert>` 用、フォーム上部 / 画面上部 共通)
 - `useToastErrors` (`useToast` 用、一過性)
 

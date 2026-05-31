@@ -3,6 +3,8 @@
 ## Status
 Accepted (2026-03-28)
 
+> **更新 (2026-05-30)**: Nuxt 4.0 が 2025-07 に stable リリースされ標準化したため、本プロジェクトは **Nuxt 4** に統一する (`package.json`: `nuxt ^4.4`)。フレームワーク選定 (Vue/Nuxt) の判断自体は不変で、メジャーバージョン表記のみ更新。
+
 ## Context
 Badminton analytics app for team use. The developer is a data engineer with strong Python/SQL skills but limited web development experience. The app requires:
 - Multi-user support (team usage)
@@ -11,7 +13,7 @@ Badminton analytics app for team use. The developer is a data engineer with stro
 
 ## Decision
 
-### Framework: Nuxt 3 (Vue 3)
+### Framework: Nuxt 4 (Vue 3)
 
 | Option | Pros | Cons |
 |--------|------|------|
