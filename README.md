@@ -58,3 +58,8 @@ pnpm preview
 ```
 
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+
+## Operations
+
+- [Supabase CLI 運用ガイド](docs/operations/supabase-cli.md) — dev/prd の link 切替と禁止事項
+- [prd マイグレーション障害 復旧手順](docs/operations/recovery.md) — 日次バックアップからの Restore / revert マイグレーションによる前進復旧

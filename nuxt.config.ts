@@ -3,7 +3,8 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
     '@nuxt/test-utils/module',
-    '@nuxt/ui'
+    '@nuxt/ui',
+    '@nuxtjs/supabase'
   ],
 
   devtools: {
@@ -25,5 +26,13 @@ export default defineNuxtConfig({
         braceStyle: '1tbs'
       }
     }
+  },
+
+  supabase: {
+    redirectOptions: {
+      login: '/login',
+      callback: '/confirm'
+    },
+    types: '~/types/supabase.ts'
   }
 })

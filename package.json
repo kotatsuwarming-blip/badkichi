@@ -3,25 +3,32 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "nuxt build",
-    "dev": "nuxt dev",
-    "preview": "nuxt preview",
+    "build": "nuxt build --dotenv .env.production",
+    "build:dev": "nuxt build --dotenv .env.development",
+    "dev": "nuxt dev --dotenv .env.development",
+    "preview": "nuxt preview --dotenv .env.production",
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
-    "typecheck": "nuxt typecheck",
+    "lint:actions": "actionlint .github/workflows/",
+    "typecheck": "nuxt typecheck --dotenv .env.development",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "db:types": "set -a && . .env.development && set +a && supabase gen types typescript --project-id $SUPABASE_PROJECT_REF > app/types/supabase.ts"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.98",
     "@iconify-json/simple-icons": "^1.2.74",
     "@nuxt/ui": "^4.5.1",
+    "@nuxtjs/supabase": "^2.0.8",
     "nuxt": "^4.4.2",
-    "tailwindcss": "^4.2.1"
+    "tailwindcss": "^4.2.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.15.2",
     "@nuxt/test-utils": "^4.0.2",
+    "@supabase/supabase-js": "^2.105.4",
     "eslint": "^10.0.3",
     "lint-staged": "^16.4.0",
     "simple-git-hooks": "^2.13.1",
@@ -30,12 +37,26 @@
     "vue-tsc": "^3.2.5"
   },
   "simple-git-hooks": {
-    "pre-commit": "pnpm lint-staged && pnpm typecheck && pnpm test"
+    "pre-commit": "pnpm lint-staged && pnpm typecheck && pnpm test && ./scripts/check-migration-integrity.sh pre-commit"
   },
   "lint-staged": {
     "*.{ts,vue}": [
       "eslint --fix"
     ]
+  },
+  "pnpm": {
+    "overrides": {
+      "vue": "3.5.32",
+      "@vue/compiler-core": "3.5.32",
+      "@vue/compiler-dom": "3.5.32",
+      "@vue/compiler-sfc": "3.5.32",
+      "@vue/compiler-ssr": "3.5.32",
+      "@vue/reactivity": "3.5.32",
+      "@vue/runtime-core": "3.5.32",
+      "@vue/runtime-dom": "3.5.32",
+      "@vue/server-renderer": "3.5.32",
+      "@vue/shared": "3.5.32"
+    }
   },
   "packageManager": "pnpm@10.32.1"
 }

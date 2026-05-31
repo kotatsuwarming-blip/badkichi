@@ -1,0 +1,78 @@
+name: migrate-dev
+
+# 発火条件:
+#   - dev ブランチへの push かつ supabase/migrations/ が変更された場合
+#   - workflow_dispatch (手動 trigger) で再実行・dry-run も可能
+#
+# 注: main への push はリポジトリルールで禁止されており、prd は別ワークフロー
+#     (migrate-prd.yml) で main マージ時に自動適用される。
+#     本ワークフローは dev プレ環境用 (GitHub Flow + dev pre-prod ブランチ構造)。
+#     適用前バックアップは追加しない (Supabase 標準の日次バックアップに任せる、
+#     migrate-prd.yml と同方針)。
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - 'supabase/migrations/**'
+  workflow_dispatch: {}
+
+# 同時実行を抑止 (連続 push 時のレース防止)
+concurrency:
+  group: migrate-dev
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+
+    # Environment Secrets を利用 (env prefix を Secret 名に含めない方針)
+    environment: dev
+
+    # GITHUB_TOKEN に Issue 作成権限を付与 (失敗通知用)
+    permissions:
+      contents: read
+      issues: write
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link to dev project
+        run: |
+          supabase link \
+            --project-ref "${SUPABASE_PROJECT_REF}" \
+            --password "${SUPABASE_DB_PASSWORD}"
+
+      - name: Push migrations to dev
+        run: supabase db push --linked
+
+      - name: Notify on failure (create GitHub Issue)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "dev マイグレーション失敗: ${{ github.sha }}" \
+            --body "$(cat <<EOF
+          dev 自動マイグレーション (migrate-dev.yml) が失敗しました。
+
+          - Commit: ${{ github.sha }}
+          - Actions run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          - Triggered by: ${{ github.actor }}
+
+          dev プレ環境のスキーマが整合しない可能性があります。原因を調査し、
+          修正マイグレーションを追加するか dev ブランチを reset してください。
+          EOF
+          )" \
+            --label "dev-migration-failure"

@@ -2,12 +2,69 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
 
 jobs:
-  ci:
+  # ガード 1: 既存マイグレーションファイルが改変されていないか git diff (HEAD~1..HEAD) で検証
+  # (pre-commit が --no-verify で skip された場合のセーフティネット)
+  migration-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2   # HEAD~1 比較のため最低 2 必要
+
+      - name: Check migration integrity
+        run: ./scripts/check-migration-integrity.sh ci
+
+  # ガード 0: GitHub Actions ワークフロー (.github/workflows/*.yml) の静的検証
+  # (pre-commit が actionlint 未導入でバイパスされた場合のセーフティネット)
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Run actionlint
+        uses: reviewdog/action-actionlint@v1
+        with:
+          reporter: github-check
+          fail_level: error
+
+  # ガード 2: supabase db lint で SECURITY DEFINER 関数の search_path 未固定や RLS 未設定など
+  # セキュリティアンチパターンを検出 (B2 確定方針, dev プロジェクトに対して実行)
+  # 必要な Environment Secrets (dev):
+  #   - SUPABASE_ACCESS_TOKEN
+  #   - SUPABASE_PROJECT_REF
+  #   - SUPABASE_DB_PASSWORD
+  db-lint:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link to dev project
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+
+      - name: Run db lint (error level)
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: supabase db lint --linked --level error
+
+  # 既存の lint / typecheck / test ジョブ
+  lint-typecheck-test:
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -39,3 +96,36 @@ jobs:
 
       - name: Test
         run: pnpm run test
+
+  # 統合テスト: dev DB に対して RLS / RPC の境界値テストを実行
+  # 必要な Environment Secrets (dev):
+  #   - SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY / SUPABASE_SECRET_KEY
+  # 注: dev DB を共有するため並行実行を抑止 (concurrency)
+  integration-test:
+    runs-on: ubuntu-latest
+    environment: dev
+    concurrency:
+      group: integration-test-dev
+      cancel-in-progress: false
+    env:
+      NUXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      NUXT_PUBLIC_SUPABASE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      NUXT_SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Install node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run integration tests
+        run: pnpm test:integration

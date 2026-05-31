@@ -1,0 +1,74 @@
+name: migrate-prd
+
+# 発火条件:
+#   - main への push かつ supabase/migrations/ が変更された場合
+#   - workflow_dispatch (手動 trigger) で dry-run / 緊急再実行も可能
+#
+# 注: スキーマレビュー ⑮ C-17 案 ii 最小構成。
+#     適用前バックアップは追加せず、Supabase 標準の日次バックアップに任せる。
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+  workflow_dispatch: {}
+
+# 同時実行を抑止 (連続 push 時のレース防止)
+concurrency:
+  group: migrate-prd
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+
+    # Environment Secrets を利用 (env prefix を Secret 名に含めない方針)
+    environment: prd
+
+    # GITHUB_TOKEN に Issue 作成権限を付与 (失敗通知用)
+    permissions:
+      contents: read
+      issues: write
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link to prd project
+        run: |
+          supabase link \
+            --project-ref "${SUPABASE_PROJECT_REF}" \
+            --password "${SUPABASE_DB_PASSWORD}"
+
+      - name: Push migrations to prd
+        run: supabase db push --linked
+
+      - name: Notify on failure (create GitHub Issue)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "prd マイグレーション失敗: ${{ github.sha }}" \
+            --body "$(cat <<EOF
+          prd 自動マイグレーション (migrate-prd.yml) が失敗しました。
+
+          - Commit: ${{ github.sha }}
+          - Actions run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          - Triggered by: ${{ github.actor }}
+
+          手動で原因調査し、必要に応じてロールバック / 修正マイグレーションを追加してください。
+          EOF
+          )" \
+            --label "prd-migration-failure"
