@@ -138,7 +138,7 @@ TASK-0010 と TASK-0011 は並行可能。TASK-0012 は TASK-0011 完了後。
 - [x] [TASK-0014: RLS 統合テスト](TASK-0014.md) ✅ CI 統合完了 (2026-05-29)、TC-14-01〜31 全 pass — 6-8h (TDD) 🔵
 - [x] [TASK-0015: RPC 統合テスト](TASK-0015.md) ✅ CI 統合完了 (2026-05-29)、TC-15-01〜TC-15-11 全 pass — 6-8h (TDD) 🔵
 - [x] [TASK-0016: /confirm.vue 最小スタブ + スモークテスト](TASK-0016.md) ✅ 完了 (2026-05-30)、Google OAuth スモークテスト成立（REQ-002 実証）— 2-3h (DIRECT) 🔵
-- [ ] [TASK-0017: prd 初回マイグレーション適用 + NFR-001 実測](TASK-0017.md) — 2-4h (DIRECT) 🔵
+- [x] [TASK-0017: prd 初回マイグレーション適用 + NFR-001 実測](TASK-0017.md) ✅ コア完了 (2026-06-01)、3 migration prd 適用・NFR-001 約3秒・11テーブル/RLS/3RPC 確認。残: E バックアップ確認のみ適用後24hにユーザ Dashboard 確認 — 2-4h (DIRECT) 🔵
 - [x] [TASK-0018: ADR-006 適用 + dev 自動マイグレーション CI](TASK-0018.md) ✅ 文書/コード完了 (2026-05-24)、dev push + CI 動作確認はユーザ手動 — 3-5h (DIRECT) 🔵
 
 ### 依存関係
