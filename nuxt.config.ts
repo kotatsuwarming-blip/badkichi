@@ -65,6 +65,14 @@ export default defineNuxtConfig({
       callback: '/confirm',
       exclude: []
     },
+    // cookie の secure フラグ: 本番(https)のみ true。
+    // ローカル dev は http://localhost のため secure:true だと Safari が Secure クッキーを保存せず、
+    // PKCE の code_verifier クッキーが消えて OAuth コード交換が無言で失敗する (Chrome は localhost を例外的に許容)。
+    // dev では secure:false にして全ブラウザで OAuth コールバックを成立させる。
+    cookieOptions: {
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production'
+    },
     types: '~/types/supabase.ts'
   }
 })
