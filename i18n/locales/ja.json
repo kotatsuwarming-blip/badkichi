@@ -54,7 +54,8 @@
       "title": "グループ設定",
       "membersTitle": "メンバー",
       "invitationsTitle": "招待リンク",
-      "generateInvitation": "招待リンクを発行"
+      "generateInvitation": "招待リンクを発行",
+      "invitationGenerated": "招待リンクを発行しました"
     }
   },
   "join": {

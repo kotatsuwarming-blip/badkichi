@@ -54,7 +54,8 @@
       "title": "",
       "membersTitle": "",
       "invitationsTitle": "",
-      "generateInvitation": ""
+      "generateInvitation": "",
+      "invitationGenerated": ""
     }
   },
   "join": {
