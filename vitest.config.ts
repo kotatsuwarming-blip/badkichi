@@ -15,7 +15,12 @@ export default defineVitestConfig({
       // シンボリックリンクパス経由でアクセスし、バージョン番号入りの .pnpm パスを隠蔽する。
       '#nuxt-router': ROOT + '/node_modules/nuxt/dist/app/composables/router.js',
       // 【#supabase-client】: useSupabaseClient を含む Supabase composable への安定エイリアス
-      '#supabase-client': ROOT + '/node_modules/@nuxtjs/supabase/dist/runtime/composables/useSupabaseClient.js'
+      '#supabase-client': ROOT + '/node_modules/@nuxtjs/supabase/dist/runtime/composables/useSupabaseClient.js',
+      // 【#supabase-user】: useSupabaseUser を含む Supabase composable への安定エイリアス
+      '#supabase-user': ROOT + '/node_modules/@nuxtjs/supabase/dist/runtime/composables/useSupabaseUser.js',
+      // 【#async-data】: useAsyncData を含む Nuxt core composable への安定エイリアス
+      // nuxt/dist/app/composables/asyncData.js は package.json exports 外のためシンボリックリンク経由
+      '#async-data': ROOT + '/node_modules/nuxt/dist/app/composables/asyncData.js'
     }
   },
   test: {
