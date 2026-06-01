@@ -38,7 +38,7 @@
 ## 全体進捗
 
 - [x] Phase 1: 基盤構築
-- [ ] Phase 2: ドメインロジック層
+- [x] Phase 2: ドメインロジック層
 - [ ] Phase 3: UI層
 - [ ] Phase 4: 統合・受入検証
 
@@ -92,7 +92,7 @@ TASK-0006 (独立)
 - [x] [TASK-0010: useCreateGroup(RPC)](TASK-0010.md) - 6h (TDD) 🔵
 - [x] [TASK-0011: useJoinGroup(RPC)](TASK-0011.md) - 8h (TDD) 🔵
 - [x] [TASK-0012: useGenerateInvitation + useListInvitations](TASK-0012.md) - 8h (TDD) 🔵
-- [ ] [TASK-0013: middleware auth.global.ts](TASK-0013.md) - 8h (TDD) 🔵
+- [x] [TASK-0013: middleware auth.global.ts](TASK-0013.md) - 8h (TDD) 🔵
 
 ### 依存関係
 
