@@ -90,7 +90,7 @@ TASK-0006 (独立)
 - [x] [TASK-0008: useLogin(Auth)](TASK-0008.md) - 6h (TDD) 🔵
 - [x] [TASK-0009: useCurrentGroup(Read)](TASK-0009.md) - 4h (TDD) 🔵
 - [x] [TASK-0010: useCreateGroup(RPC)](TASK-0010.md) - 6h (TDD) 🔵
-- [ ] [TASK-0011: useJoinGroup(RPC)](TASK-0011.md) - 8h (TDD) 🔵
+- [x] [TASK-0011: useJoinGroup(RPC)](TASK-0011.md) - 8h (TDD) 🔵
 - [ ] [TASK-0012: useGenerateInvitation + useListInvitations](TASK-0012.md) - 8h (TDD) 🔵
 - [ ] [TASK-0013: middleware auth.global.ts](TASK-0013.md) - 8h (TDD) 🔵
 
