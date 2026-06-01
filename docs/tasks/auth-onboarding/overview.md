@@ -64,7 +64,7 @@
 - [x] [TASK-0003: エラー識別子定数 error-codes.ts](TASK-0003.md) - 2h (DIRECT) 🔵
 - [x] [TASK-0004: i18n ロケール定義 + キー構造一致 CI チェック](TASK-0004.md) - 6h (TDD) 🔵
 - [x] [TASK-0005: Sentry 設定 + error.vue グローバルフォールバック](TASK-0005.md) - 4h (DIRECT) 🔵
-- [ ] [TASK-0006: Zod schema group-name.ts](TASK-0006.md) - 4h (TDD) 🔵
+- [x] [TASK-0006: Zod schema group-name.ts](TASK-0006.md) - 4h (TDD) 🔵
 
 ### 依存関係
 
