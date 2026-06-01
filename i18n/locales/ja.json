@@ -24,11 +24,14 @@
   "app": {
     "name": "badkichi"
   },
+  "common": {
+    "backToHome": "トップに戻る"
+  },
   "login": {
     "title": "ログイン",
     "google": "Google でログイン",
     "emailLabel": "メールアドレス",
-    "emailPlaceholder": "you@example.com",
+    "emailPlaceholder": "you{'@'}example.com",
     "submit": "ログイン"
   },
   "confirm": {

@@ -6,7 +6,7 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
-import { diffI18nKeys } from './i18n-keys.mjs'
+import { diffI18nKeys, findMessageFormatIssues } from './i18n-keys.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 // @nuxtjs/i18n v10 は langDir を <rootDir>/i18n/ 基準で解決するため実体は i18n/locales/
@@ -35,4 +35,15 @@ if (onlyInJa.length || onlyInEn.length) {
   process.exit(1)
 }
 
-console.log(`[check-i18n-keys] OK: ja/en のキー構造は一致しています (${Object.keys(ja).length} top-level keys)`)
+// vue-i18n のメッセージ書式検証 (未エスケープ '@' / '|' はファイル全体のコンパイルを壊す)
+const formatIssues = [
+  ...findMessageFormatIssues(ja).map(i => `ja.json ${i}`),
+  ...findMessageFormatIssues(en).map(i => `en.json ${i}`)
+]
+if (formatIssues.length) {
+  console.error('[check-i18n-keys] NG: vue-i18n メッセージ書式に問題があります')
+  for (const issue of formatIssues) console.error(`  ${issue}`)
+  process.exit(1)
+}
+
+console.log(`[check-i18n-keys] OK: ja/en のキー構造一致 + メッセージ書式 (${Object.keys(ja).length} top-level keys)`)

@@ -46,3 +46,34 @@ export function isI18nKeysConsistent(ja, en) {
   const { onlyInJa, onlyInEn } = diffI18nKeys(ja, en)
   return onlyInJa.length === 0 && onlyInEn.length === 0
 }
+
+/**
+ * vue-i18n のメッセージ書式で壊れる文字を検出する。
+ * vue-i18n は `@` を linked message (`@:key`)、`|` を複数形デリミタとして解釈するため、
+ * リテラルとして使うには `{'@'}` / `{'|'}` でエスケープする必要がある。未エスケープだと
+ * ロケールファイル全体のコンパイルが失敗し全メッセージが読めなくなる (実害大)。
+ * 本アプリは linked / 複数形を使わないため、`{'...'}` リテラル外の `@` `|` は全て不正とみなす。
+ * @param {Record<string, unknown>} obj
+ * @param {string} prefix
+ * @returns {string[]} 問題のあるキーパスと理由
+ */
+export function findMessageFormatIssues(obj, prefix = '') {
+  const issues = []
+  for (const [key, value] of Object.entries(obj)) {
+    const path = prefix ? `${prefix}.${key}` : key
+    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+      issues.push(...findMessageFormatIssues(value, path))
+      continue
+    }
+    if (typeof value !== 'string') continue
+    // vue-i18n のリテラル補間 {'...'} を除去してから検査する
+    const stripped = value.replace(/\{'[^']*'\}/g, '')
+    if (stripped.includes('@')) {
+      issues.push(`${path}: 未エスケープの '@' (vue-i18n の linked 記法と衝突)。{'@'} を使うこと`)
+    }
+    if (stripped.includes('|')) {
+      issues.push(`${path}: 未エスケープの '|' (vue-i18n の複数形デリミタ)。{'|'} を使うこと`)
+    }
+  }
+  return issues
+}

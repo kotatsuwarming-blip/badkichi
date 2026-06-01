@@ -24,6 +24,9 @@
   "app": {
     "name": ""
   },
+  "common": {
+    "backToHome": ""
+  },
   "login": {
     "title": "",
     "google": "",

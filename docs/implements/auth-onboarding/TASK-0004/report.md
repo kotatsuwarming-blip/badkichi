@@ -49,6 +49,14 @@ typecheck / test(24) / i18n:check すべて green。fail injection (en から `e
 - **画面文言は最小 scaffold**: errors ブロックは設計どおり全定義。画面文言 (login/confirm/onboarding/groups.new/groups.settings/join) は title/CTA 等の最小セットを置き、Phase 3 各ページタスクで実コピーを拡張する想定。ja/en parity は CLI が常時担保する。
 - **FYI (別トラック)**: 作業ツリーに未追跡の `docs/design/video-playback/interfaces.ts` があり `pnpm lint` (eslint .) でローカルのみ stylistic error を出す。未追跡のため CI checkout には含まれず CI lint には影響しない。auth-onboarding の範囲外のため本タスクでは未対応。
 
+## 後日修正 (TASK-0005 verify で発覚した回帰)
+
+`login.emailPlaceholder: "you@example.com"` の `@` が vue-i18n の linked 記法と衝突し `ja.json` 全体の
+コンパイルが失敗 → 全メッセージ未ロードになっていた (本タスクの i18n:check はキー構造のみ検証で見逃した)。
+TASK-0005 で `{'@'}` エスケープに修正し、`findMessageFormatIssues` (未エスケープ `@`/`|` 検出) を
+i18n:check に追加。詳細は `../TASK-0005/report.md`。
+
 ## 結論
 
 TASK-0004 完了。ロケール定義 + 専用 CLI による ja/en parity チェックを pre-commit/CI 両方に組込。typecheck/test(24)/i18n:check green。
+(※ メッセージ書式検証は TASK-0005 で追補、現在 test 28本)
