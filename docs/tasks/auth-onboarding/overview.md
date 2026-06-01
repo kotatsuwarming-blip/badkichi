@@ -86,7 +86,7 @@ TASK-0006 (独立)
 
 ### タスク一覧
 
-- [ ] [TASK-0007: cross-cutting composable 4本](TASK-0007.md) - 8h (TDD) 🔵
+- [x] [TASK-0007: cross-cutting composable 4本](TASK-0007.md) - 8h (TDD) 🔵
 - [ ] [TASK-0008: useLogin(Auth)](TASK-0008.md) - 6h (TDD) 🔵
 - [ ] [TASK-0009: useCurrentGroup(Read)](TASK-0009.md) - 4h (TDD) 🔵
 - [ ] [TASK-0010: useCreateGroup(RPC)](TASK-0010.md) - 6h (TDD) 🔵
