@@ -39,15 +39,15 @@
 
 - [x] Phase 1: 基盤構築
 - [x] Phase 2: ドメインロジック層
-- [ ] Phase 3: UI層
-- [ ] Phase 4: 統合・受入検証
+- [x] Phase 3: UI層
+- [x] Phase 4: 統合・受入検証 ※自動+静的確認完了、手動③⑤⑥(実機/OAuth)はユーザー実施待ち (2026-06-02)
 
 ## マイルストーン
 
 - **M1: 基盤完成** (06-03): 依存・設定・横断基盤(error-codes / i18n / Sentry / Zod / test基盤)完了
 - **M2: ドメイン層完成** (06-11): composable 10本 + middleware 実装・テスト完了
 - **M3: UI完成** (06-18): layouts + 全6画面実装完了
-- **M4: リリース準備完了** (06-19): 受入検証・全 mock unit 緑・リダイレクトチェーン確認完了
+- **M4: リリース準備完了** (06-19): 受入検証・全 mock unit 緑・リダイレクトチェーン確認完了 ※自動+静的検証は完了 (全119テスト緑 / lint / typecheck / i18n:check)、手動③⑤⑥(リダイレクトチェーン実機・NFR-001実測・別ユーザ参加)はユーザー実施待ち
 
 ---
 
@@ -114,12 +114,12 @@ TASK-0009 → TASK-0013
 
 ### タスク一覧
 
-- [ ] [TASK-0014: layouts(auth.vue + default.vue)](TASK-0014.md) - 6h (DIRECT) 🔵
-- [ ] [TASK-0015: /login + /confirm pages](TASK-0015.md) - 8h (TDD) 🔵
-- [ ] [TASK-0016: /onboarding(静的)](TASK-0016.md) - 3h (DIRECT) 🔵
-- [ ] [TASK-0017: /groups/new](TASK-0017.md) - 6h (TDD) 🔵
-- [ ] [TASK-0018: /join/[code]](TASK-0018.md) - 6h (TDD) 🔵
-- [ ] [TASK-0019: /groups/[id]/settings](TASK-0019.md) - 8h (TDD) 🔵
+- [x] [TASK-0014: layouts(auth.vue + default.vue)](TASK-0014.md) - 6h (DIRECT) 🔵 ✅ 完了 (2026-06-01)
+- [x] [TASK-0015: /login + /confirm pages](TASK-0015.md) - 8h (TDD) 🔵 ✅ 完了 (2026-06-01)
+- [x] [TASK-0016: /onboarding(静的)](TASK-0016.md) - 3h (DIRECT) 🔵 ✅ 完了 (2026-06-01)
+- [x] [TASK-0017: /groups/new](TASK-0017.md) - 6h (TDD) 🔵 ✅ 完了 (2026-06-01)
+- [x] [TASK-0018: /join/[code]](TASK-0018.md) - 6h (TDD) 🔵 ✅ 完了 (2026-06-01)
+- [x] [TASK-0019: /groups/[id]/settings](TASK-0019.md) - 8h (TDD) 🔵 ✅ 完了 (2026-06-01)
 
 ### 依存関係
 
@@ -142,7 +142,7 @@ TASK-0012, TASK-0014 → TASK-0019
 
 ### タスク一覧
 
-- [ ] [TASK-0020: 結線・受入検証](TASK-0020.md) - 6h (DIRECT) 🔵
+- [x] [TASK-0020: 結線・受入検証](TASK-0020.md) - 6h (DIRECT) 🔵 ✅ 自動+静的確認完了 / 手動③⑤⑥ユーザー実施待ち (2026-06-02)
 
 ### 依存関係
 

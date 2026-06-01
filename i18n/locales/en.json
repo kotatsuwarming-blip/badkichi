@@ -55,12 +55,47 @@
       "membersTitle": "",
       "invitationsTitle": "",
       "generateInvitation": "",
-      "invitationGenerated": ""
+      "invitationGenerated": "",
+      "urlCopied": "",
+      "copyUrl": "",
+      "statusActive": "",
+      "statusExpired": "",
+      "issuedAt": "",
+      "expiresAt": "",
+      "noInvitations": "",
+      "noMembers": ""
     }
   },
   "join": {
     "title": "",
+    "description": "",
     "submit": "",
     "processing": ""
+  },
+  "layout": {
+    "default": {
+      "logout": "",
+      "avatar": {
+        "alt": ""
+      }
+    }
+  },
+  "videoPlayer": {
+    "controls": {
+      "play": "",
+      "pause": "",
+      "seek": "",
+      "playbackRate": "",
+      "loading": ""
+    },
+    "error": {
+      "youtubeInvalidUrl": "",
+      "youtubeLoadFailed": "",
+      "localDecodeFailed": "",
+      "localReselectNeeded": "",
+      "reselectPrompt": "",
+      "youtubeRecommendation": "",
+      "specifyAnotherVideo": ""
+    }
   }
 }

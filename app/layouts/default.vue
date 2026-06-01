@@ -1,0 +1,73 @@
+<script setup lang="ts">
+/**
+ * 【機能概要】: 認証後レイアウト — ヘッダー (ロゴ + ユーザアバター + ログアウト) + <slot />
+ * 【適用ページ】: 認証後の全ページ — 無指定で自動適用 (ADR-011 D1)
+ * 【実装方針】:
+ *   - ログアウトは useLogin().logout() 経由のみ (REQ-406 / ADR-011 D2)
+ *   - ユーザアバターは useSupabaseUser() の Google identity を表示 (REQ-006 read only)
+ *   - 本ファイル 1 箇所にログアウトを集約。後続 page を追加しても自動継承 (NFR-104 思想)
+ * 🔵 ADR-011 D1-D2 + REQ-008 + REQ-006 + architecture.md §レイアウト戦略
+ */
+const { t } = useI18n()
+
+// 【ログアウト composable】: page/layout から supabase.auth を直叩きしない (REQ-406)
+const { logout, pending } = useLogin()
+
+// 【ユーザ情報】: Google identity から表示名 / avatar_url を取得 (REQ-006 read only)
+const user = useSupabaseUser()
+
+const userDisplayName = computed(() => {
+  return user.value?.user_metadata?.full_name
+    ?? user.value?.user_metadata?.name
+    ?? user.value?.email
+    ?? ''
+})
+
+const userAvatarUrl = computed<string | undefined>(() => {
+  return user.value?.user_metadata?.avatar_url ?? undefined
+})
+
+const userAvatarAlt = computed(() => {
+  return userDisplayName.value || t('layout.default.avatar.alt')
+})
+</script>
+
+<template>
+  <UApp>
+    <UHeader>
+      <template #left>
+        <!-- ロゴ -->
+        <NuxtLink
+          to="/"
+          :aria-label="t('app.name')"
+        >
+          <AppLogo class="h-8 w-auto shrink-0" />
+        </NuxtLink>
+      </template>
+
+      <template #right>
+        <!-- ユーザアバター (Google identity、read only) -->
+        <UAvatar
+          :src="userAvatarUrl"
+          :alt="userAvatarAlt"
+          size="sm"
+        />
+
+        <!-- ログアウトボタン — REQ-008 / ADR-011 D2 (この 1 箇所のみ) -->
+        <UButton
+          color="neutral"
+          variant="ghost"
+          :label="t('layout.default.logout')"
+          :loading="pending"
+          :disabled="pending"
+          :aria-label="t('layout.default.logout')"
+          @click="logout()"
+        />
+      </template>
+    </UHeader>
+
+    <UMain>
+      <slot />
+    </UMain>
+  </UApp>
+</template>
