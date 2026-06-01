@@ -97,6 +97,9 @@ jobs:
       - name: Test
         run: pnpm run test
 
+      - name: i18n key parity check
+        run: pnpm run i18n:check
+
   # 統合テスト: dev DB に対して RLS / RPC の境界値テストを実行
   # 必要な Environment Secrets (dev):
   #   - SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY / SUPABASE_SECRET_KEY

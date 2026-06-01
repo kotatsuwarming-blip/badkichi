@@ -1,3 +1,62 @@
 {
-  "_note": "This file is a stub. Actual translation keys will be defined in TASK-0004."
+  "errors": {
+    "generic": "",
+    "not_authenticated": "",
+    "not_a_member": "",
+    "invalid_group_name": "",
+    "invitation_not_found_by_link": "",
+    "invitation_expired": "",
+    "invitation_code_collision_after_retry": "",
+    "already_in_group": "",
+    "rls_rejected": "",
+    "unique_violation": {
+      "generic": "",
+      "join_group": "",
+      "create_group": ""
+    },
+    "fk_violation": {
+      "generic": ""
+    },
+    "check_violation": {
+      "generic": ""
+    }
+  },
+  "app": {
+    "name": ""
+  },
+  "login": {
+    "title": "",
+    "google": "",
+    "emailLabel": "",
+    "emailPlaceholder": "",
+    "submit": ""
+  },
+  "confirm": {
+    "processing": ""
+  },
+  "onboarding": {
+    "title": "",
+    "description": "",
+    "createGroup": "",
+    "joinHint": ""
+  },
+  "groups": {
+    "new": {
+      "title": "",
+      "nameLabel": "",
+      "namePlaceholder": "",
+      "submit": ""
+    },
+    "settings": {
+      "title": "",
+      "membersTitle": "",
+      "invitationsTitle": "",
+      "generateInvitation": ""
+    }
+  },
+  "join": {
+    "title": "",
+    "submit": "",
+    "processing": ""
+  }
 }

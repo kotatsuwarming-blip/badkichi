@@ -14,6 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts",
+    "i18n:check": "node scripts/check-i18n-keys.mjs",
     "db:types": "set -a && . .env.development && set +a && supabase gen types typescript --project-id $SUPABASE_PROJECT_REF > app/types/supabase.ts"
   },
   "dependencies": {
@@ -39,7 +40,7 @@
     "vue-tsc": "^3.2.5"
   },
   "simple-git-hooks": {
-    "pre-commit": "pnpm lint-staged && pnpm typecheck && pnpm test && ./scripts/check-migration-integrity.sh pre-commit"
+    "pre-commit": "pnpm lint-staged && pnpm typecheck && pnpm test && pnpm i18n:check && ./scripts/check-migration-integrity.sh pre-commit"
   },
   "lint-staged": {
     "*.{ts,vue}": [

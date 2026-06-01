@@ -1,3 +1,62 @@
 {
-  "_note": "本ファイルはスタブです。実際の翻訳キーは TASK-0004 で定義します。"
+  "errors": {
+    "generic": "予期しないエラーが発生しました",
+    "not_authenticated": "ログインが必要です",
+    "not_a_member": "このグループのメンバーではありません",
+    "invalid_group_name": "グループ名は 1〜50 文字で入力してください",
+    "invitation_not_found_by_link": "招待リンクが無効です。発行者にご確認ください",
+    "invitation_expired": "招待コードの有効期限が切れています",
+    "invitation_code_collision_after_retry": "招待コードの生成に失敗しました。再度お試しください",
+    "already_in_group": "すでにグループに参加しています",
+    "rls_rejected": "操作する権限がありません",
+    "unique_violation": {
+      "generic": "既に存在します",
+      "join_group": "すでに参加済みです",
+      "create_group": "同じ名前のグループがすでに存在します"
+    },
+    "fk_violation": {
+      "generic": "関連するデータが見つかりません"
+    },
+    "check_violation": {
+      "generic": "入力値が不正です"
+    }
+  },
+  "app": {
+    "name": "badkichi"
+  },
+  "login": {
+    "title": "ログイン",
+    "google": "Google でログイン",
+    "emailLabel": "メールアドレス",
+    "emailPlaceholder": "you@example.com",
+    "submit": "ログイン"
+  },
+  "confirm": {
+    "processing": "ログイン処理中です…"
+  },
+  "onboarding": {
+    "title": "ようこそ",
+    "description": "グループを作成するか、招待リンクから参加してください",
+    "createGroup": "グループを作成",
+    "joinHint": "招待リンクをお持ちの場合はリンクを開いてください"
+  },
+  "groups": {
+    "new": {
+      "title": "グループを作成",
+      "nameLabel": "グループ名",
+      "namePlaceholder": "例: 〇〇バドミントンクラブ",
+      "submit": "作成する"
+    },
+    "settings": {
+      "title": "グループ設定",
+      "membersTitle": "メンバー",
+      "invitationsTitle": "招待リンク",
+      "generateInvitation": "招待リンクを発行"
+    }
+  },
+  "join": {
+    "title": "グループに参加",
+    "submit": "参加する",
+    "processing": "参加処理中です…"
+  }
 }
