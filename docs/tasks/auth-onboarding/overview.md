@@ -61,7 +61,7 @@
 
 - [x] [TASK-0001: 依存パッケージ追加と nuxt.config 設定変更](TASK-0001.md) - 4h (DIRECT) 🔵
 - [x] [TASK-0002: テスト基盤整備(vitest include + rule-engine 移動)](TASK-0002.md) - 3h (DIRECT) 🔵
-- [ ] [TASK-0003: エラー識別子定数 error-codes.ts](TASK-0003.md) - 2h (DIRECT) 🔵
+- [x] [TASK-0003: エラー識別子定数 error-codes.ts](TASK-0003.md) - 2h (DIRECT) 🔵
 - [ ] [TASK-0004: i18n ロケール定義 + キー構造一致 CI チェック](TASK-0004.md) - 6h (TDD) 🔵
 - [ ] [TASK-0005: Sentry 設定 + error.vue グローバルフォールバック](TASK-0005.md) - 4h (DIRECT) 🔵
 - [ ] [TASK-0006: Zod schema group-name.ts](TASK-0006.md) - 4h (TDD) 🔵
