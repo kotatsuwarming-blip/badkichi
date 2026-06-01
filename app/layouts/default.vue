@@ -30,10 +30,20 @@ const userAvatarUrl = computed<string | undefined>(() => {
 const userAvatarAlt = computed(() => {
   return userDisplayName.value || t('layout.default.avatar.alt')
 })
+
+// 【グループ設定リンク】: 招待リンク発行などを行う /groups/[id]/settings への導線。
+// useCurrentGroup() は middleware と同一キー 'current-group' を共有するため追加クエリは発生しない (ADR-008 D4)。
+// 所属グループが無い画面 (/onboarding 等) では link を出さない。
+const { data: currentGroup } = useCurrentGroup()
+
+const groupSettingsLink = computed<string | undefined>(() => {
+  const id = currentGroup.value?.groups?.id
+  return id ? `/groups/${id}/settings` : undefined
+})
 </script>
 
 <template>
-  <UApp>
+  <div>
     <UHeader>
       <template #left>
         <!-- ロゴ -->
@@ -46,6 +56,17 @@ const userAvatarAlt = computed(() => {
       </template>
 
       <template #right>
+        <!-- グループ設定リンク (招待リンク発行などへの導線、所属グループがある時のみ) -->
+        <UButton
+          v-if="groupSettingsLink"
+          :to="groupSettingsLink"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-settings"
+          :label="t('layout.default.groupSettings')"
+          :aria-label="t('layout.default.groupSettings')"
+        />
+
         <!-- ユーザアバター (Google identity、read only) -->
         <UAvatar
           :src="userAvatarUrl"
@@ -69,5 +90,5 @@ const userAvatarAlt = computed(() => {
     <UMain>
       <slot />
     </UMain>
-  </UApp>
+  </div>
 </template>

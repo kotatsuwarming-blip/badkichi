@@ -31,8 +31,11 @@ export function useLogin() {
     pending.value = true
 
     try {
-      // 【redirectTo 組み立て】: A2 redirect クエリ運搬。'/confirm?redirect=' + encodeURIComponent(redirect ?? '/') 🔵
-      const redirectTo = '/confirm?redirect=' + encodeURIComponent(redirect ?? '/')
+      // 【redirectTo 組み立て】: A2 redirect クエリ運搬。Supabase signInWithOAuth は OAuth コールバック先に
+      // 絶対 URL を要求するため現在オリジン (例: http://localhost:3000) を付与する。
+      // useRequestURL() は SSR/CSR 双方で動作 (client では window.location ベース) 🔵
+      const origin = useRequestURL().origin
+      const redirectTo = `${origin}/confirm?redirect=` + encodeURIComponent(redirect ?? '/')
 
       // 【OAuth 開始】: Google プロバイダを指定して OAuth フローを開始。成功時は Supabase がリダイレクトする 🔵
       const { error } = await supabase.auth.signInWithOAuth({

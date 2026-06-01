@@ -77,7 +77,8 @@
       "logout": "ログアウト",
       "avatar": {
         "alt": "ユーザアバター"
-      }
+      },
+      "groupSettings": "グループ設定"
     }
   },
   "videoPlayer": {

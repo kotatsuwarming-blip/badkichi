@@ -77,7 +77,8 @@
       "logout": "",
       "avatar": {
         "alt": ""
-      }
+      },
+      "groupSettings": ""
     }
   },
   "videoPlayer": {

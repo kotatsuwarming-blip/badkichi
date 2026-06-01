@@ -94,6 +94,11 @@ vi.mock('~/composables/useNoticeErrors', () => ({
   })
 }))
 
+// 【location スタブ】: useLogin.login は redirectTo を絶対 URL 化するため useRequestURL().origin を読む。
+// node テスト環境には globalThis.location が無く、実 useRequestURL が new URL(globalThis.location.href) で
+// 失敗するため、固定オリジンを stub する (実ブラウザ/SSR では実値が使われる)。 🔵
+vi.stubGlobal('location', { href: 'http://localhost:3000/' })
+
 // eslint-disable-next-line import/first
 import { useLogin } from '~/composables/useLogin'
 
