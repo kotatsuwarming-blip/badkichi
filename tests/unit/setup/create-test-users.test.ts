@@ -41,7 +41,7 @@ describe('setupTestUsers', () => {
       .mockResolvedValueOnce({ data: { user: { id: 'uuid-A' } }, error: null })
       .mockResolvedValueOnce({ data: { user: { id: 'uuid-B' } }, error: null })
 
-    const { setupTestUsers } = await import('../create-test-users')
+    const { setupTestUsers } = await import('../../setup/create-test-users')
     const { userA, userB } = await setupTestUsers()
 
     expect(userA.id).toBe('uuid-A')
@@ -60,7 +60,7 @@ describe('setupTestUsers', () => {
   it('NUXT_SUPABASE_SECRET_KEY 未設定で Error を throw する', async () => {
     vi.stubEnv('NUXT_SUPABASE_SECRET_KEY', '')
 
-    const { setupTestUsers } = await import('../create-test-users')
+    const { setupTestUsers } = await import('../../setup/create-test-users')
     await expect(setupTestUsers()).rejects.toThrow(
       /NUXT_PUBLIC_SUPABASE_URL \/ NUXT_SUPABASE_SECRET_KEY が未設定です/
     )
@@ -72,7 +72,7 @@ describe('setupTestUsers', () => {
       error: { message: 'Invalid API key' }
     })
 
-    const { setupTestUsers } = await import('../create-test-users')
+    const { setupTestUsers } = await import('../../setup/create-test-users')
     await expect(setupTestUsers()).rejects.toThrow(
       /createUser failed: Invalid API key/
     )
@@ -86,7 +86,7 @@ describe('teardownTestUsers', () => {
       .mockResolvedValueOnce({ data: { user: { id: 'uuid-B' } }, error: null })
     mockDeleteUser.mockResolvedValue({ data: null, error: null })
 
-    const mod = await import('../create-test-users')
+    const mod = await import('../../setup/create-test-users')
     await mod.setupTestUsers()
     await mod.teardownTestUsers()
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { determineSetWinner } from '../determine-set-winner'
-import type { Score, SetConfig } from '../types'
+import { determineSetWinner } from '~/utils/rule-engine/determine-set-winner'
+import type { Score, SetConfig } from '~/utils/rule-engine/types'
 
 function makeConfig(overrides: Partial<SetConfig> = {}): SetConfig {
   return {

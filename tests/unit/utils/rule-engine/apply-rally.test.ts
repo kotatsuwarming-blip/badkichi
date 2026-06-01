@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { applyRally } from '../apply-rally'
-import { createInitialState } from '../create-initial-state'
-import type { GameState, RallyResult, SetConfig, SetPlayerPosition } from '../types'
+import { applyRally } from '~/utils/rule-engine/apply-rally'
+import { createInitialState } from '~/utils/rule-engine/create-initial-state'
+import type { GameState, RallyResult, SetConfig, SetPlayerPosition } from '~/utils/rule-engine/types'
 
 const positions: SetPlayerPosition[] = [
   { playerId: 'A1', team: 'A', position: 'left' },

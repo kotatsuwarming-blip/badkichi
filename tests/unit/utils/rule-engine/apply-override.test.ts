@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { applyOverride } from '../apply-override'
-import { createInitialState } from '../create-initial-state'
-import type { SetConfig, SetPlayerPosition } from '../types'
+import { applyOverride } from '~/utils/rule-engine/apply-override'
+import { createInitialState } from '~/utils/rule-engine/create-initial-state'
+import type { SetConfig, SetPlayerPosition } from '~/utils/rule-engine/types'
 
 const positions: SetPlayerPosition[] = [
   { playerId: 'A1', team: 'A', position: 'left' },
