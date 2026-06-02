@@ -1,4 +1,9 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+
+// @types/node を導入していないため、設定ファイルで使う process.env を型のみ宣言する。
+// 実体は Node ランタイムの process。CI の `nuxt typecheck` で TS2591 を出さないための型宣言。
+declare const process: { env: Record<string, string | undefined> }
+
 export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
