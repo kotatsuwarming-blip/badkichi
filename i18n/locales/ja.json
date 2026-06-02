@@ -1,0 +1,102 @@
+{
+  "errors": {
+    "generic": "予期しないエラーが発生しました",
+    "not_authenticated": "ログインが必要です",
+    "not_a_member": "このグループのメンバーではありません",
+    "invalid_group_name": "グループ名は 1〜50 文字で入力してください",
+    "invitation_not_found_by_link": "招待リンクが無効です。発行者にご確認ください",
+    "invitation_expired": "招待コードの有効期限が切れています",
+    "invitation_code_collision_after_retry": "招待コードの生成に失敗しました。再度お試しください",
+    "already_in_group": "すでにグループに参加しています",
+    "rls_rejected": "操作する権限がありません",
+    "unique_violation": {
+      "generic": "既に存在します",
+      "join_group": "すでに参加済みです",
+      "create_group": "同じ名前のグループがすでに存在します"
+    },
+    "fk_violation": {
+      "generic": "関連するデータが見つかりません"
+    },
+    "check_violation": {
+      "generic": "入力値が不正です"
+    }
+  },
+  "app": {
+    "name": "badkichi"
+  },
+  "common": {
+    "backToHome": "トップに戻る"
+  },
+  "login": {
+    "title": "ログイン",
+    "google": "Google でログイン",
+    "emailLabel": "メールアドレス",
+    "emailPlaceholder": "you{'@'}example.com",
+    "submit": "ログイン"
+  },
+  "confirm": {
+    "processing": "ログイン処理中です…"
+  },
+  "onboarding": {
+    "title": "ようこそ",
+    "description": "グループを作成するか、招待リンクから参加してください",
+    "createGroup": "グループを作成",
+    "joinHint": "発行者から受け取った招待 URL を直接開いてください"
+  },
+  "groups": {
+    "new": {
+      "title": "グループを作成",
+      "nameLabel": "グループ名",
+      "namePlaceholder": "例: 〇〇バドミントンクラブ",
+      "submit": "作成する"
+    },
+    "settings": {
+      "title": "グループ設定",
+      "membersTitle": "メンバー",
+      "invitationsTitle": "招待リンク",
+      "generateInvitation": "招待リンクを発行",
+      "invitationGenerated": "招待リンクを発行しました",
+      "urlCopied": "URLをコピーしました",
+      "copyUrl": "URLをコピー",
+      "statusActive": "有効",
+      "statusExpired": "期限切れ",
+      "issuedAt": "発行日",
+      "expiresAt": "期限",
+      "noInvitations": "まだ招待リンクがありません。「招待リンクを発行」ボタンで発行してください",
+      "noMembers": "メンバーがいません"
+    }
+  },
+  "join": {
+    "title": "グループに参加",
+    "description": "招待リンクからグループに参加します",
+    "submit": "参加する",
+    "processing": "参加処理中です…"
+  },
+  "layout": {
+    "default": {
+      "logout": "ログアウト",
+      "avatar": {
+        "alt": "ユーザアバター"
+      },
+      "groupSettings": "グループ設定"
+    }
+  },
+  "videoPlayer": {
+    "controls": {
+      "play": "再生",
+      "pause": "一時停止",
+      "seek": "再生位置",
+      "playbackRate": "再生速度",
+      "loading": "読み込み中"
+    },
+    "error": {
+      "youtubeInvalidUrl": "YouTube の URL が正しくありません。URL をご確認ください",
+      "youtubeLoadFailed": "動画を読み込めませんでした。別の動画を指定してください",
+      "localDecodeFailed": "この動画ファイルを再生できませんでした",
+      "localReselectNeeded": "動画の参照が切れました。同じ動画を選び直してください",
+      "reselectPrompt": "同じ動画を選び直してください",
+      "youtubeRecommendation": "長時間の記録には YouTube のご利用をおすすめします",
+      "specifyAnotherVideo": "別の動画を指定"
+    }
+  }
+}

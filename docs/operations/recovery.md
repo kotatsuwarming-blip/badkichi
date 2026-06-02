@@ -36,10 +36,17 @@ prd（`badkichi-prd`）プロジェクトへのマイグレーション適用後
 
 ## B. 日次バックアップからの Restore（データ破損時）
 
-1. Supabase Dashboard → 対象プロジェクト（`badkichi-prd`）→ **Database → Backups** を開く。
-2. 障害発生前の該当日のバックアップを選び **Restore** する。
-3. Restore 完了後、問題のあったマイグレーションを **revert する PR** を作成し、`dev` 検証 → `main` マージ → CI 反映の順で恒久対応する（手順 A と同じ流れ）。
-4. Restore によりロールバック後の差分が出るため、`supabase migration list --linked` で prd の適用状況を確認し、`supabase/migrations/` と整合させる。
+> ⚠️ **Free プランの制約（2026-06-01 確認）**: Free プランの Backups ページは「Projects are backed up daily around midnight of your project's region」という定型メッセージのみで、**スナップショット一覧・Restore UI は表示されない**（自己リストア / PITR は Pro 機能）。日次バックアップ自体はプラットフォーム側で取得（東京リージョン = 約 00:00 JST）されているが、**Free のままでは self-serve Restore ができない可能性が高い**。
+
+**現状の前提**: prd は実データ無し（MVP 未公開・スキーマのみ）。データ破損時も実損失はほぼ無いため、**手順 A（マイグレーション再適用 / revert）で復旧可能**。バックアップ Restore への依存度は低い。
+
+**実データ投入前に必須の判断**:
+
+1. **Pro プランへ移行**して self-serve Restore / PITR を有効化する（実ユーザーデータを扱う前に推奨）。
+2. Restore が必要になった場合の Free プランでの手順:
+   - Supabase Dashboard → 対象プロジェクト（`badkichi-prd`）→ **Database → Backups** で Restore UI の有無を確認。
+   - UI が無い場合は **Supabase サポートへ問い合わせ**、または Pro へ一時アップグレードして Restore を実行。
+3. Restore 後は、問題のあったマイグレーションを **revert する PR** を作成し `dev` 検証 → `main` マージ → CI 反映（手順 A と同じ）。`supabase migration list --linked` で prd の適用状況を `supabase/migrations/` と整合させる。
 
 ## エスカレーション
 

@@ -491,6 +491,12 @@ export default defineNuxtConfig({
 })
 ```
 
+> **⚠️ ロケール配置 (@nuxtjs/i18n v10 / TASK-0001 実装時に確定)**:
+> v10 は `restructureDir` (既定 `'i18n'`) を導入し、`langDir` を **`<rootDir>/i18n/` 基準**で解決する
+> (`@nuxtjs/i18n/dist/module.mjs`: `langDir = resolve(rootDir/i18n, langDir ?? 'locales')`)。
+> したがって `langDir: 'locales/'` のままで、実ファイルは **`i18n/locales/ja.json` / `i18n/locales/en.json`**
+> に配置する (`app/locales/` ではない)。本表の `locales/...` 表記は全てこの `i18n/locales/...` を指す。
+
 ### 7.3 `locales/ja.json` と `locales/en.json`
 
 `ja.json` を主軸に書く。`en.json` は **キー構造だけコピー** して値は空文字
@@ -539,20 +545,45 @@ Nuxt UI v4 は `@nuxtjs/i18n` と統合済 (`ui.locale.messages.ja` 等)。
 pnpm add @sentry/nuxt
 ```
 
-### 8.2 `nuxt.config.ts`
+### 8.2 `nuxt.config.ts` + `sentry.client.config.ts`
+
+> **⚠️ @sentry/nuxt v10 で設定方法が変更 (TASK-0001 実装時に確定)**:
+> v10 の nuxt.config `sentry` キーは **build-time 専用** (`SentryNuxtModuleOptions`: source maps 等) で、
+> `dsn` / `environment` / `*SampleRate` は受け付けない (typecheck で `TS2353: 'dsn' does not exist` になる)。
+> これらは **runtime init オプション**であり、プロジェクトルートの `sentry.client.config.ts` (module が
+> `defineNuxtPlugin` でラップし `useRuntimeConfig()` を呼べる) に置く。dsn / env は `runtimeConfig.public`
+> 経由で env (`NUXT_PUBLIC_SENTRY_DSN` / `NUXT_PUBLIC_ENV`) から注入する。
 
 ```ts
+// nuxt.config.ts
 export default defineNuxtConfig({
   modules: ['@sentry/nuxt/module'],
-  sentry: {
-    dsn: process.env.NUXT_PUBLIC_SENTRY_DSN,
-    environment: process.env.NUXT_PUBLIC_ENV ?? 'development',
-    tracesSampleRate: 0,           // Performance: Phase 2 で有効化
-    replaysSessionSampleRate: 0,   // Session Replay: Phase 2 で有効化
-    replaysOnErrorSampleRate: 0,
+  runtimeConfig: {
+    public: {
+      sentry: { dsn: '' },   // ← NUXT_PUBLIC_SENTRY_DSN
+      env: 'development',    // ← NUXT_PUBLIC_ENV
+    },
   },
 })
 ```
+
+```ts
+// sentry.client.config.ts (プロジェクトルート)
+import * as Sentry from '@sentry/nuxt'
+
+const config = useRuntimeConfig()
+
+Sentry.init({
+  dsn: config.public.sentry.dsn,
+  environment: config.public.env,
+  tracesSampleRate: 0,           // Performance: Phase 2 で有効化
+  replaysSessionSampleRate: 0,   // Session Replay: Phase 2 で有効化
+  replaysOnErrorSampleRate: 0,
+})
+```
+
+> server 側 (`sentry.server.config.ts`) は本 unit が CSR 中心で独自 Nitro ルートを持たないため未配置
+> (将来 server ルート追加時に `process.env` から init して追加する)。dsn 空なら Sentry は no-op で dev も安全。
 
 ### 8.3 環境変数
 
