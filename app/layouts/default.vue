@@ -40,6 +40,13 @@ const groupSettingsLink = computed<string | undefined>(() => {
   const id = currentGroup.value?.groups?.id
   return id ? `/groups/${id}/settings` : undefined
 })
+
+// 【選手管理リンク】: 所属グループの選手ロスター /groups/[id]/players への導線。
+// グループ設定リンクと同じく useCurrentGroup() の group id を共有し、所属がある時のみ出す。
+const playersLink = computed<string | undefined>(() => {
+  const id = currentGroup.value?.groups?.id
+  return id ? `/groups/${id}/players` : undefined
+})
 </script>
 
 <template>
@@ -56,6 +63,17 @@ const groupSettingsLink = computed<string | undefined>(() => {
       </template>
 
       <template #right>
+        <!-- 選手管理リンク (選手ロスターへの導線、所属グループがある時のみ) -->
+        <UButton
+          v-if="playersLink"
+          :to="playersLink"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-users"
+          :label="t('layout.default.players')"
+          :aria-label="t('layout.default.players')"
+        />
+
         <!-- グループ設定リンク (招待リンク発行などへの導線、所属グループがある時のみ) -->
         <UButton
           v-if="groupSettingsLink"
