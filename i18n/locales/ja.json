@@ -4,6 +4,7 @@
     "not_authenticated": "ログインが必要です",
     "not_a_member": "このグループのメンバーではありません",
     "invalid_group_name": "グループ名は 1〜50 文字で入力してください",
+    "invalid_player_name": "選手名は 1〜50 文字で入力してください",
     "invitation_not_found_by_link": "招待リンクが無効です。発行者にご確認ください",
     "invitation_expired": "招待コードの有効期限が切れています",
     "invitation_code_collision_after_retry": "招待コードの生成に失敗しました。再度お試しください",
@@ -78,6 +79,7 @@
       "avatar": {
         "alt": "ユーザアバター"
       },
+      "players": "選手",
       "groupSettings": "グループ設定"
     }
   },
@@ -98,5 +100,27 @@
       "youtubeRecommendation": "長時間の記録には YouTube のご利用をおすすめします",
       "specifyAnotherVideo": "別の動画を指定"
     }
+  },
+  "players": {
+    "title": "選手一覧",
+    "empty": "まだ選手が登録されていません",
+    "add": "選手を追加",
+    "nameLabel": "選手名",
+    "namePlaceholder": "例: 山田 太郎",
+    "handednessLabel": "利き手",
+    "handednessOptions": {
+      "right": "右",
+      "left": "左",
+      "unknown": "未設定"
+    },
+    "edit": "編集",
+    "delete": "削除",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "modalCreateTitle": "選手を追加",
+    "modalEditTitle": "選手を編集",
+    "createSuccess": "選手を追加しました",
+    "updateSuccess": "選手を更新しました",
+    "deleteSuccess": "選手を削除しました"
   }
 }

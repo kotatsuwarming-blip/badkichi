@@ -4,6 +4,7 @@
     "not_authenticated": "",
     "not_a_member": "",
     "invalid_group_name": "",
+    "invalid_player_name": "",
     "invitation_not_found_by_link": "",
     "invitation_expired": "",
     "invitation_code_collision_after_retry": "",
@@ -78,6 +79,7 @@
       "avatar": {
         "alt": ""
       },
+      "players": "",
       "groupSettings": ""
     }
   },
@@ -98,5 +100,27 @@
       "youtubeRecommendation": "",
       "specifyAnotherVideo": ""
     }
+  },
+  "players": {
+    "title": "",
+    "empty": "",
+    "add": "",
+    "nameLabel": "",
+    "namePlaceholder": "",
+    "handednessLabel": "",
+    "handednessOptions": {
+      "right": "",
+      "left": "",
+      "unknown": ""
+    },
+    "edit": "",
+    "delete": "",
+    "save": "",
+    "cancel": "",
+    "modalCreateTitle": "",
+    "modalEditTitle": "",
+    "createSuccess": "",
+    "updateSuccess": "",
+    "deleteSuccess": ""
   }
 }
