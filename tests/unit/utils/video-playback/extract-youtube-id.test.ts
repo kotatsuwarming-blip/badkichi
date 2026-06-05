@@ -22,6 +22,10 @@ describe('extractYouTubeId', () => {
     it('クエリパラメータ付き（?t=10）でも ID のみ返す', () => {
       expect(extractYouTubeId('https://youtu.be/dQw4w9WgXcQ?t=10')).toBe('dQw4w9WgXcQ')
     })
+
+    it('裸の 11 桁 ID（match-management 保存値）をそのまま返す', () => {
+      expect(extractYouTubeId('dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ')
+    })
   })
 
   describe('異常系: null を返す（例外を投げない）', () => {
