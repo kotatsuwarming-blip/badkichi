@@ -46,6 +46,12 @@ export type SetSetupInput = SetConfig & {
 /** 初期立ち位置入力（4選手）。rule-engine SetPlayerPosition と同形。REQ-003。 */
 export type SetPositionInput = SetPlayerPosition
 
+/** セット概要（useSets の射影）。採番・再開・決着判定に使う。REQ-002/010。 */
+export type SetSummary = SetSetupInput & {
+  id: SetRow['id']
+  winner: Team | null
+}
+
 // ========================================
 // ラリー denormalize 写像（GameState → rallies 列）
 // ========================================
