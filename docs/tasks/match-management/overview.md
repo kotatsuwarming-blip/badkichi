@@ -44,9 +44,9 @@
 - [x] [TASK-0001: matches additive migration + 型再生成](TASK-0001.md) - 3h (DIRECT) 🔵
 - [x] [TASK-0002: 型定義 + Zod スキーマ](TASK-0002.md) - 4h (TDD) 🔵
 - [x] [TASK-0003: useMatches (Read, 選手名解決)](TASK-0003.md) - 5h (TDD) 🔵 (複合FK埋め込み実地検証で🟡→🔵)
-- [ ] [TASK-0004: useCreateMatch](TASK-0004.md) - 3h (TDD) 🔵
-- [ ] [TASK-0005: useUpdateMatch](TASK-0005.md) - 3h (TDD) 🔵
-- [ ] [TASK-0006: useDeleteMatch (ソフト削除)](TASK-0006.md) - 2h (TDD) 🔵
+- [x] [TASK-0004: useCreateMatch](TASK-0004.md) - 3h (TDD) 🔵
+- [x] [TASK-0005: useUpdateMatch](TASK-0005.md) - 3h (TDD) 🔵
+- [x] [TASK-0006: useDeleteMatch (ソフト削除)](TASK-0006.md) - 2h (TDD) 🔵
 
 ### 依存関係
 
