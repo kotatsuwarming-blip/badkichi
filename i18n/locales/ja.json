@@ -167,5 +167,64 @@
     "createSuccess": "試合を追加しました",
     "updateSuccess": "試合を更新しました",
     "deleteSuccess": "試合を削除しました"
+  },
+  "record": {
+    "back": "戻る",
+    "untitledMatch": "無題の試合",
+    "localReselect": "ローカル動画ファイルを再選択してください",
+    "setDecided": "セット決着",
+    "matchDecided": "試合終了",
+    "team": {
+      "A": "チームA",
+      "B": "チームB"
+    },
+    "court": {
+      "far": "奥",
+      "near": "手前"
+    },
+    "score": {
+      "set": "セット",
+      "server": "サーバー",
+      "receiver": "レシーバー"
+    },
+    "buttons": {
+      "shot": "打った",
+      "shotCount": "ショット",
+      "pointA": "チームA得点",
+      "pointB": "チームB得点",
+      "let": "レット",
+      "skip": "スキップ",
+      "overrideA": "A入替",
+      "overrideB": "B入替",
+      "nextSet": "次のセットへ"
+    },
+    "undo": {
+      "shot": "直前のショットを取り消し",
+      "point": "得点を取り消し",
+      "let": "レットを取り消し",
+      "skip": "スキップを取り消し",
+      "override": "入れ替わりを取り消し",
+      "none": "取り消し"
+    },
+    "history": {
+      "unconfirmed": "未確定",
+      "let": "レット",
+      "pointA": "A得点",
+      "pointB": "B得点",
+      "empty": "まだラリーがありません",
+      "shotsUnit": "打",
+      "jump": "ジャンプ"
+    },
+    "setup": {
+      "title": "セット設定",
+      "targetPoints": "目標点",
+      "enableDeuce": "デュース",
+      "deucePointCap": "デュース上限点",
+      "firstServingTeam": "先攻",
+      "cameraNearTeam": "カメラ手前チーム",
+      "teamALeft": "チームA 左の選手",
+      "teamBLeft": "チームB 左の選手",
+      "start": "記録を開始"
+    }
   }
 }
