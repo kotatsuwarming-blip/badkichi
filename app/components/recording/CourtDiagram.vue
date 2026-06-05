@@ -39,7 +39,9 @@ function cell(team: Team, side: CourtSide) {
   }
 }
 
-const farCells = computed(() => [cell(farTeam.value, 'left'), cell(farTeam.value, 'right')])
+// 手前チームは背後から見るため left/right が画面の左/右と一致。
+// 奥チームは正面から見るため左右がミラー（反転）する → right(偶数側=ファースト)を画面左に出す。
+const farCells = computed(() => [cell(farTeam.value, 'right'), cell(farTeam.value, 'left')])
 const nearCells = computed(() => [cell(nearTeam.value, 'left'), cell(nearTeam.value, 'right')])
 </script>
 

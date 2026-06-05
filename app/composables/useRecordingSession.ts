@@ -75,6 +75,7 @@ export function useRecordingSession(
   // --- 内部 state ---
   let currentSetId: string | null = null
   let currentConfig: SetSetupInput | null = null
+  let pendingPositions: SetPositionInput[] | null = null // セット遅延作成用に保持
   let cameraNearTeam: Team | null = null
   const overrideCounts: Record<Team, number> = { A: 0, B: 0 }
   const setWins: Record<Team, number> = { A: 0, B: 0 }
@@ -116,10 +117,12 @@ export function useRecordingSession(
   // ラリー行の遅延生成。存在すれば既存 id を返す。
   async function ensureRallyRow(firstShotMs: number | null): Promise<string | null> {
     const cr = currentRally.value
-    if (!cr || !gameState.value || !currentSetId) return null
+    if (!cr || !gameState.value) return null
     if (cr.rallyId) return cr.rallyId
+    const setId = await ensureSetRow() // セット行の遅延作成
+    if (!setId) return null
     const denorm = mapGameStateToRallyDenorm(gameState.value, cameraNearTeam)
-    const res = await createRally({ setId: currentSetId, rallyNumber: cr.rallyNumber, denorm, videoStartTimestampMs: firstShotMs })
+    const res = await createRally({ setId, rallyNumber: cr.rallyNumber, denorm, videoStartTimestampMs: firstShotMs })
     if (res.error || !res.data) return null
     cr.rallyId = res.data
     return res.data
@@ -129,16 +132,12 @@ export function useRecordingSession(
   // セットアップ
   // ========================================
 
+  // セット行は遅延作成: 記録開始時点では DB に書かず、最初の記録操作 (ensureSetRow) で作成する。
+  // 戻って再編集しても空セットが DB に溜まらない (ラリー行と同じ遅延生成方針)。
   async function configureAndStartSet(setup: SetSetupInput, positions: SetPositionInput[]) {
-    const created = await createSet({ ...setup, matchId })
-    if (created.error || !created.data) return { data: null, error: created.error }
-    const setId = created.data
-
-    const pos = await createSetPositions({ setId, positions })
-    if (pos.error) return { data: null, error: pos.error }
-
-    currentSetId = setId
+    currentSetId = null
     currentConfig = setup
+    pendingPositions = positions
     cameraNearTeam = setup.cameraNearTeamAtStart
     currentSetNumber.value = setup.setNumber
     gameState.value = createInitialState(
@@ -152,7 +151,19 @@ export function useRecordingSession(
     overrideCounts.B = 0
     undoStack.length = 0
     updateUndoLabel()
-    return { data: setId, error: null }
+    return { data: null, error: null }
+  }
+
+  // セット行の遅延作成。最初の記録操作 (ensureRallyRow) から呼ばれる。
+  async function ensureSetRow(): Promise<string | null> {
+    if (currentSetId) return currentSetId
+    if (!currentConfig || !pendingPositions) return null
+    const created = await createSet({ ...currentConfig, matchId })
+    if (created.error || !created.data) return null
+    const pos = await createSetPositions({ setId: created.data, positions: pendingPositions })
+    if (pos.error) return null
+    currentSetId = created.data
+    return currentSetId
   }
 
   function advanceToNextSet(): void {
@@ -164,6 +175,7 @@ export function useRecordingSession(
     setWinner.value = null
     currentSetId = null
     currentConfig = null
+    pendingPositions = null
     currentSetNumber.value = next
     undoStack.length = 0
     updateUndoLabel()
@@ -201,10 +213,10 @@ export function useRecordingSession(
 
   async function completeRally(team: Team | null, isLet: boolean, fromPending: boolean): Promise<void> {
     const cr = currentRally.value
-    if (!cr || !gameState.value || !currentSetId || !currentConfig) return
+    if (!cr || !gameState.value || !currentConfig) return
     if (cr.isPending && !fromPending) return
     const activeState = gameState.value
-    const rallyId = await ensureRallyRow(null)
+    const rallyId = await ensureRallyRow(null) // 内部でセット行も遅延作成
     if (!rallyId) return
 
     const prevRally = cloneRally(cr)
@@ -237,7 +249,7 @@ export function useRecordingSession(
       setWinner.value = winner
       currentRally.value = null
       setWins[winner] += 1
-      await persistSetWinner({ setId: currentSetId, winner })
+      if (currentSetId) await persistSetWinner({ setId: currentSetId, winner })
       if (setWins[winner] >= MATCH_SET_TARGET) matchWinner.value = winner
     } else {
       currentRally.value = { rallyNumber: cr.rallyNumber + 1, rallyId: null, shots: [], isPending: false }

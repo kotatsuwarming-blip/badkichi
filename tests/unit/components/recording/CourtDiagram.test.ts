@@ -50,4 +50,18 @@ describe('CourtDiagram', () => {
     const rows = w.findAll('.court-row')
     expect(rows[1].text()).toContain('佐藤') // A 手前
   })
+
+  it('奥チームは左右ミラー: ファースト(right=B2/田中)が画面の左セルに来る', () => {
+    const w = mountCourt('A') // 奥=B
+    const farCells = w.findAll('.court-row')[0].findAll('.court-cell')
+    expect(farCells[0].text()).toContain('田中') // B2 (right/偶数側) が向かって左
+    expect(farCells[1].text()).toContain('高橋') // B1 (left) が向かって右
+  })
+
+  it('手前チームはミラーしない: left(A1/佐藤)が画面の左セル', () => {
+    const w = mountCourt('A') // 手前=A
+    const nearCells = w.findAll('.court-row')[1].findAll('.court-cell')
+    expect(nearCells[0].text()).toContain('佐藤') // A1 (left) が向かって左
+    expect(nearCells[1].text()).toContain('鈴木') // A2 (right) が向かって右
+  })
 })

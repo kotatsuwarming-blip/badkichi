@@ -78,14 +78,22 @@ async function startedSession() {
 }
 
 describe('useRecordingSession: セットアップ', () => {
-  it('configureAndStartSet で GameState を初期化し第1ラリーを開始する', async () => {
+  it('configureAndStartSet で GameState を初期化し第1ラリーを開始する (セットは遅延作成)', async () => {
     const s = await startedSession()
-    expect(m.createSet).toHaveBeenCalledWith(expect.objectContaining({ matchId: 'm1', setNumber: 1 }))
-    expect(m.createSetPositions).toHaveBeenCalled()
+    // 遅延作成: 記録開始時点では DB にセットを書かない
+    expect(m.createSet).not.toHaveBeenCalled()
+    expect(m.createSetPositions).not.toHaveBeenCalled()
     expect(s.gameState.value?.servingTeam).toBe('A')
     expect(s.gameState.value?.server).toBe('A2') // 右コートがサーバー (スコア0=偶数)
     expect(s.currentRally.value?.rallyNumber).toBe(1)
     expect(s.currentSetNumber.value).toBe(1)
+  })
+
+  it('最初の記録操作でセット行が遅延作成される', async () => {
+    const s = await startedSession()
+    await s.recordShot()
+    expect(m.createSet).toHaveBeenCalledWith(expect.objectContaining({ matchId: 'm1', setNumber: 1 }))
+    expect(m.createSetPositions).toHaveBeenCalled()
   })
 })
 
