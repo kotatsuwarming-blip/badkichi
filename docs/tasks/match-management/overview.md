@@ -29,8 +29,8 @@
 
 ## 全体進捗
 
-- [ ] Phase 1: 基盤＋composable層
-- [ ] Phase 2: UI層
+- [x] Phase 1: 基盤＋composable層
+- [x] Phase 2: UI層（全タスク完了 2026-06-05、unit 180 green）
 
 ---
 
@@ -70,7 +70,7 @@ TASK-0002 → TASK-0006
 - [x] [TASK-0007: i18n matches namespace](TASK-0007.md) - 1h (DIRECT) 🔵
 - [x] [TASK-0008: MatchFormModal.vue（追加/編集モーダル）](TASK-0008.md) - 6h (TDD) 🔵
 - [x] [TASK-0009: matches.vue（一覧ページ）](TASK-0009.md) - 6h (TDD) 🔵
-- [ ] [TASK-0010: 受入検証](TASK-0010.md) - 3h (TDD) 🔵
+- [x] [TASK-0010: 受入検証](TASK-0010.md) - 3h (TDD) 🔵
 
 ### 依存関係
 
