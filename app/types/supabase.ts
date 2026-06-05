@@ -7,10 +7,30 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -123,6 +143,8 @@ export type Database = {
           deleted_at: string | null
           group_id: string
           id: string
+          match_date: string
+          name: string | null
           team_a_player1_id: string
           team_a_player2_id: string
           team_b_player1_id: string
@@ -136,6 +158,8 @@ export type Database = {
           deleted_at?: string | null
           group_id: string
           id?: string
+          match_date?: string
+          name?: string | null
           team_a_player1_id: string
           team_a_player2_id: string
           team_b_player1_id: string
@@ -149,6 +173,8 @@ export type Database = {
           deleted_at?: string | null
           group_id?: string
           id?: string
+          match_date?: string
+          name?: string | null
           team_a_player1_id?: string
           team_a_player2_id?: string
           team_b_player1_id?: string
@@ -545,6 +571,10 @@ export type Database = {
       }
       is_member_of: { Args: { target_group_id: string }; Returns: boolean }
       join_group_with_code: { Args: { invite_code: string }; Returns: string }
+      test_force_collision_invitation_code: {
+        Args: { target_group_id: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
@@ -673,7 +703,11 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
 } as const
+
