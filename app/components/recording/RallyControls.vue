@@ -1,11 +1,13 @@
 <script setup lang="ts">
 /**
  * RallyControls.vue — ラリー終了の入力 (得点A/得点B/レット/スキップ)。
- * 関連: TASK-0014 / REQ-006 / REQ-102 / REQ-103 / ui-design.md
+ * キーボード (スペース周辺): 得点A=V / 得点B=N / レット=C / スキップ=M。
+ * 関連: TASK-0014 / REQ-006 / REQ-102 / REQ-103 / NFR-201 / ui-design.md
  */
+import { onBeforeUnmount, onMounted } from 'vue'
 import type { Team } from '~/utils/rule-engine/types'
 
-defineProps<{
+const props = defineProps<{
   disabled?: boolean
 }>()
 
@@ -14,6 +16,26 @@ const emit = defineEmits<{
   let: []
   skip: []
 }>()
+
+function onKeydown(e: KeyboardEvent) {
+  if (props.disabled) return
+  const target = e.target as HTMLElement | null
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+  const map: Record<string, () => void> = {
+    KeyV: () => emit('point', 'A'),
+    KeyN: () => emit('point', 'B'),
+    KeyC: () => emit('let'),
+    KeyM: () => emit('skip')
+  }
+  const action = map[e.code]
+  if (action) {
+    e.preventDefault()
+    action()
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
@@ -29,7 +51,7 @@ const emit = defineEmits<{
         :disabled="disabled"
         @click="emit('point', 'A')"
       >
-        {{ $t('record.buttons.pointA') }}
+        {{ $t('record.buttons.pointA') }} (V)
       </UButton>
       <UButton
         block
@@ -38,7 +60,7 @@ const emit = defineEmits<{
         :disabled="disabled"
         @click="emit('point', 'B')"
       >
-        {{ $t('record.buttons.pointB') }}
+        {{ $t('record.buttons.pointB') }} (N)
       </UButton>
     </div>
     <div class="sub-row">
@@ -50,7 +72,7 @@ const emit = defineEmits<{
         :disabled="disabled"
         @click="emit('let')"
       >
-        {{ $t('record.buttons.let') }}
+        {{ $t('record.buttons.let') }} (C)
       </UButton>
       <UButton
         block
@@ -60,7 +82,7 @@ const emit = defineEmits<{
         :disabled="disabled"
         @click="emit('skip')"
       >
-        {{ $t('record.buttons.skip') }}
+        {{ $t('record.buttons.skip') }} (M)
       </UButton>
     </div>
   </div>

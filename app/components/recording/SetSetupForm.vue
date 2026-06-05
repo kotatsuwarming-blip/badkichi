@@ -29,8 +29,8 @@ const deucePointCap = ref(30)
 const firstServingTeam = ref<Team>(props.suggestedFirstServingTeam ?? 'A')
 // URadioGroup は string を扱うため '' を「不明 (null)」として保持し submit 時に変換する
 const cameraNearRaw = ref<'A' | 'B' | ''>('A')
-const aLeftPlayerId = ref<PlayerId>(aPlayers.value[0]?.playerId ?? '')
-const bLeftPlayerId = ref<PlayerId>(bPlayers.value[0]?.playerId ?? '')
+const aFirstPlayerId = ref<PlayerId>(aPlayers.value[0]?.playerId ?? '')
+const bFirstPlayerId = ref<PlayerId>(bPlayers.value[0]?.playerId ?? '')
 
 const teamOptions = computed(() => [
   { label: 'A', value: 'A' },
@@ -50,8 +50,8 @@ function onSubmit() {
     deucePointCap: deucePointCap.value,
     firstServingTeam: firstServingTeam.value,
     cameraNearTeamAtStart: cameraNearRaw.value === '' ? null : cameraNearRaw.value,
-    aLeftPlayerId: aLeftPlayerId.value,
-    bLeftPlayerId: bLeftPlayerId.value
+    aFirstPlayerId: aFirstPlayerId.value,
+    bFirstPlayerId: bFirstPlayerId.value
   })
   emit('submit', result)
 }
@@ -106,19 +106,29 @@ function onSubmit() {
       />
     </UFormField>
 
-    <UFormField :label="$t('record.setup.teamALeft')">
+    <h3
+      class="subtitle"
+      data-testid="positions-title"
+    >
+      {{ $t('record.setup.positionsTitle') }}
+    </h3>
+    <p class="hint">
+      {{ $t('record.setup.firstHint') }}
+    </p>
+
+    <UFormField :label="$t('record.setup.teamAFirst')">
       <USelect
-        v-model="aLeftPlayerId"
+        v-model="aFirstPlayerId"
         :items="aPlayers.map(p => ({ label: p.name, value: p.playerId }))"
-        data-testid="a-left"
+        data-testid="a-first"
       />
     </UFormField>
 
-    <UFormField :label="$t('record.setup.teamBLeft')">
+    <UFormField :label="$t('record.setup.teamBFirst')">
       <USelect
-        v-model="bLeftPlayerId"
+        v-model="bFirstPlayerId"
         :items="bPlayers.map(p => ({ label: p.name, value: p.playerId }))"
-        data-testid="b-left"
+        data-testid="b-first"
       />
     </UFormField>
 
@@ -135,4 +145,6 @@ function onSubmit() {
 <style scoped>
 .set-setup-form { display: flex; flex-direction: column; gap: 0.75rem; max-width: 28rem; }
 .title { font-weight: 700; }
+.subtitle { font-weight: 600; margin-top: 0.5rem; }
+.hint { font-size: 0.8125rem; color: var(--ui-text-muted); }
 </style>

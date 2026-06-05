@@ -221,11 +221,13 @@
       "targetPoints": "目標点",
       "enableDeuce": "デュース",
       "deucePointCap": "デュース上限点",
-      "firstServingTeam": "先攻",
+      "firstServingTeam": "最初のサーブチーム",
       "cameraNearTeam": "カメラ手前チーム",
-      "teamALeft": "チームA 左の選手",
-      "teamBLeft": "チームB 左の選手",
-      "start": "記録を開始"
+      "start": "記録を開始",
+      "positionsTitle": "初期立ち位置の入力",
+      "firstHint": "各チームの「ファースト」= 最初にサーブ／レシーブする偶数側の選手を選んでください",
+      "teamAFirst": "チームA のファースト",
+      "teamBFirst": "チームB のファースト"
     }
   }
 }

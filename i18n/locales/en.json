@@ -223,9 +223,11 @@
       "deucePointCap": "Deuce cap",
       "firstServingTeam": "First serving team",
       "cameraNearTeam": "Camera near team",
-      "teamALeft": "Team A left player",
-      "teamBLeft": "Team B left player",
-      "start": "Start recording"
+      "start": "Start recording",
+      "positionsTitle": "Initial positions",
+      "firstHint": "Pick each team's 'first' player — the even-side player who serves/receives first",
+      "teamAFirst": "Team A first",
+      "teamBFirst": "Team B first"
     }
   }
 }

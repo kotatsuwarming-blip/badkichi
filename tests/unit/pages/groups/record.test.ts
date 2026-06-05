@@ -22,6 +22,12 @@ const sessionRefs = {
 vi.mock('~/composables/useMatchForRecording', () => ({
   useMatchForRecording: () => ({ data: matchData })
 }))
+vi.mock('~/composables/useSets', () => ({
+  useSets: () => ({ data: ref([]), refresh: vi.fn() })
+}))
+vi.mock('~/composables/useToastErrors', () => ({
+  useToastErrors: () => ({ showError: vi.fn() })
+}))
 vi.mock('~/composables/useVideoPlayer', () => ({
   useVideoPlayer: () => ({ state: ref({}), controls: { getCurrentTimeMs: vi.fn(() => null), seekToMs: vi.fn() }, attach: vi.fn(), detach: vi.fn() })
 }))

@@ -11,25 +11,25 @@ const roster = [
 const base = {
   setNumber: 1, targetPoints: 21, enableDeuce: true, deucePointCap: 30,
   firstServingTeam: 'A' as const, cameraNearTeamAtStart: 'A' as const,
-  aLeftPlayerId: 'A1', bLeftPlayerId: 'B1'
+  aFirstPlayerId: 'A1', bFirstPlayerId: 'B1'
 }
 
 describe('buildSetInput', () => {
-  it('左の選手選択から左右4スロットを重複なく組み立てる (EDGE-002)', () => {
+  it('ファースト(偶数側=右)選択から4スロットを重複なく組み立てる (EDGE-002)', () => {
     const { setup, positions } = buildSetInput(roster, base)
     expect(setup).toEqual({ setNumber: 1, targetPoints: 21, enableDeuce: true, deucePointCap: 30, firstServingTeam: 'A', cameraNearTeamAtStart: 'A' })
     expect(positions).toEqual([
-      { playerId: 'A1', team: 'A', position: 'left' },
-      { playerId: 'A2', team: 'A', position: 'right' },
-      { playerId: 'B1', team: 'B', position: 'left' },
-      { playerId: 'B2', team: 'B', position: 'right' }
+      { playerId: 'A1', team: 'A', position: 'right' },
+      { playerId: 'A2', team: 'A', position: 'left' },
+      { playerId: 'B1', team: 'B', position: 'right' },
+      { playerId: 'B2', team: 'B', position: 'left' }
     ])
   })
 
-  it('左に A2 を選ぶと A1 が右になる', () => {
-    const { positions } = buildSetInput(roster, { ...base, aLeftPlayerId: 'A2' })
-    expect(positions[0]).toEqual({ playerId: 'A2', team: 'A', position: 'left' })
-    expect(positions[1]).toEqual({ playerId: 'A1', team: 'A', position: 'right' })
+  it('ファーストに A2 を選ぶと A2 が右(偶数側)・A1 が左になる', () => {
+    const { positions } = buildSetInput(roster, { ...base, aFirstPlayerId: 'A2' })
+    expect(positions[0]).toEqual({ playerId: 'A2', team: 'A', position: 'right' })
+    expect(positions[1]).toEqual({ playerId: 'A1', team: 'A', position: 'left' })
   })
 
   it('camera null を許容する', () => {

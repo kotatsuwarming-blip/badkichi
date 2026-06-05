@@ -16,12 +16,22 @@ import type { BuildSetResult } from '~/utils/match-recording/build-set-input'
 import { useMatchForRecording } from '~/composables/useMatchForRecording'
 import { useVideoPlayer } from '~/composables/useVideoPlayer'
 import { useRecordingSession } from '~/composables/useRecordingSession'
+import { useSets } from '~/composables/useSets'
+import { useToastErrors } from '~/composables/useToastErrors'
 
 const route = useRoute()
 const matchId = route.params.matchId as string
 const groupId = route.params.id as string
 
 const { data: match } = useMatchForRecording(matchId)
+const { data: sets, refresh: refreshSets } = useSets(matchId)
+const { showError } = useToastErrors()
+
+// 既存セットから次のセット番号を採番 (再入場時の set_number 重複を防ぐ、REQ-002)
+const nextSetNumber = computed(() => {
+  const nums = (sets.value ?? []).map(s => s.setNumber)
+  return (nums.length ? Math.max(...nums) : 0) + 1
+})
 
 const names = computed<Record<PlayerId, string>>(() => {
   const map: Record<PlayerId, string> = {}
@@ -67,8 +77,13 @@ const shotMarkers = computed(() => (currentRally.value?.shots ?? []).map(s => s.
 const recordDisabled = computed(() => !currentRally.value || currentRally.value.isPending)
 const shotCount = computed(() => currentRally.value?.shots.length ?? 0)
 
-function onSetupSubmit(payload: BuildSetResult) {
-  void session.configureAndStartSet(payload.setup, payload.positions)
+async function onSetupSubmit(payload: BuildSetResult) {
+  const { error } = await session.configureAndStartSet(payload.setup, payload.positions)
+  if (error) {
+    showError(error)
+    return
+  }
+  await refreshSets()
 }
 function onJump(ms: number) {
   player.value?.controls.seekToMs(ms)
@@ -103,15 +118,6 @@ function onJump(ms: number) {
       >
     </div>
 
-    <RecordingSetSetupForm
-      v-else-if="!gameState"
-      :roster="match?.roster ?? []"
-      :set-number="currentSetNumber ?? 1"
-      :suggested-first-serving-team="suggestedFirstServingTeam"
-      data-testid="setup"
-      @submit="onSetupSubmit"
-    />
-
     <div
       v-else
       class="record-grid"
@@ -123,60 +129,71 @@ function onJump(ms: number) {
         />
       </section>
 
-      <section class="side-col">
-        <RecordingScoreHeader
-          :score="gameState.score"
-          :set-number="currentSetNumber"
-          :server-name="serverName"
-          :receiver-name="receiverName"
+      <section class="aside-col">
+        <RecordingSetSetupForm
+          v-if="!gameState"
+          :roster="match?.roster ?? []"
+          :set-number="currentSetNumber ?? nextSetNumber"
+          :suggested-first-serving-team="suggestedFirstServingTeam"
+          data-testid="setup"
+          @submit="onSetupSubmit"
         />
-        <RecordingCourtDiagram
-          :positions="gameState.positions"
-          :serving-team="gameState.servingTeam"
-          :server="gameState.server"
-          :receiver="gameState.receiver"
-          :camera-near-team="null"
-          :names="names"
-        />
+        <template v-else>
+          <RecordingScoreHeader
+            :score="gameState.score"
+            :set-number="currentSetNumber"
+            :server-name="serverName"
+            :receiver-name="receiverName"
+          />
+          <RecordingCourtDiagram
+            :positions="gameState.positions"
+            :serving-team="gameState.servingTeam"
+            :server="gameState.server"
+            :receiver="gameState.receiver"
+            :camera-near-team="null"
+            :names="names"
+          />
+          <RecordingShotButton
+            :shot-count="shotCount"
+            :disabled="recordDisabled"
+            @shot="session.recordShot"
+          />
+          <RecordingUndoButton
+            :label-key="undoLabelKey"
+            @undo="session.undoLast"
+          />
+          <RecordingRallyControls
+            :disabled="recordDisabled"
+            @point="session.recordPoint"
+            @let="session.recordLet"
+            @skip="session.skipRally"
+          />
+          <RecordingPositionControls
+            :can-advance="setWinner !== null"
+            @override="session.recordOverride"
+            @next-set="session.advanceToNextSet"
+          />
+          <p
+            v-if="setWinner"
+            class="set-decided"
+            data-testid="set-decided"
+          >
+            {{ $t('record.setDecided') }}: {{ $t(`record.team.${setWinner}`) }}
+          </p>
+          <p
+            v-if="matchWinner"
+            class="match-decided"
+            data-testid="match-decided"
+          >
+            {{ $t('record.matchDecided') }}: {{ $t(`record.team.${matchWinner}`) }}
+          </p>
+        </template>
       </section>
 
-      <section class="controls-col">
-        <RecordingShotButton
-          :shot-count="shotCount"
-          :disabled="recordDisabled"
-          @shot="session.recordShot"
-        />
-        <RecordingUndoButton
-          :label-key="undoLabelKey"
-          @undo="session.undoLast"
-        />
-        <RecordingRallyControls
-          @point="session.recordPoint"
-          @let="session.recordLet"
-          @skip="session.skipRally"
-        />
-        <RecordingPositionControls
-          :can-advance="setWinner !== null"
-          @override="session.recordOverride"
-          @next-set="session.advanceToNextSet"
-        />
-        <p
-          v-if="setWinner"
-          class="set-decided"
-          data-testid="set-decided"
-        >
-          {{ $t('record.setDecided') }}: {{ $t(`record.team.${setWinner}`) }}
-        </p>
-        <p
-          v-if="matchWinner"
-          class="match-decided"
-          data-testid="match-decided"
-        >
-          {{ $t('record.matchDecided') }}: {{ $t(`record.team.${matchWinner}`) }}
-        </p>
-      </section>
-
-      <section class="history-col">
+      <section
+        v-if="gameState"
+        class="history-col"
+      >
         <RecordingRallyHistory
           :items="history"
           :names="names"
@@ -193,12 +210,11 @@ function onJump(ms: number) {
 .match-name { font-weight: 600; }
 .source-picker { display: flex; flex-direction: column; gap: 0.5rem; }
 .record-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
-.side-col, .controls-col { display: flex; flex-direction: column; gap: 1rem; }
+.aside-col { display: flex; flex-direction: column; gap: 1rem; }
 @media (min-width: 1024px) {
-  .record-grid { grid-template-columns: 2fr 1fr; grid-template-areas: 'video side' 'controls controls' 'history history'; }
+  .record-grid { grid-template-columns: 1.8fr 1fr; grid-template-areas: 'video aside' 'history aside'; align-items: start; }
   .video-col { grid-area: video; }
-  .side-col { grid-area: side; }
-  .controls-col { grid-area: controls; }
+  .aside-col { grid-area: aside; }
   .history-col { grid-area: history; }
 }
 </style>
