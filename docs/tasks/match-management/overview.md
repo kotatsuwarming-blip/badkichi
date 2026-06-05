@@ -68,7 +68,7 @@ TASK-0002 → TASK-0006
 ### タスク一覧
 
 - [x] [TASK-0007: i18n matches namespace](TASK-0007.md) - 1h (DIRECT) 🔵
-- [ ] [TASK-0008: MatchFormModal.vue（追加/編集モーダル）](TASK-0008.md) - 6h (TDD) 🔵
+- [x] [TASK-0008: MatchFormModal.vue（追加/編集モーダル）](TASK-0008.md) - 6h (TDD) 🔵
 - [ ] [TASK-0009: matches.vue（一覧ページ）](TASK-0009.md) - 6h (TDD) 🔵
 - [ ] [TASK-0010: 受入検証](TASK-0010.md) - 3h (TDD) 🔵
 
