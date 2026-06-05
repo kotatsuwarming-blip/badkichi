@@ -163,6 +163,15 @@ watch(error, (e) => {
           </div>
           <div class="flex items-center gap-2">
             <UButton
+              color="primary"
+              variant="soft"
+              size="sm"
+              icon="i-lucide-circle-dot"
+              :to="`/groups/${route.params.id}/matches/${m.id}/record`"
+              :aria-label="t('matches.record')"
+              :label="t('matches.record')"
+            />
+            <UButton
               color="neutral"
               variant="ghost"
               size="sm"

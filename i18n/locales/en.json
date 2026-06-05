@@ -166,7 +166,8 @@
     "goToPlayers": "",
     "createSuccess": "",
     "updateSuccess": "",
-    "deleteSuccess": ""
+    "deleteSuccess": "",
+    "record": "Record"
   },
   "record": {
     "back": "Back",

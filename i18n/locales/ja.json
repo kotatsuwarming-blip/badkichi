@@ -166,7 +166,8 @@
     "goToPlayers": "選手を追加する",
     "createSuccess": "試合を追加しました",
     "updateSuccess": "試合を更新しました",
-    "deleteSuccess": "試合を削除しました"
+    "deleteSuccess": "試合を削除しました",
+    "record": "録画"
   },
   "record": {
     "back": "戻る",
