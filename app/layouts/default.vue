@@ -47,6 +47,12 @@ const playersLink = computed<string | undefined>(() => {
   const id = currentGroup.value?.groups?.id
   return id ? `/groups/${id}/players` : undefined
 })
+
+// 【試合管理リンク】: 所属グループの試合一覧 /groups/[id]/matches への導線。所属がある時のみ出す。
+const matchesLink = computed<string | undefined>(() => {
+  const id = currentGroup.value?.groups?.id
+  return id ? `/groups/${id}/matches` : undefined
+})
 </script>
 
 <template>
@@ -63,6 +69,17 @@ const playersLink = computed<string | undefined>(() => {
       </template>
 
       <template #right>
+        <!-- 試合管理リンク (試合一覧への導線、所属グループがある時のみ) -->
+        <UButton
+          v-if="matchesLink"
+          :to="matchesLink"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-swords"
+          :label="t('layout.default.matches')"
+          :aria-label="t('layout.default.matches')"
+        />
+
         <!-- 選手管理リンク (選手ロスターへの導線、所属グループがある時のみ) -->
         <UButton
           v-if="playersLink"
