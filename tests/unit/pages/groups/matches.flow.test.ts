@@ -48,7 +48,7 @@ vi.mock('~/composables/useDeleteMatch', () => ({
 vi.mock('~/composables/useToastErrors', () => ({ useToastErrors: () => ({ showError }) }))
 
 // eslint-disable-next-line import/first
-import MatchesPage from '~/pages/groups/[id]/matches.vue'
+import MatchesPage from '~/pages/groups/[id]/matches/index.vue'
 
 const stubs = {
   UContainer: { template: '<div><slot /></div>' },
