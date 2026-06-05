@@ -181,7 +181,8 @@
     },
     "court": {
       "far": "Far",
-      "near": "Near"
+      "near": "Near",
+      "net": "Net"
     },
     "score": {
       "set": "Set",

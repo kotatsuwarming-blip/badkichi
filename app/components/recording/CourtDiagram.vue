@@ -54,7 +54,7 @@ const nearCells = computed(() => [cell(nearTeam.value, 'left'), cell(nearTeam.va
       {{ $t('record.court.far') }}: {{ $t(`record.team.${farTeam}`) }}
     </p>
     <div class="court">
-      <div class="court-row">
+      <div class="court-row far-row">
         <div
           v-for="c in farCells"
           :key="c.id"
@@ -66,11 +66,15 @@ const nearCells = computed(() => [cell(nearTeam.value, 'left'), cell(nearTeam.va
             v-if="c.isServer"
             class="server-mark"
           >◎</span>
-          {{ c.name }}
+          <span class="cell-name">{{ c.name }}</span>
         </div>
       </div>
-      <div class="court-net" />
-      <div class="court-row">
+      <div class="service-line" />
+      <div class="court-net">
+        <span class="net-label">{{ $t('record.court.net') }}</span>
+      </div>
+      <div class="service-line" />
+      <div class="court-row near-row">
         <div
           v-for="c in nearCells"
           :key="c.id"
@@ -82,7 +86,7 @@ const nearCells = computed(() => [cell(nearTeam.value, 'left'), cell(nearTeam.va
             v-if="c.isServer"
             class="server-mark"
           >◎</span>
-          {{ c.name }}
+          <span class="cell-name">{{ c.name }}</span>
         </div>
       </div>
     </div>
@@ -95,11 +99,66 @@ const nearCells = computed(() => [cell(nearTeam.value, 'left'), cell(nearTeam.va
 <style scoped>
 .court-diagram { display: flex; flex-direction: column; gap: 0.25rem; align-items: center; }
 .court-label { font-size: 0.75rem; color: var(--ui-text-muted); }
-.court { width: 100%; max-width: 20rem; border: 1px solid var(--ui-border); border-radius: 0.5rem; overflow: hidden; }
+
+/* バドミントンコート風: 緑面 + 白ライン */
+.court {
+  width: 100%;
+  max-width: 18rem;
+  background: #2e7d4f;
+  border: 3px solid #fff; /* 外側の境界線 (ダブルスサイドライン) */
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 各ハーフ = 左右サービスコート。セル間の縦線 = センターライン */
 .court-row { display: grid; grid-template-columns: 1fr 1fr; }
-.court-cell { padding: 0.75rem 0.25rem; text-align: center; border: 1px solid var(--ui-border); font-size: 0.875rem; }
-.court-cell.is-server { background: var(--ui-primary); color: var(--ui-bg); font-weight: 600; }
-.court-cell.is-receiver { outline: 2px solid var(--ui-primary); outline-offset: -2px; }
-.court-net { height: 2px; background: var(--ui-border); }
-.server-mark { margin-right: 0.25rem; }
+.court-cell {
+  position: relative;
+  min-height: 3.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  color: #fff;
+  font-size: 0.8125rem;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+}
+/* センターライン (左右の境) と外周内側のライン */
+.court-cell + .court-cell { border-left: 2px solid rgba(255, 255, 255, 0.9); }
+.cell-name { font-weight: 600; }
+
+.court-cell.is-server { background: var(--ui-primary); color: #1a1a1a; text-shadow: none; }
+.court-cell.is-server .cell-name { font-weight: 800; }
+.court-cell.is-receiver { box-shadow: inset 0 0 0 3px #ffd54f; }
+
+/* ショートサービスライン (ネット手前の白線) */
+.service-line { height: 2px; background: rgba(255, 255, 255, 0.9); }
+
+/* ネット: メッシュ柄 + ラベル + 両端ポスト */
+.court-net {
+  position: relative;
+  height: 1.1rem;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.85) 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.85) 0 1px, transparent 1px 5px);
+  background-color: #1f5c3a;
+  border-top: 3px solid #fff;
+  border-bottom: 3px solid #fff;
+}
+.net-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #1a1a1a;
+  background: #fff;
+  padding: 0 0.4rem;
+  border-radius: 2px;
+}
+.server-mark { font-size: 0.875rem; line-height: 1; }
 </style>
