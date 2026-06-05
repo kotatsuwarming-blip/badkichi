@@ -215,7 +215,8 @@ export function useRecordingSession(
       pointWinner: team,
       isLet,
       isPointConfirmed: true,
-      shotCount: cr.shots.length
+      shotCount: cr.shots.length,
+      videoStartTimestampMs: cr.shots[0]?.videoTimestampMs ?? null
     })
 
     track(updateRally({ rallyId, pointWinner: team, isLet, isPointConfirmed: true }))

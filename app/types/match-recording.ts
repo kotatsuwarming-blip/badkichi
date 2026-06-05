@@ -113,6 +113,8 @@ export interface RallyHistoryItem {
   isLet: boolean
   isPointConfirmed: boolean
   shotCount: number
+  /** 該当ラリーの動画開始位置 (ms)。[▶] ジャンプに使う。null=動画アラインメントなし。REQ-009。 */
+  videoStartTimestampMs: number | null
 }
 
 // ========================================
