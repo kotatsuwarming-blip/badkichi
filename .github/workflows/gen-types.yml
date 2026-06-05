@@ -21,6 +21,7 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/config.toml'
+      - '.github/workflows/gen-types.yml'
   workflow_dispatch: {}
 
 # 同一ブランチの連続実行を抑止 (commit-back のレース防止)
