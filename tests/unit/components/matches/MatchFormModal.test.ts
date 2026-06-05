@@ -54,14 +54,9 @@ import MatchFormModal from '~/components/matches/MatchFormModal.vue'
 const stubs = {
   UModal: {
     inheritAttrs: false,
-    props: ['open'],
+    props: ['open', 'title'],
     emits: ['update:open'],
-    template: '<div v-if="open"><slot name="content" /></div>'
-  },
-  UForm: {
-    inheritAttrs: false,
-    props: ['state'],
-    template: '<form v-bind="$attrs"><slot /></form>'
+    template: '<div v-if="open">{{ title }}<slot name="body" /><slot name="footer" /></div>'
   },
   UFormField: {
     inheritAttrs: false,
@@ -105,6 +100,12 @@ function textInputs(wrapper: ReturnType<typeof mountModal>) {
   return wrapper.findAll('input[type=text]')
 }
 
+// 保存ボタン（footer）をクリックして submit
+async function clickSave(wrapper: ReturnType<typeof mountModal>) {
+  const save = wrapper.findAll('button').find(b => b.text() === 'matches.save')
+  await save!.trigger('click')
+}
+
 async function selectFourPlayers(wrapper: ReturnType<typeof mountModal>, ids: [string, string, string, string]) {
   const selects = wrapper.findAll('select')
   for (let i = 0; i < 4; i++) {
@@ -129,7 +130,7 @@ describe('MatchFormModal.vue', () => {
   it('TC1: 試合名 51 字は inline error・createMatch 未呼出 (EDGE-011)', async () => {
     const wrapper = mountModal()
     await textInputs(wrapper)[0]!.setValue('あ'.repeat(51))
-    await wrapper.find('form').trigger('submit')
+    await clickSave(wrapper)
     await flushPromises()
     expect(wrapper.text()).toContain('errors.invalid_match_name')
     expect(createMatch).not.toHaveBeenCalled()
@@ -138,7 +139,7 @@ describe('MatchFormModal.vue', () => {
   it('TC2: 試合日付未入力は inline error・createMatch 未呼出 (EDGE-012)', async () => {
     const wrapper = mountModal()
     await wrapper.find('input[type=date]').setValue('')
-    await wrapper.find('form').trigger('submit')
+    await clickSave(wrapper)
     await flushPromises()
     expect(wrapper.text()).toContain('errors.invalid_match_date')
     expect(createMatch).not.toHaveBeenCalled()
@@ -148,22 +149,28 @@ describe('MatchFormModal.vue', () => {
     const wrapper = mountModal()
     await selectFourPlayers(wrapper, [P1, P2, P3, P4])
     await textInputs(wrapper)[1]!.setValue('これはURLでない')
-    await wrapper.find('form').trigger('submit')
+    await clickSave(wrapper)
     await flushPromises()
     expect(wrapper.text()).toContain('errors.invalid_youtube_url')
     expect(createMatch).not.toHaveBeenCalled()
   })
 
-  it('TC5: 選手選択肢が他枠選択で絞られる (NFR-202)', async () => {
+  it('TC5: 選手ちょうど4人でも入れ替え可能 (スワップ, NFR-202)', async () => {
+    // 選手ちょうど 4 人。全枠を埋めた後、A1 を A2 の選手に変更すると A2 に元の A1 が入る
+    playersRef.value = [
+      { id: P1, name: 'A' },
+      { id: P2, name: 'B' },
+      { id: P3, name: 'C' },
+      { id: P4, name: 'D' }
+    ]
     const wrapper = mountModal()
-    const selects = wrapper.findAll('select')
-    await selects[0]!.setValue(P1) // teamAPlayer1 = P1
+    await selectFourPlayers(wrapper, [P1, P2, P3, P4])
     await flushPromises()
-    // teamAPlayer2 枠（selects[1]）の option に P1 が含まれない
-    const a2Values = wrapper.findAll('select')[1]!.findAll('option').map(o => o.element.value)
-    expect(a2Values).not.toContain(P1)
-    expect(a2Values).toContain(P2)
-    expect(a2Values).toContain(P5)
+    // A1(select[0]) を P2 に変更 → A2(select[1]) へ元の P1 がスワップされる
+    await wrapper.findAll('select')[0]!.setValue(P2)
+    await flushPromises()
+    expect((wrapper.findAll('select')[0]!.element as HTMLSelectElement).value).toBe(P2)
+    expect((wrapper.findAll('select')[1]!.element as HTMLSelectElement).value).toBe(P1)
   })
 
   it('TC6: 動画ソース切替で条件付きフィールドが切り替わる', async () => {
@@ -184,7 +191,7 @@ describe('MatchFormModal.vue', () => {
     const wrapper = mountModal()
     await selectFourPlayers(wrapper, [P1, P2, P3, P4])
     await textInputs(wrapper)[1]!.setValue('https://youtu.be/abcdefghijk')
-    await wrapper.find('form').trigger('submit')
+    await clickSave(wrapper)
     await flushPromises()
     expect(createMatch).toHaveBeenCalledTimes(1)
     expect(createMatch).toHaveBeenCalledWith(expect.objectContaining({
@@ -201,7 +208,7 @@ describe('MatchFormModal.vue', () => {
     const wrapper = mountModal()
     await selectFourPlayers(wrapper, [P1, P2, P3, P4])
     await textInputs(wrapper)[1]!.setValue('abcdefghijk')
-    await wrapper.find('form').trigger('submit')
+    await clickSave(wrapper)
     await flushPromises()
     expect(showError).toHaveBeenCalledTimes(1)
     expect(wrapper.emitted('saved')).toBeUndefined()
@@ -221,7 +228,7 @@ describe('MatchFormModal.vue', () => {
     await flushPromises()
     // teamAPlayer2 を P5 に差し替え
     await wrapper.findAll('select')[1]!.setValue(P5)
-    await wrapper.find('form').trigger('submit')
+    await clickSave(wrapper)
     await flushPromises()
     expect(updateMatch).toHaveBeenCalledTimes(1)
     expect(updateMatch.mock.calls[0]![0]).toBe('m1')

@@ -152,6 +152,7 @@
     "youtubeUrlPlaceholder": "https://www.youtube.com/watch?v=...",
     "localFileLabel": "動画ファイル",
     "localFileSelect": "ファイルを選択",
+    "localFileNone": "ファイル未選択",
     "edit": "編集",
     "delete": "削除",
     "save": "保存",

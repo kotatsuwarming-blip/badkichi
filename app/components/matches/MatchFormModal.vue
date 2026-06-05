@@ -7,7 +7,8 @@
  *
  * 設計方針:
  *   - mode prop（'create' | 'edit'）で挙動を分岐。edit 時は match prop でプリフィル。
- *   - 4 選手は usePlayers（未削除ロスター）を選択肢に。各枠は他枠選択済を除外（NFR-202 / EDGE-001）。
+ *   - 4 選手は usePlayers（未削除ロスター）を選択肢に。他枠の選手を選ぶと入れ替え（スワップ）して
+ *     重複を防ぐ（NFR-202 / EDGE-001）。選手ちょうど 4 人でも編集で入れ替え可能。
  *   - 動画ソースは URadioGroup（youtube/local）+ 条件付きフィールド。local=file.name、youtube=URL。
  *   - matchFormSchema でクライアント検証し、エラーは UFormField inline（EDGE-009）。
  *   - youtube の保存値は extractYoutubeId で 11 桁 ID に正規化（REQ-107）。
@@ -91,24 +92,27 @@ watch(() => [props.open, props.match, props.mode], () => {
   if (props.open) resetForm()
 }, { immediate: true })
 
-// 自枠以外で選択済の id を除外した選択肢を返す（NFR-202 / EDGE-001）
-function itemsExcluding(self: Ref<string | undefined>) {
-  return computed(() => {
-    const taken = new Set(
-      [teamAPlayer1Id, teamAPlayer2Id, teamBPlayer1Id, teamBPlayer2Id]
-        .filter(r => r !== self)
-        .map(r => r.value)
-        .filter((v): v is string => v != null)
-    )
-    return (players.value ?? [])
-      .filter(p => !taken.has(p.id))
-      .map(p => ({ value: p.id, label: p.name }))
-  })
+// 4 枠は同一ロスター（未削除選手）から選ぶ。選択肢は除外しない。
+const playerItems = computed(() => (players.value ?? []).map(p => ({ value: p.id, label: p.name })))
+
+// 既に他枠にいる選手を選んだら、その枠へ自分の元選手を移す（スワップ）。
+// → 選手がちょうど 4 人でも入れ替え可能、かつ重複は構造的に発生しない（NFR-202 / EDGE-001 の意図を維持）。
+// 注: テンプレートでは ref が自動アンラップされるため、ref を引数で渡さずクロージャに閉じ込める。
+const slotRefs = [teamAPlayer1Id, teamAPlayer2Id, teamBPlayer1Id, teamBPlayer2Id]
+function makeSelectHandler(target: Ref<string | undefined>) {
+  return (value: string | undefined) => {
+    const prev = target.value
+    if (value != null) {
+      const other = slotRefs.find(r => r !== target && r.value === value)
+      if (other) other.value = prev // 入れ替え：相手枠に自分の元選手を渡す
+    }
+    target.value = value
+  }
 }
-const itemsA1 = itemsExcluding(teamAPlayer1Id)
-const itemsA2 = itemsExcluding(teamAPlayer2Id)
-const itemsB1 = itemsExcluding(teamBPlayer1Id)
-const itemsB2 = itemsExcluding(teamBPlayer2Id)
+const onSelectA1 = makeSelectHandler(teamAPlayer1Id)
+const onSelectA2 = makeSelectHandler(teamAPlayer2Id)
+const onSelectB1 = makeSelectHandler(teamBPlayer1Id)
+const onSelectB2 = makeSelectHandler(teamBPlayer2Id)
 
 const videoSourceItems = computed(() =>
   (['youtube', 'local'] as const).map(v => ({
@@ -123,6 +127,11 @@ function onVideoSourceTypeChange() {
   videoSourceUrl.value = ''
 }
 
+// 隠し file input をボタンから起動する（素の input より分かりやすい UI）
+const fileInput = ref<HTMLInputElement | null>(null)
+function triggerFileSelect() {
+  fileInput.value?.click()
+}
 function onFileSelect(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (file) videoSourceUrl.value = file.name // 元ファイル名ラベル（REQ-106）
@@ -171,17 +180,12 @@ async function onSubmit() {
 <template>
   <UModal
     :open="open"
+    :title="mode === 'edit' ? t('matches.modalEditTitle') : t('matches.modalCreateTitle')"
     @update:open="emit('update:open', $event)"
   >
-    <template #content>
-      <UForm
-        :state="{}"
-        @submit.prevent="onSubmit"
-      >
-        <h2 class="text-lg font-semibold mb-4">
-          {{ mode === 'edit' ? t('matches.modalEditTitle') : t('matches.modalCreateTitle') }}
-        </h2>
-
+    <!-- 本文（縦長なので #body でスクロールさせ、保存ボタンは #footer に固定） -->
+    <template #body>
+      <div class="flex flex-col gap-4">
         <UFormField
           :label="t('matches.nameLabel')"
           name="name"
@@ -189,6 +193,7 @@ async function onSubmit() {
         >
           <UInput
             v-model="name"
+            class="w-full"
             :placeholder="t('matches.namePlaceholder')"
           />
         </UFormField>
@@ -197,11 +202,11 @@ async function onSubmit() {
           :label="t('matches.matchDateLabel')"
           name="matchDate"
           :error="fieldErrors.matchDate"
-          class="mt-4"
         >
           <UInput
             v-model="matchDate"
             type="date"
+            class="w-full"
           />
         </UFormField>
 
@@ -209,50 +214,58 @@ async function onSubmit() {
           :label="t('matches.teamALabel')"
           name="teamA"
           :error="fieldErrors.form"
-          class="mt-4"
         >
-          <USelectMenu
-            v-model="teamAPlayer1Id"
-            value-key="value"
-            :items="itemsA1"
-            :placeholder="t('matches.playerSlotPlaceholder')"
-          />
-          <USelectMenu
-            v-model="teamAPlayer2Id"
-            value-key="value"
-            :items="itemsA2"
-            :placeholder="t('matches.playerSlotPlaceholder')"
-            class="mt-2"
-          />
+          <div class="flex flex-col gap-2">
+            <USelectMenu
+              :model-value="teamAPlayer1Id"
+              value-key="value"
+              class="w-full"
+              :items="playerItems"
+              :placeholder="t('matches.playerSlotPlaceholder')"
+              @update:model-value="onSelectA1"
+            />
+            <USelectMenu
+              :model-value="teamAPlayer2Id"
+              value-key="value"
+              class="w-full"
+              :items="playerItems"
+              :placeholder="t('matches.playerSlotPlaceholder')"
+              @update:model-value="onSelectA2"
+            />
+          </div>
         </UFormField>
 
         <UFormField
           :label="t('matches.teamBLabel')"
           name="teamB"
-          class="mt-4"
         >
-          <USelectMenu
-            v-model="teamBPlayer1Id"
-            value-key="value"
-            :items="itemsB1"
-            :placeholder="t('matches.playerSlotPlaceholder')"
-          />
-          <USelectMenu
-            v-model="teamBPlayer2Id"
-            value-key="value"
-            :items="itemsB2"
-            :placeholder="t('matches.playerSlotPlaceholder')"
-            class="mt-2"
-          />
+          <div class="flex flex-col gap-2">
+            <USelectMenu
+              :model-value="teamBPlayer1Id"
+              value-key="value"
+              class="w-full"
+              :items="playerItems"
+              :placeholder="t('matches.playerSlotPlaceholder')"
+              @update:model-value="onSelectB1"
+            />
+            <USelectMenu
+              :model-value="teamBPlayer2Id"
+              value-key="value"
+              class="w-full"
+              :items="playerItems"
+              :placeholder="t('matches.playerSlotPlaceholder')"
+              @update:model-value="onSelectB2"
+            />
+          </div>
         </UFormField>
 
         <UFormField
           :label="t('matches.videoSourceLabel')"
           name="videoSourceType"
-          class="mt-4"
         >
           <URadioGroup
             v-model="videoSourceType"
+            orientation="horizontal"
             :items="videoSourceItems"
             @update:model-value="onVideoSourceTypeChange"
           />
@@ -263,10 +276,10 @@ async function onSubmit() {
           :label="t('matches.youtubeUrlLabel')"
           name="videoSourceUrl"
           :error="fieldErrors.videoSourceUrl"
-          class="mt-2"
         >
           <UInput
             v-model="videoSourceUrl"
+            class="w-full"
             :placeholder="t('matches.youtubeUrlPlaceholder')"
           />
         </UFormField>
@@ -275,37 +288,47 @@ async function onSubmit() {
           :label="t('matches.localFileLabel')"
           name="videoSourceUrl"
           :error="fieldErrors.videoSourceUrl"
-          class="mt-2"
         >
+          <!-- 隠し input をボタンで起動し、選択済みファイル名を併記（素の file input より分かりやすい） -->
+          <div class="flex items-center gap-3">
+            <UButton
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-paperclip"
+              :label="t('matches.localFileSelect')"
+              @click="triggerFileSelect"
+            />
+            <span class="text-sm text-gray-500 truncate">
+              {{ videoSourceUrl || t('matches.localFileNone') }}
+            </span>
+          </div>
           <input
+            ref="fileInput"
             type="file"
             accept="video/*"
+            class="hidden"
             @change="onFileSelect"
           >
-          <p
-            v-if="videoSourceUrl"
-            class="text-sm text-gray-500 mt-1"
-          >
-            {{ videoSourceUrl }}
-          </p>
         </UFormField>
+      </div>
+    </template>
 
-        <div class="mt-6 flex justify-end gap-2">
-          <UButton
-            color="neutral"
-            variant="ghost"
-            :label="t('matches.cancel')"
-            :disabled="pending"
-            @click="emit('update:open', false)"
-          />
-          <UButton
-            type="submit"
-            :label="t('matches.save')"
-            :loading="pending"
-            :disabled="pending"
-          />
-        </div>
-      </UForm>
+    <template #footer>
+      <div class="flex w-full justify-end gap-2">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          :label="t('matches.cancel')"
+          :disabled="pending"
+          @click="emit('update:open', false)"
+        />
+        <UButton
+          :label="t('matches.save')"
+          :loading="pending"
+          :disabled="pending"
+          @click="onSubmit"
+        />
+      </div>
     </template>
   </UModal>
 </template>
