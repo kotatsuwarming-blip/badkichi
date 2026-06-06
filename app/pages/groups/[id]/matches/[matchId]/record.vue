@@ -62,7 +62,7 @@ const session = useRecordingSession(matchId, {
 })
 const {
   gameState, currentRally, history, currentSetNumber,
-  setWinner, matchWinner, suggestedFirstServingTeam, undoLabelKey
+  setWinner, matchWinner, suggestedFirstServingTeam, cameraNearTeam, undoLabelKey
 } = session
 
 const serverName = computed(() => {
@@ -150,7 +150,7 @@ function onJump(ms: number) {
             :serving-team="gameState.servingTeam"
             :server="gameState.server"
             :receiver="gameState.receiver"
-            :camera-near-team="null"
+            :camera-near-team="cameraNearTeam"
             :names="names"
           />
           <RecordingShotButton

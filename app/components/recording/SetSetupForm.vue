@@ -32,13 +32,17 @@ const cameraNearRaw = ref<'A' | 'B' | ''>('A')
 const aFirstPlayerId = ref<PlayerId>(aPlayers.value[0]?.playerId ?? '')
 const bFirstPlayerId = ref<PlayerId>(bPlayers.value[0]?.playerId ?? '')
 
+function teamLabel(team: Team): string {
+  const ps = (team === 'A' ? aPlayers.value : bPlayers.value).map(p => p.name).join('・')
+  return ps ? `${team}（${ps}）` : team
+}
 const teamOptions = computed(() => [
-  { label: 'A', value: 'A' },
-  { label: 'B', value: 'B' }
+  { label: teamLabel('A'), value: 'A' },
+  { label: teamLabel('B'), value: 'B' }
 ])
 const cameraOptions = computed(() => [
-  { label: 'A', value: 'A' },
-  { label: 'B', value: 'B' },
+  { label: teamLabel('A'), value: 'A' },
+  { label: teamLabel('B'), value: 'B' },
   { label: '?', value: '' }
 ])
 

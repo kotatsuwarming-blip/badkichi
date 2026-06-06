@@ -6,7 +6,7 @@
  * 方針:
  *   - rule-engine の positions を上下 2 チームで描画。camera_near_team を手前 (下)、相手を奥 (上)。
  *     null は A を手前の既定 (ui-design.md)。
- *   - サーバーを ◎ で強調、レシーバーを枠線で示す。override で left/right が入れ替わると表示も入れ替わる。
+ *   - サーバーを🏸(シャトル)で強調、レシーバーを枠線で示す。override で left/right が入れ替わると表示も入れ替わる。
  *   - 選手名は names マップで解決 (presentational、session 非依存でテスト容易)。
  *   - 左右ミラー補正は MVP では行わない (実装時プロトタイプで調整、ui-design.md)。
  */
@@ -65,7 +65,7 @@ const nearCells = computed(() => [cell(nearTeam.value, 'left'), cell(nearTeam.va
           <span
             v-if="c.isServer"
             class="server-mark"
-          >◎</span>
+          >🏸</span>
           <span class="cell-name">{{ c.name }}</span>
         </div>
       </div>
@@ -85,7 +85,7 @@ const nearCells = computed(() => [cell(nearTeam.value, 'left'), cell(nearTeam.va
           <span
             v-if="c.isServer"
             class="server-mark"
-          >◎</span>
+          >🏸</span>
           <span class="cell-name">{{ c.name }}</span>
         </div>
       </div>

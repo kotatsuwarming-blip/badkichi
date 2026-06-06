@@ -170,6 +170,8 @@ export interface UseRecordingSessionReturn {
   matchWinner: Readonly<Ref<Team | null>>
   /** 次セットの先攻の既定提示（前セット勝者）。セット未決着時 null。REQ-107。 */
   suggestedFirstServingTeam: Readonly<Ref<Team | null>>
+  /** カメラ手前チーム（コート描画の向き）。セット開始時に確定。REQ-002。 */
+  cameraNearTeam: Readonly<Ref<Team | null>>
 
   // セットアップ（同期）
   configureAndStartSet: (setup: SetSetupInput, positions: SetPositionInput[]) => Promise<ActionResult<SetRow['id']>>

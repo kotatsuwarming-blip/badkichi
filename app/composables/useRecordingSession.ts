@@ -69,6 +69,7 @@ export function useRecordingSession(
   const setWinner = ref<Team | null>(null)
   const matchWinner = ref<Team | null>(null)
   const suggestedFirstServingTeam = ref<Team | null>(null)
+  const cameraNearTeam = ref<Team | null>(null)
   const undoLabelKey = ref<string | null>(null)
   const allSynced = ref(true)
 
@@ -76,7 +77,6 @@ export function useRecordingSession(
   let currentSetId: string | null = null
   let currentConfig: SetSetupInput | null = null
   let pendingPositions: SetPositionInput[] | null = null // セット遅延作成用に保持
-  let cameraNearTeam: Team | null = null
   const overrideCounts: Record<Team, number> = { A: 0, B: 0 }
   const setWins: Record<Team, number> = { A: 0, B: 0 }
   const undoStack: Step[] = []
@@ -121,7 +121,7 @@ export function useRecordingSession(
     if (cr.rallyId) return cr.rallyId
     const setId = await ensureSetRow() // セット行の遅延作成
     if (!setId) return null
-    const denorm = mapGameStateToRallyDenorm(gameState.value, cameraNearTeam)
+    const denorm = mapGameStateToRallyDenorm(gameState.value, cameraNearTeam.value)
     const res = await createRally({ setId, rallyNumber: cr.rallyNumber, denorm, videoStartTimestampMs: firstShotMs })
     if (res.error || !res.data) return null
     cr.rallyId = res.data
@@ -138,7 +138,7 @@ export function useRecordingSession(
     currentSetId = null
     currentConfig = setup
     pendingPositions = positions
-    cameraNearTeam = setup.cameraNearTeamAtStart
+    cameraNearTeam.value = setup.cameraNearTeamAtStart
     currentSetNumber.value = setup.setNumber
     gameState.value = createInitialState(
       { targetPoints: setup.targetPoints, enableDeuce: setup.enableDeuce, deucePointCap: setup.deucePointCap, firstServingTeam: setup.firstServingTeam },
@@ -361,6 +361,7 @@ export function useRecordingSession(
     setWinner,
     matchWinner,
     suggestedFirstServingTeam,
+    cameraNearTeam,
     configureAndStartSet,
     advanceToNextSet,
     recordShot,

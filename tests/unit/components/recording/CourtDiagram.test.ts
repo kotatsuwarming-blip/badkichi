@@ -45,6 +45,13 @@ describe('CourtDiagram', () => {
     expect(rows[1].text()).toContain('佐藤') // A1
   })
 
+  it('camera_near_team=B は B を手前・A を奥にする', () => {
+    const w = mountCourt('B')
+    const rows = w.findAll('.court-row')
+    expect(rows[0].text()).toContain('佐藤') // 奥=A
+    expect(rows[1].text()).toContain('高橋') // 手前=B
+  })
+
   it('camera_near_team=null は A を手前の既定にする', () => {
     const w = mountCourt(null)
     const rows = w.findAll('.court-row')
