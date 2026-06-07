@@ -218,7 +218,8 @@
       "empty": "No rallies yet",
       "shotsUnit": " shots",
       "jump": "Jump",
-      "legend": "Server ▶ Receiver"
+      "legend": "Server ▶ Receiver",
+      "override": "Position swap"
     },
     "setup": {
       "title": "Set setup",

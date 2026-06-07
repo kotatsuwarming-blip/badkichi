@@ -44,8 +44,8 @@ describe('useSetRallies', () => {
     vi.clearAllMocks()
     orderMock.mockResolvedValue({
       data: [
-        { rally_number: 1, serving_team: 'A', server_player_id: 'p1', receiver_player_id: 'p3', point_winner: 'A', is_let: false, is_point_confirmed: true, video_start_timestamp_ms: 12345, shots: [{ count: 3 }] },
-        { rally_number: 2, serving_team: 'A', server_player_id: 'p2', receiver_player_id: 'p4', point_winner: null, is_let: false, is_point_confirmed: false, video_start_timestamp_ms: null, shots: [] }
+        { rally_number: 1, serving_team: 'A', server_player_id: 'p1', receiver_player_id: 'p3', point_winner: 'A', is_let: false, is_point_confirmed: true, video_start_timestamp_ms: 12345, shots: [{ count: 3 }], position_overrides: [{ count: 2 }] },
+        { rally_number: 2, serving_team: 'A', server_player_id: 'p2', receiver_player_id: 'p4', point_winner: null, is_let: false, is_point_confirmed: false, video_start_timestamp_ms: null, shots: [], position_overrides: [] }
       ],
       error: null
     })
@@ -59,7 +59,7 @@ describe('useSetRallies', () => {
     expect(orderMock).toHaveBeenCalledWith('rally_number', { ascending: true })
     expect(data.value?.[0]).toEqual({
       rallyNumber: 1, servingTeam: 'A', serverPlayerId: 'p1', receiverPlayerId: 'p3', pointWinner: 'A',
-      isLet: false, isPointConfirmed: true, shotCount: 3, videoStartTimestampMs: 12345
+      isLet: false, isPointConfirmed: true, shotCount: 3, overrideCount: 2, videoStartTimestampMs: 12345
     })
   })
 

@@ -89,6 +89,8 @@ export interface CurrentRally {
   rallyId: RallyRow['id'] | null
   shots: ShotDraft[]
   isPending: boolean
+  /** このラリーで記録した override 件数 (🔄 表示・undo 用)。 */
+  overrideCount: number
 }
 
 /**
@@ -114,6 +116,8 @@ export interface RallyHistoryItem {
   isLet: boolean
   isPointConfirmed: boolean
   shotCount: number
+  /** 該当ラリーで記録された左右入れ替わり (position_overrides) の件数。🔄 表示用。 */
+  overrideCount: number
   /** 該当ラリーの動画開始位置 (ms)。[▶] ジャンプに使う。null=動画アラインメントなし。REQ-009。 */
   videoStartTimestampMs: number | null
 }

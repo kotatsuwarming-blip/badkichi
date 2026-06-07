@@ -107,7 +107,7 @@ export function useRecordingSession(
   }
 
   function cloneRally(r: CurrentRally): CurrentRally {
-    return { rallyNumber: r.rallyNumber, rallyId: r.rallyId, shots: r.shots.map(s => ({ ...s })), isPending: r.isPending }
+    return { rallyNumber: r.rallyNumber, rallyId: r.rallyId, shots: r.shots.map(s => ({ ...s })), isPending: r.isPending, overrideCount: r.overrideCount }
   }
 
   function updateUndoLabel(): void {
@@ -145,7 +145,7 @@ export function useRecordingSession(
       { targetPoints: setup.targetPoints, enableDeuce: setup.enableDeuce, deucePointCap: setup.deucePointCap, firstServingTeam: setup.firstServingTeam },
       positions
     )
-    currentRally.value = { rallyNumber: 1, rallyId: null, shots: [], isPending: false }
+    currentRally.value = { rallyNumber: 1, rallyId: null, shots: [], isPending: false, overrideCount: 0 }
     history.value = []
     setWinner.value = null
     overrideCounts.A = 0
@@ -190,7 +190,7 @@ export function useRecordingSession(
     gameState.value = state
 
     const maxNum = sorted.reduce((m, r) => Math.max(m, r.rallyNumber), 0)
-    currentRally.value = { rallyNumber: maxNum + 1, rallyId: null, shots: [], isPending: false }
+    currentRally.value = { rallyNumber: maxNum + 1, rallyId: null, shots: [], isPending: false, overrideCount: 0 }
     setWinner.value = null
     overrideCounts.A = 0
     overrideCounts.B = 0
@@ -261,6 +261,7 @@ export function useRecordingSession(
       isLet,
       isPointConfirmed: true,
       shotCount: cr.shots.length,
+      overrideCount: cr.overrideCount,
       videoStartTimestampMs: cr.shots[0]?.videoTimestampMs ?? null
     })
 
@@ -285,7 +286,7 @@ export function useRecordingSession(
       if (currentSetId) await persistSetWinner({ setId: currentSetId, winner })
       if (setWins[winner] >= MATCH_SET_TARGET) matchWinner.value = winner
     } else {
-      currentRally.value = { rallyNumber: cr.rallyNumber + 1, rallyId: null, shots: [], isPending: false }
+      currentRally.value = { rallyNumber: cr.rallyNumber + 1, rallyId: null, shots: [], isPending: false, overrideCount: 0 }
     }
     updateUndoLabel()
   }
@@ -334,6 +335,7 @@ export function useRecordingSession(
       return
     }
     overrideCounts[team] += 1
+    cr.overrideCount += 1 // 🔄 表示・履歴用
     const overrideIdP = track(createOverride({ rallyId, team, overrideType })).then(r => r.data)
     undoStack.push({ kind: 'override', rallyId, prevState, team, overrideIdP })
     updateUndoLabel()
@@ -364,6 +366,9 @@ export function useRecordingSession(
     } else if (step.kind === 'override') {
       gameState.value = step.prevState
       overrideCounts[step.team] = Math.max(0, overrideCounts[step.team] - 1)
+      if (currentRally.value && currentRally.value.rallyId === step.rallyId) {
+        currentRally.value.overrideCount = Math.max(0, currentRally.value.overrideCount - 1)
+      }
       const ovId = await step.overrideIdP.catch(() => null)
       if (ovId) track(deleteOverride({ overrideId: ovId }))
     } else {

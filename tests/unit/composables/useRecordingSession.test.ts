@@ -158,6 +158,7 @@ describe('useRecordingSession: override トグル', () => {
     expect(after.left).toBe(before.right)
     expect(after.right).toBe(before.left)
     expect(m.createOverride).toHaveBeenCalledWith(expect.objectContaining({ team: 'A', overrideType: 'swapped' }))
+    expect(s.currentRally.value?.overrideCount).toBe(1) // 🔄 用カウント
   })
 })
 
@@ -187,8 +188,8 @@ describe('useRecordingSession: 再開 (resume)', () => {
     const s = makeSession()
     const setSummary = { id: 's1', setNumber: 1, targetPoints: 21, enableDeuce: true, deucePointCap: 30, firstServingTeam: 'A' as const, cameraNearTeamAtStart: 'A' as const, winner: null }
     const rallies = [
-      { rallyNumber: 1, servingTeam: 'A' as const, serverPlayerId: 'A2', receiverPlayerId: 'B2', pointWinner: 'A' as const, isLet: false, isPointConfirmed: true, shotCount: 2, videoStartTimestampMs: 100 },
-      { rallyNumber: 2, servingTeam: 'A' as const, serverPlayerId: 'A1', receiverPlayerId: 'B1', pointWinner: 'B' as const, isLet: false, isPointConfirmed: true, shotCount: 5, videoStartTimestampMs: 200 }
+      { rallyNumber: 1, servingTeam: 'A' as const, serverPlayerId: 'A2', receiverPlayerId: 'B2', pointWinner: 'A' as const, isLet: false, isPointConfirmed: true, shotCount: 2, overrideCount: 0, videoStartTimestampMs: 100 },
+      { rallyNumber: 2, servingTeam: 'A' as const, serverPlayerId: 'A1', receiverPlayerId: 'B1', pointWinner: 'B' as const, isLet: false, isPointConfirmed: true, shotCount: 5, overrideCount: 0, videoStartTimestampMs: 200 }
     ]
     s.resumeSet(setSummary, positions, rallies)
     expect(s.gameState.value?.score).toEqual({ teamA: 1, teamB: 1 }) // A1点 + B1点
@@ -201,8 +202,8 @@ describe('useRecordingSession: 再開 (resume)', () => {
     const s = makeSession()
     const setSummary = { id: 's1', setNumber: 1, targetPoints: 21, enableDeuce: true, deucePointCap: 30, firstServingTeam: 'A' as const, cameraNearTeamAtStart: null, winner: null }
     const rallies = [
-      { rallyNumber: 1, servingTeam: 'A' as const, serverPlayerId: 'A2', receiverPlayerId: 'B2', pointWinner: 'A' as const, isLet: false, isPointConfirmed: true, shotCount: 1, videoStartTimestampMs: null },
-      { rallyNumber: 2, servingTeam: 'A' as const, serverPlayerId: 'A1', receiverPlayerId: 'B1', pointWinner: null, isLet: false, isPointConfirmed: false, shotCount: 0, videoStartTimestampMs: null }
+      { rallyNumber: 1, servingTeam: 'A' as const, serverPlayerId: 'A2', receiverPlayerId: 'B2', pointWinner: 'A' as const, isLet: false, isPointConfirmed: true, shotCount: 1, overrideCount: 0, videoStartTimestampMs: null },
+      { rallyNumber: 2, servingTeam: 'A' as const, serverPlayerId: 'A1', receiverPlayerId: 'B1', pointWinner: null, isLet: false, isPointConfirmed: false, shotCount: 0, overrideCount: 0, videoStartTimestampMs: null }
     ]
     s.resumeSet(setSummary, positions, rallies)
     expect(s.gameState.value?.score).toEqual({ teamA: 1, teamB: 0 }) // 確定の1点のみ

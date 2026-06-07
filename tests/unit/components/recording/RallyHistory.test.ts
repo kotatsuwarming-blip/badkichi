@@ -21,8 +21,8 @@ const UButton = {
 const names = { p1: '佐藤', p2: '鈴木', p3: '高橋', p4: '田中' }
 
 const items: RallyHistoryItem[] = [
-  { rallyNumber: 1, servingTeam: 'A', serverPlayerId: 'p1', receiverPlayerId: 'p3', pointWinner: 'A', isLet: false, isPointConfirmed: true, shotCount: 3, videoStartTimestampMs: 1000 },
-  { rallyNumber: 2, servingTeam: 'A', serverPlayerId: 'p2', receiverPlayerId: 'p4', pointWinner: null, isLet: false, isPointConfirmed: false, shotCount: 0, videoStartTimestampMs: null }
+  { rallyNumber: 1, servingTeam: 'A', serverPlayerId: 'p1', receiverPlayerId: 'p3', pointWinner: 'A', isLet: false, isPointConfirmed: true, shotCount: 3, overrideCount: 2, videoStartTimestampMs: 1000 },
+  { rallyNumber: 2, servingTeam: 'A', serverPlayerId: 'p2', receiverPlayerId: 'p4', pointWinner: null, isLet: false, isPointConfirmed: false, shotCount: 0, overrideCount: 0, videoStartTimestampMs: null }
 ]
 
 function mountHistory(list: RallyHistoryItem[]) {
@@ -50,6 +50,13 @@ describe('RallyHistory', () => {
     const w = mountHistory(items)
     await w.find('[data-testid="jump-1"]').trigger('click')
     expect(w.emitted('jump')?.[0]).toEqual([1000])
+  })
+
+  it('override があるラリーに🔄マークを表示する', () => {
+    const w = mountHistory(items)
+    expect(w.find('[data-testid="override-1"]').exists()).toBe(true) // overrideCount 2
+    expect(w.find('[data-testid="override-1"]').text()).toContain('🔄')
+    expect(w.find('[data-testid="override-2"]').exists()).toBe(false) // overrideCount 0
   })
 
   it('ms=null の行はジャンプボタンを描画しない', () => {

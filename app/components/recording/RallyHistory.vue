@@ -59,6 +59,12 @@ function resultLabelKey(item: RallyHistoryItem): string {
             <span class="rcv">{{ names[item.receiverPlayerId] ?? item.receiverPlayerId }}</span>
           </span>
           <span class="result">{{ $t(resultLabelKey(item)) }}</span>
+          <span
+            v-if="item.overrideCount > 0"
+            class="override"
+            :title="$t('record.history.override')"
+            :data-testid="`override-${item.rallyNumber}`"
+          >🔄<template v-if="item.overrideCount > 1">×{{ item.overrideCount }}</template></span>
           <span class="shots">{{ item.shotCount }}{{ $t('record.history.shotsUnit') }}</span>
           <UButton
             v-if="item.videoStartTimestampMs !== null"
@@ -86,5 +92,6 @@ function resultLabelKey(item: RallyHistoryItem): string {
 .players { display: inline-flex; align-items: center; gap: 0.375rem; }
 .players .arrow { color: var(--ui-text-muted); font-size: 0.75rem; }
 .players .srv { font-weight: 600; }
+.override { font-size: 0.8125rem; white-space: nowrap; }
 .shots { color: var(--ui-text-muted); margin-left: auto; }
 </style>
