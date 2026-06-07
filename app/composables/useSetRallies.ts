@@ -14,7 +14,7 @@ export function useSetRallies(setId: string) {
   return useAsyncData<RallyHistoryItem[]>(`set-rallies-${setId}`, async () => {
     const { data, error } = await client
       .from('rallies')
-      .select('rally_number, serving_team, server_player_id, point_winner, is_let, is_point_confirmed, video_start_timestamp_ms, shots(count)')
+      .select('rally_number, serving_team, server_player_id, receiver_player_id, point_winner, is_let, is_point_confirmed, video_start_timestamp_ms, shots(count)')
       .eq('set_id', setId)
       .is('deleted_at', null)
       .order('rally_number', { ascending: true })
@@ -25,6 +25,7 @@ export function useSetRallies(setId: string) {
       rallyNumber: row.rally_number,
       servingTeam: row.serving_team as RallyHistoryItem['servingTeam'],
       serverPlayerId: row.server_player_id,
+      receiverPlayerId: row.receiver_player_id,
       pointWinner: row.point_winner as RallyHistoryItem['pointWinner'],
       isLet: row.is_let,
       isPointConfirmed: row.is_point_confirmed,

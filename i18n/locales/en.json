@@ -215,7 +215,8 @@
       "pointB": "B point",
       "empty": "No rallies yet",
       "shotsUnit": " shots",
-      "jump": "Jump"
+      "jump": "Jump",
+      "legend": "Server ▶ Receiver"
     },
     "setup": {
       "title": "Set setup",

@@ -109,6 +109,7 @@ export interface RallyHistoryItem {
   rallyNumber: RallyRow['rally_number']
   servingTeam: Team
   serverPlayerId: PlayerId
+  receiverPlayerId: PlayerId
   pointWinner: Team | null
   isLet: boolean
   isPointConfirmed: boolean

@@ -215,7 +215,8 @@
       "pointB": "B得点",
       "empty": "まだラリーがありません",
       "shotsUnit": "打",
-      "jump": "ジャンプ"
+      "jump": "ジャンプ",
+      "legend": "サーバー ▶ レシーバー"
     },
     "setup": {
       "title": "セット設定",

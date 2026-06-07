@@ -94,11 +94,24 @@ function formatMs(ms: number | null): string {
   return `${mm}:${ss}`
 }
 
+// 10 秒スキップ/戻し (YouTube と同じ J=-10s / L=+10s)
+function onKeydown(e: KeyboardEvent): void {
+  const target = e.target as HTMLElement | null
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+  if (e.code !== 'KeyL' && e.code !== 'KeyJ') return
+  const cur = controls.getCurrentTimeMs()
+  if (cur == null) return
+  e.preventDefault()
+  controls.seekToMs(cur + (e.code === 'KeyL' ? 10000 : -10000))
+}
+
 onMounted(async () => {
+  window.addEventListener('keydown', onKeydown)
   if (playerEl.value) await props.player.attach(playerEl.value)
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
   props.player.detach()
 })
 </script>

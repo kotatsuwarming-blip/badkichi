@@ -224,6 +224,7 @@ export function useRecordingSession(
       rallyNumber: cr.rallyNumber,
       servingTeam: activeState.servingTeam,
       serverPlayerId: activeState.server,
+      receiverPlayerId: activeState.receiver,
       pointWinner: team,
       isLet,
       isPointConfirmed: true,

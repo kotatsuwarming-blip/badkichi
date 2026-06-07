@@ -18,11 +18,11 @@ const UButton = {
   emits: ['click'],
   template: '<button @click="$emit(\'click\', $event)"><slot /></button>'
 }
-const names = { p1: '佐藤', p2: '鈴木' }
+const names = { p1: '佐藤', p2: '鈴木', p3: '高橋', p4: '田中' }
 
 const items: RallyHistoryItem[] = [
-  { rallyNumber: 1, servingTeam: 'A', serverPlayerId: 'p1', pointWinner: 'A', isLet: false, isPointConfirmed: true, shotCount: 3, videoStartTimestampMs: 1000 },
-  { rallyNumber: 2, servingTeam: 'A', serverPlayerId: 'p2', pointWinner: null, isLet: false, isPointConfirmed: false, shotCount: 0, videoStartTimestampMs: null }
+  { rallyNumber: 1, servingTeam: 'A', serverPlayerId: 'p1', receiverPlayerId: 'p3', pointWinner: 'A', isLet: false, isPointConfirmed: true, shotCount: 3, videoStartTimestampMs: 1000 },
+  { rallyNumber: 2, servingTeam: 'A', serverPlayerId: 'p2', receiverPlayerId: 'p4', pointWinner: null, isLet: false, isPointConfirmed: false, shotCount: 0, videoStartTimestampMs: null }
 ]
 
 function mountHistory(list: RallyHistoryItem[]) {
@@ -36,6 +36,14 @@ describe('RallyHistory', () => {
     expect(rows[0].attributes('data-testid')).toBe('history-row-2') // 新しい順
     expect(rows[0].classes()).toContain('is-unconfirmed')
     expect(rows[1].classes()).not.toContain('is-unconfirmed')
+  })
+
+  it('各行にサーバーとレシーバーの両方の名前を表示する', () => {
+    const w = mountHistory(items)
+    const row1 = w.find('[data-testid="history-row-1"]')
+    expect(row1.text()).toContain('佐藤') // server p1
+    expect(row1.text()).toContain('高橋') // receiver p3
+    expect(w.find('[data-testid="history-legend"]').exists()).toBe(true)
   })
 
   it('ジャンプ可能行 (ms あり) で jump を ms 付きで emit', async () => {
