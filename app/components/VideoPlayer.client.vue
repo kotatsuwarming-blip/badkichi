@@ -102,16 +102,28 @@ function onKeydown(e: KeyboardEvent): void {
   const cur = controls.getCurrentTimeMs()
   if (cur == null) return
   e.preventDefault()
+  e.stopPropagation()
   controls.seekToMs(cur + (e.code === 'KeyL' ? 10000 : -10000))
 }
 
+// iframe (YouTube) にフォーカスが移るとキー操作がアプリに届かなくなるため、奪い返す。
+// window が blur したとき activeElement が iframe なら blur して body へ戻す。
+function onWindowBlur(): void {
+  setTimeout(() => {
+    const ae = document.activeElement
+    if (ae && ae.tagName === 'IFRAME') (ae as HTMLElement).blur()
+  }, 0)
+}
+
 onMounted(async () => {
-  window.addEventListener('keydown', onKeydown)
+  window.addEventListener('keydown', onKeydown, true)
+  window.addEventListener('blur', onWindowBlur)
   if (playerEl.value) await props.player.attach(playerEl.value)
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('keydown', onKeydown, true)
+  window.removeEventListener('blur', onWindowBlur)
   props.player.detach()
 })
 </script>

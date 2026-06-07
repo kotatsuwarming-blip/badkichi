@@ -24,12 +24,13 @@ function onKeydown(e: KeyboardEvent) {
   if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
   if (e.key === 'Backspace') {
     e.preventDefault()
+    e.stopPropagation()
     fire()
   }
 }
 
-onMounted(() => window.addEventListener('keydown', onKeydown))
-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+onMounted(() => window.addEventListener('keydown', onKeydown, true))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown, true))
 </script>
 
 <template>

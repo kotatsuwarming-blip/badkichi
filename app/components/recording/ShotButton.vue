@@ -21,13 +21,16 @@ function onKeydown(e: KeyboardEvent) {
   const target = e.target as HTMLElement | null
   if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
   if (e.code === 'Space' || e.key === ' ') {
+    // capture + stopPropagation で、フォーカス中のボタン/セレクトに Space を奪われないようにする
     e.preventDefault()
+    e.stopPropagation()
     fire()
   }
 }
 
-onMounted(() => window.addEventListener('keydown', onKeydown))
-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+// capture フェーズで登録し、フォーカス対象より先に処理する
+onMounted(() => window.addEventListener('keydown', onKeydown, true))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown, true))
 </script>
 
 <template>

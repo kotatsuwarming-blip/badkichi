@@ -30,12 +30,13 @@ function onKeydown(e: KeyboardEvent) {
   const action = map[e.code]
   if (action) {
     e.preventDefault()
+    e.stopPropagation()
     action()
   }
 }
 
-onMounted(() => window.addEventListener('keydown', onKeydown))
-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+onMounted(() => window.addEventListener('keydown', onKeydown, true))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown, true))
 </script>
 
 <template>
