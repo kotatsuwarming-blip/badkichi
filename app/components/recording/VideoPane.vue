@@ -49,6 +49,16 @@ const markers = computed(() => props.shotMarkers)
 
 <style scoped>
 .video-pane { width: 100%; }
-.shot-markers { position: relative; height: 0; }
-.shot-marker { position: absolute; top: -0.75rem; width: 2px; height: 0.75rem; background: var(--ui-primary); transform: translateX(-1px); }
+/* シークバー上端 (timeline の padding-top 領域) に痕跡マーカーを並べる */
+.shot-markers { position: absolute; top: 0; left: 0; right: 0; height: 0.5rem; pointer-events: none; }
+.shot-marker {
+  position: absolute;
+  top: 0;
+  width: 3px;
+  height: 0.5rem;
+  background: #ffce3a;
+  border-radius: 1px;
+  transform: translateX(-1.5px);
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
 </style>

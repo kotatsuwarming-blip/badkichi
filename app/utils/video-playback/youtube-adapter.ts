@@ -106,6 +106,16 @@ export function createYouTubeAdapter(
     return new Promise<void>((resolve) => {
       const instance = new YT.Player(el, {
         videoId: videoId ?? '',
+        // 自前コントロールを主役にする: YouTube の操作 UI とキーボードを無効化し、
+        // Space 等のキーが iframe に奪われないようにする (フォーカス対策は VideoPlayer の click-catch 層と併用)。
+        playerVars: {
+          controls: 0, // YouTube ネイティブのコントロールバーを隠す
+          disablekb: 1, // YouTube のキーボード操作を無効化
+          modestbranding: 1,
+          rel: 0,
+          playsinline: 1,
+          fs: 0 // 全画面ボタン非表示
+        },
         events: {
           onReady: () => handleReady(resolve),
           onStateChange: handleStateChange,
