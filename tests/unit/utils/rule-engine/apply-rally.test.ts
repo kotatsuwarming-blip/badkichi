@@ -17,7 +17,7 @@ const config: SetConfig = {
   firstServingTeam: 'A'
 }
 
-// 初期状態: A サーブ, A2(右)がサーバー, B1(左)がレシーバー, スコア0-0
+// 初期状態: A サーブ, A2(右)がサーバー, B2(右)がレシーバー, スコア0-0
 function initialState(): GameState {
   return createInitialState(config, positions)
 }
@@ -46,8 +46,8 @@ describe('applyRally', () => {
     // スコア1(奇数) → サーバーは左コートの選手 = A2(入替後)
     expect(next.server).toBe('A2')
     expect(next.serverPosition).toBe('left')
-    // レシーバーは対角 = B2(右)
-    expect(next.receiver).toBe('B2')
+    // レシーバーは対角(同コート) = B1(左)
+    expect(next.receiver).toBe('B1')
   })
 
   it('レシーブ側得点(新スコア偶数): サーブ権移動、位置不変、サーバーは右', () => {
@@ -64,8 +64,8 @@ describe('applyRally', () => {
     // Bのスコア1(奇数) → サーバーは左コートの選手 = B1
     expect(next.server).toBe('B1')
     expect(next.serverPosition).toBe('left')
-    // レシーバーは対角 = A2(右)
-    expect(next.receiver).toBe('A2')
+    // レシーバーは対角(同コート) = A1(左)
+    expect(next.receiver).toBe('A1')
   })
 
   it('レシーブ側得点(新スコア奇数): サーバーは左', () => {

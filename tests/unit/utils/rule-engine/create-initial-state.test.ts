@@ -19,13 +19,13 @@ function makeConfig(firstServingTeam: 'A' | 'B'): SetConfig {
 }
 
 describe('createInitialState', () => {
-  it('チームAサーブ権: スコア0-0、右コートA2がサーバー、対角B1がレシーバー', () => {
+  it('チームAサーブ権: スコア0-0、右コートA2がサーバー、対角B2がレシーバー', () => {
     const state = createInitialState(makeConfig('A'), positions)
 
     expect(state.score).toEqual({ teamA: 0, teamB: 0 })
     expect(state.servingTeam).toBe('A')
     expect(state.server).toBe('A2')
-    expect(state.receiver).toBe('B1')
+    expect(state.receiver).toBe('B2')
     expect(state.serverPosition).toBe('right')
     expect(state.positions).toEqual({
       teamA: { left: 'A1', right: 'A2' },
@@ -33,12 +33,12 @@ describe('createInitialState', () => {
     })
   })
 
-  it('チームBサーブ権: 右コートB2がサーバー、対角A1がレシーバー', () => {
+  it('チームBサーブ権: 右コートB2がサーバー、対角A2がレシーバー', () => {
     const state = createInitialState(makeConfig('B'), positions)
 
     expect(state.servingTeam).toBe('B')
     expect(state.server).toBe('B2')
-    expect(state.receiver).toBe('A1')
+    expect(state.receiver).toBe('A2')
     expect(state.serverPosition).toBe('right')
   })
 })

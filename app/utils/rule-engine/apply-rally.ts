@@ -33,8 +33,8 @@ export function applyRally(state: GameState, rally: RallyResult): GameState {
   const servingScore = servingTeam === 'A' ? score.teamA : score.teamB
   const serverPosition = servingScore % 2 === 0 ? 'right' : 'left' as const
   const server = positions[servingTeamKey][serverPosition]
-  const receiverPosition = serverPosition === 'right' ? 'left' : 'right' as const
-  const receiver = positions[receivingTeamKey][receiverPosition]
+  // レシーバーはサーバーの対角＝相手チームの同じサービスコート（同じ position ラベル）
+  const receiver = positions[receivingTeamKey][serverPosition]
 
   return {
     score,
