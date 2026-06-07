@@ -139,6 +139,7 @@ export type Database = {
       }
       matches: {
         Row: {
+          completed_at: string | null
           created_at: string
           deleted_at: string | null
           group_id: string
@@ -154,6 +155,7 @@ export type Database = {
           video_source_url: string
         }
         Insert: {
+          completed_at?: string | null
           created_at?: string
           deleted_at?: string | null
           group_id: string
@@ -169,6 +171,7 @@ export type Database = {
           video_source_url: string
         }
         Update: {
+          completed_at?: string | null
           created_at?: string
           deleted_at?: string | null
           group_id?: string
