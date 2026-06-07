@@ -167,7 +167,9 @@
     "createSuccess": "",
     "updateSuccess": "",
     "deleteSuccess": "",
-    "record": "Record"
+    "record": "Record",
+    "statusDone": "Done",
+    "statusRecording": "Recording"
   },
   "record": {
     "back": "Back",
@@ -230,6 +232,16 @@
       "firstHint": "Pick each team's 'first' player — the even-side player who serves/receives first",
       "teamAFirst": "Team A first",
       "teamBFirst": "Team B first"
+    },
+    "finish": "Finish",
+    "summary": {
+      "title": "Match result",
+      "set": "Set",
+      "matchWinner": "Winner",
+      "inProgress": "In progress",
+      "empty": "No records yet",
+      "close": "Close",
+      "backToMatches": "Back to matches"
     }
   }
 }

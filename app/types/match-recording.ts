@@ -199,6 +199,22 @@ export interface UseRecordingSessionReturn {
 // 録画対象の試合（read 射影）
 // ========================================
 
+/** 1 セットのスコア集計（rallies.point_winner の COUNT で導出、② B-7）。 */
+export interface SetScore {
+  setNumber: number
+  scoreA: number
+  scoreB: number
+  winner: Team | null
+}
+
+/** 試合サマリー（完了確認用）。各セットのスコア + 取得セット数 + 試合勝者。 */
+export interface MatchSummary {
+  sets: SetScore[]
+  setsWonA: number
+  setsWonB: number
+  matchWinner: Team | null
+}
+
 /** useMatchForRecording: matches を1件読み、VideoSource 構築材料 + 4選手ロスターへ。REQ-001/004。 */
 export interface MatchForRecording {
   id: string

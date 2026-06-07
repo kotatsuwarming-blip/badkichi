@@ -157,9 +157,29 @@ watch(error, (e) => {
           :key="m.id"
           class="flex items-center justify-between rounded-lg border border-gray-200 p-3"
         >
-          <div class="flex flex-col">
+          <div class="flex flex-col gap-1">
             <span class="font-medium">{{ titleOf(m) }}</span>
-            <span class="text-sm text-gray-500">{{ m.matchDate }}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-500">{{ m.matchDate }}</span>
+              <UBadge
+                v-if="m.recordingStatus === 'done'"
+                color="primary"
+                variant="subtle"
+                size="sm"
+                :data-testid="`status-${m.id}`"
+              >
+                {{ t('matches.statusDone') }}（{{ m.setsWonA }}-{{ m.setsWonB }}）
+              </UBadge>
+              <UBadge
+                v-else-if="m.recordingStatus === 'recording'"
+                color="warning"
+                variant="subtle"
+                size="sm"
+                :data-testid="`status-${m.id}`"
+              >
+                {{ t('matches.statusRecording') }}
+              </UBadge>
+            </div>
           </div>
           <div class="flex items-center gap-2">
             <UButton

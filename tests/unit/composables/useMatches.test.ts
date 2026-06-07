@@ -80,7 +80,8 @@ const rowFixture = {
   ta1: { id: 'p1', name: '佐藤' },
   ta2: { id: 'p2', name: '鈴木(削除済)' },
   tb1: { id: 'p3', name: '高橋' },
-  tb2: { id: 'p4', name: '田中' }
+  tb2: { id: 'p4', name: '田中' },
+  sets: [{ winner: 'A', deleted_at: null }, { winner: 'A', deleted_at: null }]
 }
 
 describe('useMatches', () => {
@@ -115,5 +116,12 @@ describe('useMatches', () => {
   it('TC4: 削除済 player も名前解決される (EDGE-007)', async () => {
     const { data } = await useMatches()
     expect(data.value?.[0]?.teamA[1].name).toBe('鈴木(削除済)')
+  })
+
+  it('TC5: sets.winner から録画状態を導出 (2セット先取=done)', async () => {
+    const { data } = await useMatches()
+    expect(data.value?.[0]?.recordingStatus).toBe('done')
+    expect(data.value?.[0]?.setsWonA).toBe(2)
+    expect(data.value?.[0]?.setsWonB).toBe(0)
   })
 })

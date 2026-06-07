@@ -31,6 +31,9 @@ vi.mock('~/composables/useSetPositions', () => ({
 vi.mock('~/composables/useSetRallies', () => ({
   useSetRallies: () => Promise.resolve({ data: ref([]) })
 }))
+vi.mock('~/composables/useMatchSummary', () => ({
+  useMatchSummary: () => ({ data: ref(null), refresh: vi.fn() })
+}))
 vi.mock('~/composables/useToastErrors', () => ({
   useToastErrors: () => ({ showError: vi.fn() })
 }))
@@ -51,6 +54,8 @@ import Record from '~/pages/groups/[id]/matches/[matchId]/record.vue'
 
 const stubs = {
   UButton: { props: ['to'], template: '<button><slot /></button>' },
+  UModal: true,
+  RecordingMatchSummary: true,
   RecordingSetSetupForm: { template: '<div data-testid="setup-stub" />' },
   RecordingVideoPane: true,
   RecordingScoreHeader: true,

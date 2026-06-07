@@ -8,7 +8,7 @@
  *   - gameState 未設定なら SetSetupForm、設定済みなら録画 UI。lg 以上 2 カラム / 未満 1 カラム。
  *   - 動画 API はブラウザ専用のため VideoPlayer は .client (CSR、ADR-010)。
  */
-import { computed, onMounted, shallowRef, watch } from 'vue'
+import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { PlayerId } from '~/utils/rule-engine/types'
 import type { VideoSource, UseVideoPlayerReturn } from '~/types/video-playback'
@@ -19,6 +19,7 @@ import { useRecordingSession } from '~/composables/useRecordingSession'
 import { useSets } from '~/composables/useSets'
 import { useSetPositions } from '~/composables/useSetPositions'
 import { useSetRallies } from '~/composables/useSetRallies'
+import { useMatchSummary } from '~/composables/useMatchSummary'
 import { useToastErrors } from '~/composables/useToastErrors'
 
 const route = useRoute()
@@ -91,6 +92,14 @@ function onJump(ms: number) {
   player.value?.controls.seekToMs(ms)
 }
 
+// 完了 → 試合サマリー (スコア確認)
+const { data: summary, refresh: refreshSummary } = useMatchSummary(matchId)
+const summaryOpen = ref(false)
+async function openSummary() {
+  await refreshSummary()
+  summaryOpen.value = true
+}
+
 // リロード時: 進行中 (未決着) セットがあれば再開する。空セットの番号加算を防ぐ。
 onMounted(async () => {
   if (gameState.value) return
@@ -121,6 +130,15 @@ onMounted(async () => {
         {{ $t('record.back') }}
       </UButton>
       <span class="match-name">{{ match?.name ?? $t('record.untitledMatch') }}</span>
+      <UButton
+        class="finish-btn"
+        color="primary"
+        icon="i-lucide-flag"
+        data-testid="finish"
+        @click="openSummary"
+      >
+        {{ $t('record.finish') }}
+      </UButton>
     </header>
 
     <div
@@ -220,12 +238,42 @@ onMounted(async () => {
         />
       </section>
     </div>
+
+    <UModal v-model:open="summaryOpen">
+      <template #content>
+        <div class="summary-modal">
+          <RecordingMatchSummary
+            v-if="summary"
+            :summary="summary"
+          />
+          <div class="summary-actions">
+            <UButton
+              variant="ghost"
+              data-testid="summary-close"
+              @click="summaryOpen = false"
+            >
+              {{ $t('record.summary.close') }}
+            </UButton>
+            <UButton
+              color="primary"
+              :to="`/groups/${groupId}/matches`"
+              data-testid="summary-back"
+            >
+              {{ $t('record.summary.backToMatches') }}
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
 <style scoped>
 .record-page { display: flex; flex-direction: column; gap: 1rem; padding: 1rem; }
 .record-header { display: flex; align-items: center; gap: 1rem; }
+.finish-btn { margin-left: auto; }
+.summary-modal { display: flex; flex-direction: column; gap: 1rem; padding: 1.25rem; }
+.summary-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
 .match-name { font-weight: 600; }
 .source-picker { display: flex; flex-direction: column; gap: 0.5rem; }
 .record-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }

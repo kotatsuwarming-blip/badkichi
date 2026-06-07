@@ -167,7 +167,9 @@
     "createSuccess": "試合を追加しました",
     "updateSuccess": "試合を更新しました",
     "deleteSuccess": "試合を削除しました",
-    "record": "録画"
+    "record": "録画",
+    "statusDone": "完了",
+    "statusRecording": "記録中"
   },
   "record": {
     "back": "戻る",
@@ -230,6 +232,16 @@
       "firstHint": "各チームの「ファースト」= 最初にサーブ／レシーブする偶数側の選手を選んでください",
       "teamAFirst": "チームA のファースト",
       "teamBFirst": "チームB のファースト"
+    },
+    "finish": "完了",
+    "summary": {
+      "title": "試合結果",
+      "set": "セット",
+      "matchWinner": "試合勝者",
+      "inProgress": "記録中",
+      "empty": "まだ記録がありません",
+      "close": "閉じる",
+      "backToMatches": "試合一覧へ戻る"
     }
   }
 }
