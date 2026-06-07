@@ -241,7 +241,10 @@
       "inProgress": "In progress",
       "empty": "No records yet",
       "close": "Close",
-      "backToMatches": "Back to matches"
+      "backToMatches": "Back to matches",
+      "markComplete": "Mark match complete",
+      "completed": "Completed",
+      "unmark": "Undo"
     }
   }
 }

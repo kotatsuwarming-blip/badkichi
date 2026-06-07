@@ -241,7 +241,10 @@
       "inProgress": "記録中",
       "empty": "まだ記録がありません",
       "close": "閉じる",
-      "backToMatches": "試合一覧へ戻る"
+      "backToMatches": "試合一覧へ戻る",
+      "markComplete": "この試合を完了にする",
+      "completed": "完了済み",
+      "unmark": "取り消す"
     }
   }
 }

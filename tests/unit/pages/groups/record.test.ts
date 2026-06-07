@@ -20,7 +20,7 @@ const sessionRefs = {
 }
 
 vi.mock('~/composables/useMatchForRecording', () => ({
-  useMatchForRecording: () => ({ data: matchData })
+  useMatchForRecording: () => ({ data: matchData, refresh: vi.fn() })
 }))
 vi.mock('~/composables/useSets', () => ({
   useSets: () => ({ data: ref([]), refresh: vi.fn() })
@@ -33,6 +33,9 @@ vi.mock('~/composables/useSetRallies', () => ({
 }))
 vi.mock('~/composables/useMatchSummary', () => ({
   useMatchSummary: () => ({ data: ref(null), refresh: vi.fn() })
+}))
+vi.mock('~/composables/useCompleteMatch', () => ({
+  useCompleteMatch: () => ({ setCompleted: vi.fn().mockResolvedValue({ data: true, error: null }), pending: ref(false) })
 }))
 vi.mock('~/composables/useToastErrors', () => ({
   useToastErrors: () => ({ showError: vi.fn() })

@@ -20,15 +20,19 @@ import { useSets } from '~/composables/useSets'
 import { useSetPositions } from '~/composables/useSetPositions'
 import { useSetRallies } from '~/composables/useSetRallies'
 import { useMatchSummary } from '~/composables/useMatchSummary'
+import { useCompleteMatch } from '~/composables/useCompleteMatch'
 import { useToastErrors } from '~/composables/useToastErrors'
 
 const route = useRoute()
 const matchId = route.params.matchId as string
 const groupId = route.params.id as string
 
-const { data: match } = useMatchForRecording(matchId)
+const { data: match, refresh: refreshMatch } = useMatchForRecording(matchId)
 const { data: sets, refresh: refreshSets } = useSets(matchId)
+const { setCompleted, pending: completePending } = useCompleteMatch()
 const { showError } = useToastErrors()
+
+const isCompleted = computed(() => match.value?.completedAt != null)
 
 // 既存セットから次のセット番号を採番 (再入場時の set_number 重複を防ぐ、REQ-002)
 const nextSetNumber = computed(() => {
@@ -98,6 +102,16 @@ const summaryOpen = ref(false)
 async function openSummary() {
   await refreshSummary()
   summaryOpen.value = true
+}
+
+// 試合の完了/取り消し (1セットでも明示的に完了にできる)
+async function markCompleted(completed: boolean) {
+  const { error } = await setCompleted({ matchId, completed })
+  if (error) {
+    showError(error)
+    return
+  }
+  await refreshMatch()
 }
 
 // リロード時: 進行中 (未決着) セットがあれば再開する。空セットの番号加算を防ぐ。
@@ -255,7 +269,28 @@ onMounted(async () => {
               {{ $t('record.summary.close') }}
             </UButton>
             <UButton
+              v-if="!isCompleted"
               color="primary"
+              icon="i-lucide-flag"
+              :loading="completePending"
+              data-testid="summary-complete"
+              @click="markCompleted(true)"
+            >
+              {{ $t('record.summary.markComplete') }}
+            </UButton>
+            <UButton
+              v-else
+              color="neutral"
+              variant="soft"
+              :loading="completePending"
+              data-testid="summary-uncomplete"
+              @click="markCompleted(false)"
+            >
+              {{ $t('record.summary.completed') }}（{{ $t('record.summary.unmark') }}）
+            </UButton>
+            <UButton
+              color="primary"
+              variant="outline"
               :to="`/groups/${groupId}/matches`"
               data-testid="summary-back"
             >

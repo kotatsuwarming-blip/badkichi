@@ -61,6 +61,7 @@ const rowFixture = {
   name: 'XX練習会',
   video_source_type: 'youtube',
   video_source_url: 'https://youtu.be/abc',
+  completed_at: null,
   ta1: { id: 'p1', name: '佐藤' },
   ta2: { id: 'p2', name: '鈴木' },
   tb1: { id: 'p3', name: '高橋' },

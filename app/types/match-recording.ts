@@ -221,5 +221,6 @@ export interface MatchForRecording {
   name: string | null
   videoSourceType: 'youtube' | 'local'
   videoSourceUrl: string
+  completedAt: string | null // 完了フラグ (matches.completed_at)。null=未完了
   roster: { playerId: PlayerId, name: string, team: Team }[]
 }

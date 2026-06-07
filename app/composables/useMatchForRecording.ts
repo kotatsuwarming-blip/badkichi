@@ -15,7 +15,7 @@ export function useMatchForRecording(matchId: string) {
     // 【埋め込み select】: 複合 FK は制約名ヒントで解決 (useMatches.ts と同様)
     const { data, error } = await client
       .from('matches')
-      .select('id, name, video_source_type, video_source_url, ta1:players!matches_group_id_team_a_player1_id_fkey(id, name), ta2:players!matches_group_id_team_a_player2_id_fkey(id, name), tb1:players!matches_group_id_team_b_player1_id_fkey(id, name), tb2:players!matches_group_id_team_b_player2_id_fkey(id, name)')
+      .select('id, name, video_source_type, video_source_url, completed_at, ta1:players!matches_group_id_team_a_player1_id_fkey(id, name), ta2:players!matches_group_id_team_a_player2_id_fkey(id, name), tb1:players!matches_group_id_team_b_player1_id_fkey(id, name), tb2:players!matches_group_id_team_b_player2_id_fkey(id, name)')
       .eq('id', matchId)
       .is('deleted_at', null)
       .single()
@@ -36,6 +36,7 @@ export function useMatchForRecording(matchId: string) {
       name: data.name,
       videoSourceType: data.video_source_type as MatchForRecording['videoSourceType'],
       videoSourceUrl: data.video_source_url,
+      completedAt: data.completed_at,
       roster
     }
   })

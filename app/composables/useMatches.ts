@@ -23,7 +23,7 @@ export function useMatches() {
     //   するため players 側に deleted_at フィルタをかけない (EDGE-007)。
     const { data, error } = await client
       .from('matches')
-      .select('id, name, match_date, created_at, video_source_type, video_source_url, ta1:players!matches_group_id_team_a_player1_id_fkey(id, name), ta2:players!matches_group_id_team_a_player2_id_fkey(id, name), tb1:players!matches_group_id_team_b_player1_id_fkey(id, name), tb2:players!matches_group_id_team_b_player2_id_fkey(id, name), sets(winner, deleted_at)')
+      .select('id, name, match_date, created_at, video_source_type, video_source_url, completed_at, ta1:players!matches_group_id_team_a_player1_id_fkey(id, name), ta2:players!matches_group_id_team_a_player2_id_fkey(id, name), tb1:players!matches_group_id_team_b_player1_id_fkey(id, name), tb2:players!matches_group_id_team_b_player2_id_fkey(id, name), sets(winner, deleted_at)')
       .eq('group_id', gid)
       .is('deleted_at', null)
       .order('match_date', { ascending: false })
@@ -37,8 +37,9 @@ export function useMatches() {
       const liveSets = (row.sets ?? []).filter(s => s.deleted_at === null)
       const setsWonA = liveSets.filter(s => s.winner === 'A').length
       const setsWonB = liveSets.filter(s => s.winner === 'B').length
+      // 完了は明示フラグ (completed_at) で判定。未完了でセットがあれば「記録中」。
       const recordingStatus: MatchListItem['recordingStatus']
-        = setsWonA >= 2 || setsWonB >= 2 ? 'done' : liveSets.length > 0 ? 'recording' : 'none'
+        = row.completed_at !== null ? 'done' : liveSets.length > 0 ? 'recording' : 'none'
       return {
         id: row.id,
         name: row.name,
