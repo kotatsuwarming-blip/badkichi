@@ -177,6 +177,8 @@ export interface UseRecordingSessionReturn {
   // セットアップ（同期）
   configureAndStartSet: (setup: SetSetupInput, positions: SetPositionInput[]) => Promise<ActionResult<SetRow['id']>>
   advanceToNextSet: () => void
+  /** 進行中セットの再開（リロード時）。確定ラリーを replay して GameState を復元。resume。 */
+  resumeSet: (set: SetSummary, positions: SetPositionInput[], rallies: RallyHistoryItem[]) => void
 
   // ラリー記録（楽観/遅延）
   recordShot: () => Promise<void>

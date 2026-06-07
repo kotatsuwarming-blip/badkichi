@@ -22,6 +22,7 @@ import type {
   RallyHistoryItem,
   SetPositionInput,
   SetSetupInput,
+  SetSummary,
   UseRecordingSessionReturn
 } from '~/types/match-recording'
 import { createInitialState } from '~/utils/rule-engine/create-initial-state'
@@ -164,6 +165,37 @@ export function useRecordingSession(
     if (pos.error) return null
     currentSetId = created.data
     return currentSetId
+  }
+
+  // 進行中セットの再開 (リロード時): 確定ラリーを replay して GameState を復元する。
+  // MVP: override の途中適用は再現しない (engine 状態は confirmed ラリーの replay で近似)。
+  function resumeSet(set: SetSummary, positions: SetPositionInput[], rallies: RallyHistoryItem[]): void {
+    currentSetId = set.id
+    currentConfig = set // SetSummary は SetSetupInput 互換 (config + setNumber + cameraNearTeamAtStart)
+    pendingPositions = null
+    cameraNearTeam.value = set.cameraNearTeamAtStart
+    currentSetNumber.value = set.setNumber
+
+    let state = createInitialState(
+      { targetPoints: set.targetPoints, enableDeuce: set.enableDeuce, deucePointCap: set.deucePointCap, firstServingTeam: set.firstServingTeam },
+      positions
+    )
+    const sorted = [...rallies].sort((a, b) => a.rallyNumber - b.rallyNumber)
+    history.value = []
+    for (const r of sorted) {
+      if (!r.isPointConfirmed) continue // 未確定 (スキップ) は replay 不可
+      history.value.push({ ...r })
+      state = applyRally(state, { pointWinner: r.pointWinner, isLet: r.isLet })
+    }
+    gameState.value = state
+
+    const maxNum = sorted.reduce((m, r) => Math.max(m, r.rallyNumber), 0)
+    currentRally.value = { rallyNumber: maxNum + 1, rallyId: null, shots: [], isPending: false }
+    setWinner.value = null
+    overrideCounts.A = 0
+    overrideCounts.B = 0
+    undoStack.length = 0
+    updateUndoLabel()
   }
 
   function advanceToNextSet(): void {
@@ -365,6 +397,7 @@ export function useRecordingSession(
     cameraNearTeam,
     configureAndStartSet,
     advanceToNextSet,
+    resumeSet,
     recordShot,
     recordPoint,
     recordLet,

@@ -182,6 +182,34 @@ describe('useRecordingSession: 統一 undo', () => {
   })
 })
 
+describe('useRecordingSession: 再開 (resume)', () => {
+  it('確定ラリーを replay して GameState・履歴・次ラリーを復元する', () => {
+    const s = makeSession()
+    const setSummary = { id: 's1', setNumber: 1, targetPoints: 21, enableDeuce: true, deucePointCap: 30, firstServingTeam: 'A' as const, cameraNearTeamAtStart: 'A' as const, winner: null }
+    const rallies = [
+      { rallyNumber: 1, servingTeam: 'A' as const, serverPlayerId: 'A2', receiverPlayerId: 'B2', pointWinner: 'A' as const, isLet: false, isPointConfirmed: true, shotCount: 2, videoStartTimestampMs: 100 },
+      { rallyNumber: 2, servingTeam: 'A' as const, serverPlayerId: 'A1', receiverPlayerId: 'B1', pointWinner: 'B' as const, isLet: false, isPointConfirmed: true, shotCount: 5, videoStartTimestampMs: 200 }
+    ]
+    s.resumeSet(setSummary, positions, rallies)
+    expect(s.gameState.value?.score).toEqual({ teamA: 1, teamB: 1 }) // A1点 + B1点
+    expect(s.history.value).toHaveLength(2)
+    expect(s.currentRally.value?.rallyNumber).toBe(3) // 次のラリー
+    expect(s.currentSetNumber.value).toBe(1)
+  })
+
+  it('未確定 (スキップ) ラリーは replay しない', () => {
+    const s = makeSession()
+    const setSummary = { id: 's1', setNumber: 1, targetPoints: 21, enableDeuce: true, deucePointCap: 30, firstServingTeam: 'A' as const, cameraNearTeamAtStart: null, winner: null }
+    const rallies = [
+      { rallyNumber: 1, servingTeam: 'A' as const, serverPlayerId: 'A2', receiverPlayerId: 'B2', pointWinner: 'A' as const, isLet: false, isPointConfirmed: true, shotCount: 1, videoStartTimestampMs: null },
+      { rallyNumber: 2, servingTeam: 'A' as const, serverPlayerId: 'A1', receiverPlayerId: 'B1', pointWinner: null, isLet: false, isPointConfirmed: false, shotCount: 0, videoStartTimestampMs: null }
+    ]
+    s.resumeSet(setSummary, positions, rallies)
+    expect(s.gameState.value?.score).toEqual({ teamA: 1, teamB: 0 }) // 確定の1点のみ
+    expect(s.history.value).toHaveLength(1) // 未確定は履歴に含めない
+  })
+})
+
 describe('useRecordingSession: セット決着', () => {
   it('21-0 でセット勝者を検知し sets.winner を保存', async () => {
     const s = await startedSession()

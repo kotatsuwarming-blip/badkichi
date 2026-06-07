@@ -8,7 +8,7 @@
  *   - gameState 未設定なら SetSetupForm、設定済みなら録画 UI。lg 以上 2 カラム / 未満 1 カラム。
  *   - 動画 API はブラウザ専用のため VideoPlayer は .client (CSR、ADR-010)。
  */
-import { computed, shallowRef, watch } from 'vue'
+import { computed, onMounted, shallowRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { PlayerId } from '~/utils/rule-engine/types'
 import type { VideoSource, UseVideoPlayerReturn } from '~/types/video-playback'
@@ -17,6 +17,8 @@ import { useMatchForRecording } from '~/composables/useMatchForRecording'
 import { useVideoPlayer } from '~/composables/useVideoPlayer'
 import { useRecordingSession } from '~/composables/useRecordingSession'
 import { useSets } from '~/composables/useSets'
+import { useSetPositions } from '~/composables/useSetPositions'
+import { useSetRallies } from '~/composables/useSetRallies'
 import { useToastErrors } from '~/composables/useToastErrors'
 
 const route = useRoute()
@@ -88,6 +90,23 @@ async function onSetupSubmit(payload: BuildSetResult) {
 function onJump(ms: number) {
   player.value?.controls.seekToMs(ms)
 }
+
+// リロード時: 進行中 (未決着) セットがあれば再開する。空セットの番号加算を防ぐ。
+onMounted(async () => {
+  if (gameState.value) return
+  await refreshSets()
+  const target = (sets.value ?? [])
+    .filter(s => s.winner === null)
+    .sort((a, b) => b.setNumber - a.setNumber)[0]
+  if (!target) return
+  const [{ data: pos }, { data: rallies }] = await Promise.all([
+    useSetPositions(target.id),
+    useSetRallies(target.id)
+  ])
+  if ((pos.value ?? []).length === 4) {
+    session.resumeSet(target, pos.value ?? [], rallies.value ?? [])
+  }
+})
 </script>
 
 <template>

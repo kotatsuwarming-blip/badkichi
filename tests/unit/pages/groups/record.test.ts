@@ -25,6 +25,12 @@ vi.mock('~/composables/useMatchForRecording', () => ({
 vi.mock('~/composables/useSets', () => ({
   useSets: () => ({ data: ref([]), refresh: vi.fn() })
 }))
+vi.mock('~/composables/useSetPositions', () => ({
+  useSetPositions: () => Promise.resolve({ data: ref([]) })
+}))
+vi.mock('~/composables/useSetRallies', () => ({
+  useSetRallies: () => Promise.resolve({ data: ref([]) })
+}))
 vi.mock('~/composables/useToastErrors', () => ({
   useToastErrors: () => ({ showError: vi.fn() })
 }))
@@ -34,7 +40,7 @@ vi.mock('~/composables/useVideoPlayer', () => ({
 vi.mock('~/composables/useRecordingSession', () => ({
   useRecordingSession: () => ({
     ...sessionRefs,
-    configureAndStartSet: vi.fn(), advanceToNextSet: vi.fn(), recordShot: vi.fn(), recordPoint: vi.fn(),
+    configureAndStartSet: vi.fn(), advanceToNextSet: vi.fn(), resumeSet: vi.fn(), recordShot: vi.fn(), recordPoint: vi.fn(),
     recordLet: vi.fn(), skipRally: vi.fn(), confirmSkipped: vi.fn(), recordOverride: vi.fn(),
     undoLast: vi.fn(), allSynced: ref(true)
   })
