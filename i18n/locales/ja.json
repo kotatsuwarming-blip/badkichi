@@ -166,6 +166,86 @@
     "goToPlayers": "選手を追加する",
     "createSuccess": "試合を追加しました",
     "updateSuccess": "試合を更新しました",
-    "deleteSuccess": "試合を削除しました"
+    "deleteSuccess": "試合を削除しました",
+    "record": "録画",
+    "statusDone": "完了",
+    "statusRecording": "記録中"
+  },
+  "record": {
+    "back": "戻る",
+    "untitledMatch": "無題の試合",
+    "localReselect": "ローカル動画ファイルを再選択してください",
+    "setDecided": "セット決着",
+    "matchDecided": "試合終了",
+    "team": {
+      "A": "チームA",
+      "B": "チームB"
+    },
+    "court": {
+      "far": "奥",
+      "near": "手前",
+      "net": "ネット"
+    },
+    "score": {
+      "set": "セット",
+      "server": "サーバー",
+      "receiver": "レシーバー"
+    },
+    "buttons": {
+      "shot": "打った",
+      "shotCount": "ショット",
+      "pointA": "チームA得点",
+      "pointB": "チームB得点",
+      "let": "レット",
+      "skip": "スキップ",
+      "overrideA": "A入替",
+      "overrideB": "B入替",
+      "nextSet": "次のセットへ"
+    },
+    "undo": {
+      "shot": "直前のショットを取り消し",
+      "point": "得点を取り消し",
+      "let": "レットを取り消し",
+      "skip": "スキップを取り消し",
+      "override": "入れ替わりを取り消し",
+      "none": "取り消し"
+    },
+    "history": {
+      "unconfirmed": "未確定",
+      "let": "レット",
+      "pointA": "A得点",
+      "pointB": "B得点",
+      "empty": "まだラリーがありません",
+      "shotsUnit": "打",
+      "jump": "ジャンプ",
+      "legend": "サーバー ▶ レシーバー",
+      "override": "入れ替わりあり"
+    },
+    "setup": {
+      "title": "セット設定",
+      "targetPoints": "目標点",
+      "enableDeuce": "デュース",
+      "deucePointCap": "デュース上限点",
+      "firstServingTeam": "最初のサーブチーム",
+      "cameraNearTeam": "カメラ手前チーム",
+      "start": "記録を開始",
+      "positionsTitle": "初期立ち位置の入力",
+      "firstHint": "各チームの「ファースト」= 最初にサーブ／レシーブする偶数側の選手を選んでください",
+      "teamAFirst": "チームA のファースト",
+      "teamBFirst": "チームB のファースト"
+    },
+    "finish": "完了",
+    "summary": {
+      "title": "試合結果",
+      "set": "セット",
+      "matchWinner": "試合勝者",
+      "inProgress": "記録中",
+      "empty": "まだ記録がありません",
+      "close": "閉じる",
+      "backToMatches": "試合一覧へ戻る",
+      "markComplete": "この試合を完了にする",
+      "completed": "完了済み",
+      "unmark": "取り消す"
+    }
   }
 }

@@ -94,76 +94,110 @@ function formatMs(ms: number | null): string {
   return `${mm}:${ss}`
 }
 
+// 10 秒スキップ/戻し (YouTube と同じ J=-10s / L=+10s)
+function onKeydown(e: KeyboardEvent): void {
+  const target = e.target as HTMLElement | null
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+  if (e.code !== 'KeyL' && e.code !== 'KeyJ') return
+  const cur = controls.getCurrentTimeMs()
+  if (cur == null) return
+  e.preventDefault()
+  e.stopPropagation()
+  controls.seekToMs(cur + (e.code === 'KeyL' ? 10000 : -10000))
+}
+
+// iframe (YouTube) にフォーカスが移るとキー操作がアプリに届かなくなるため、奪い返す。
+// window が blur したとき activeElement が iframe なら blur して body へ戻す。
+function onWindowBlur(): void {
+  setTimeout(() => {
+    const ae = document.activeElement
+    if (ae && ae.tagName === 'IFRAME') (ae as HTMLElement).blur()
+  }, 0)
+}
+
 onMounted(async () => {
+  window.addEventListener('keydown', onKeydown, true)
+  window.addEventListener('blur', onWindowBlur)
   if (playerEl.value) await props.player.attach(playerEl.value)
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown, true)
+  window.removeEventListener('blur', onWindowBlur)
   props.player.detach()
 })
 </script>
 
 <template>
   <div class="video-player">
-    <!-- 再生面 + overlay 層 -->
-    <div
-      ref="playerEl"
-      class="video-player__surface"
-    >
-      <div class="video-player__overlay">
-        <slot
-          name="overlay"
-          v-bind="slotProps"
-        />
-      </div>
-
+    <!-- 再生面 + overlay 層。stage で包み、iframe へのフォーカス移動を防ぐクリック層を重ねる -->
+    <div class="video-player__stage">
       <div
-        v-if="isLoading"
-        data-testid="vp-loading"
-        class="video-player__loading"
-        :aria-label="t('videoPlayer.controls.loading')"
+        ref="playerEl"
+        class="video-player__surface"
       >
-        <USkeleton class="video-player__skeleton" />
-      </div>
+        <div class="video-player__overlay">
+          <slot
+            name="overlay"
+            v-bind="slotProps"
+          />
+        </div>
 
-      <!-- エラー提示（inline/banner）。文言は messageKey で locale 解決 -->
-      <UAlert
-        v-if="state.error"
-        data-testid="vp-error"
-        color="error"
-        :title="t(state.error.messageKey)"
-      >
-        <template
-          v-if="isYoutubeLoadFailed"
-          #actions
+        <div
+          v-if="isLoading"
+          data-testid="vp-loading"
+          class="video-player__loading"
+          :aria-label="t('videoPlayer.controls.loading')"
         >
-          <UButton
-            data-testid="vp-new-source"
-            @click="emit('requestNewSource')"
+          <USkeleton class="video-player__skeleton" />
+        </div>
+
+        <!-- エラー提示（inline/banner）。文言は messageKey で locale 解決 -->
+        <UAlert
+          v-if="state.error"
+          data-testid="vp-error"
+          color="error"
+          :title="t(state.error.messageKey)"
+        >
+          <template
+            v-if="isYoutubeLoadFailed"
+            #actions
           >
-            {{ t('videoPlayer.error.specifyAnotherVideo') }}
-          </UButton>
-        </template>
-      </UAlert>
+            <UButton
+              data-testid="vp-new-source"
+              @click="emit('requestNewSource')"
+            >
+              {{ t('videoPlayer.error.specifyAnotherVideo') }}
+            </UButton>
+          </template>
+        </UAlert>
 
-      <!-- 再選択 UI（REQ-103 / NFR-101: ユーザ操作起点のみ） -->
-      <div
-        v-if="state.needsReselect"
-        data-testid="vp-reselect"
-        class="video-player__reselect"
-      >
-        <p>{{ t('videoPlayer.error.reselectPrompt') }}</p>
-        <input
-          data-testid="vp-reselect-input"
-          type="file"
-          accept="video/*"
-          :aria-label="t('videoPlayer.error.reselectPrompt')"
-          @change="onReselect"
+        <!-- 再選択 UI（REQ-103 / NFR-101: ユーザ操作起点のみ） -->
+        <div
+          v-if="state.needsReselect"
+          data-testid="vp-reselect"
+          class="video-player__reselect"
         >
-        <p class="video-player__hint">
-          {{ t('videoPlayer.error.youtubeRecommendation') }}
-        </p>
+          <p>{{ t('videoPlayer.error.reselectPrompt') }}</p>
+          <input
+            data-testid="vp-reselect-input"
+            type="file"
+            accept="video/*"
+            :aria-label="t('videoPlayer.error.reselectPrompt')"
+            @change="onReselect"
+          >
+          <p class="video-player__hint">
+            {{ t('videoPlayer.error.youtubeRecommendation') }}
+          </p>
+        </div>
       </div>
+      <!-- クリック層: iframe のフォーカス奪取を防ぎ、クリックで再生/一時停止 (自前操作) -->
+      <div
+        v-if="!state.error && !state.needsReselect"
+        class="video-player__click-catch"
+        data-testid="vp-click-catch"
+        @click="toggle"
+      />
     </div>
 
     <!-- 標準コントロール -->
@@ -211,3 +245,30 @@ onBeforeUnmount(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.video-player { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; }
+
+/* 再生面ラッパ: クリック層を絶対配置で重ねるための相対基準 */
+.video-player__stage { position: relative; width: 100%; }
+.video-player__surface { position: relative; width: 100%; }
+/* YouTube iframe / HTML5 video を全幅・16:9 に */
+.video-player__surface :deep(iframe),
+.video-player__surface :deep(video) { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; border: 0; }
+
+/* 痕跡などの overlay は視覚のみ (クリックを通す) */
+.video-player__overlay { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+
+/* クリック層: iframe より上でクリックを受け、フォーカス奪取を防ぐ */
+.video-player__click-catch { position: absolute; inset: 0; z-index: 3; cursor: pointer; }
+
+/* ローディング/エラー/再選択は最前面 */
+.video-player__loading,
+.video-player__reselect { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; background: rgba(0, 0, 0, 0.4); }
+
+/* コントロール: シークバーを独立した全幅行にして痕跡を見やすく */
+.video-player__controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.video-player__time { font-variant-numeric: tabular-nums; font-size: 0.875rem; }
+.video-player__timeline { position: relative; flex: 1 1 100%; min-width: 0; padding-top: 0.5rem; }
+.video-player__seek { width: 100%; display: block; }
+</style>

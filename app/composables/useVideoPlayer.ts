@@ -90,7 +90,12 @@ export function useVideoPlayer(source: VideoSource): UseVideoPlayerReturn {
 
     // イベント購読
     adapter.on('statuschange', () => {
-      state.value.status = adapter!.getStatus()
+      const s = adapter!.getStatus()
+      state.value.status = s
+      // 再生状態に応じて時刻更新ループを駆動する。これにより、再生のトリガ
+      // （自前ボタン / クリック層 / 速度変更後の再開など）に依らずシークバーが更新される。
+      if (s === 'playing') startRaf()
+      else stopRaf()
     })
     adapter.on('durationchange', () => {
       state.value.durationMs = adapter!.getDurationMs()

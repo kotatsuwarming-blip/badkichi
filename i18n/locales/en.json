@@ -166,6 +166,86 @@
     "goToPlayers": "",
     "createSuccess": "",
     "updateSuccess": "",
-    "deleteSuccess": ""
+    "deleteSuccess": "",
+    "record": "Record",
+    "statusDone": "Done",
+    "statusRecording": "Recording"
+  },
+  "record": {
+    "back": "Back",
+    "untitledMatch": "Untitled match",
+    "localReselect": "Please re-select the local video file",
+    "setDecided": "Set decided",
+    "matchDecided": "Match over",
+    "team": {
+      "A": "Team A",
+      "B": "Team B"
+    },
+    "court": {
+      "far": "Far",
+      "near": "Near",
+      "net": "Net"
+    },
+    "score": {
+      "set": "Set",
+      "server": "Server",
+      "receiver": "Receiver"
+    },
+    "buttons": {
+      "shot": "Shot",
+      "shotCount": "Shots",
+      "pointA": "Team A point",
+      "pointB": "Team B point",
+      "let": "Let",
+      "skip": "Skip",
+      "overrideA": "Swap A",
+      "overrideB": "Swap B",
+      "nextSet": "Next set"
+    },
+    "undo": {
+      "shot": "Undo last shot",
+      "point": "Undo point",
+      "let": "Undo let",
+      "skip": "Undo skip",
+      "override": "Undo swap",
+      "none": "Undo"
+    },
+    "history": {
+      "unconfirmed": "Unconfirmed",
+      "let": "Let",
+      "pointA": "A point",
+      "pointB": "B point",
+      "empty": "No rallies yet",
+      "shotsUnit": " shots",
+      "jump": "Jump",
+      "legend": "Server ▶ Receiver",
+      "override": "Position swap"
+    },
+    "setup": {
+      "title": "Set setup",
+      "targetPoints": "Target points",
+      "enableDeuce": "Deuce",
+      "deucePointCap": "Deuce cap",
+      "firstServingTeam": "First serving team",
+      "cameraNearTeam": "Camera near team",
+      "start": "Start recording",
+      "positionsTitle": "Initial positions",
+      "firstHint": "Pick each team's 'first' player — the even-side player who serves/receives first",
+      "teamAFirst": "Team A first",
+      "teamBFirst": "Team B first"
+    },
+    "finish": "Finish",
+    "summary": {
+      "title": "Match result",
+      "set": "Set",
+      "matchWinner": "Winner",
+      "inProgress": "In progress",
+      "empty": "No records yet",
+      "close": "Close",
+      "backToMatches": "Back to matches",
+      "markComplete": "Mark match complete",
+      "completed": "Completed",
+      "unmark": "Undo"
+    }
   }
 }

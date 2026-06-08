@@ -19,7 +19,7 @@ const config: SetConfig = {
 
 describe('applyOverride', () => {
   it('サーブ側Override: 左右入替、サーバー変更、スコア・サーブ権・相手は不変', () => {
-    // 初期: A2(右)がサーバー, B1(左)がレシーバー, スコア0-0
+    // 初期: A2(右)がサーバー, B2(右)がレシーバー, スコア0-0
     const state = createInitialState(config, positions)
     const next = applyOverride(state, 'A')
 
@@ -45,8 +45,8 @@ describe('applyOverride', () => {
     expect(next.positions.teamA).toEqual({ left: 'A1', right: 'A2' })
     // サーバーは変わらない
     expect(next.server).toBe('A2')
-    // レシーバーはB対角の左 = B2(入替後)
-    expect(next.receiver).toBe('B2')
+    // レシーバーはB同コートの右 = B1(入替後)
+    expect(next.receiver).toBe('B1')
   })
 
   it('2回適用で元に戻る（トグル）', () => {

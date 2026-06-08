@@ -19,8 +19,8 @@ export function createInitialState(
   // スコア0（偶数）→ サーバーは右コート
   const serverPosition = 'right' as const
   const server = servingTeam === 'A' ? teamA.right : teamB.right
-  // レシーバーは相手チームの対角（右からサーブ → 左で受ける）
-  const receiver = servingTeam === 'A' ? teamB.left : teamA.left
+  // レシーバーはサーバーの対角＝相手チームの同じサービスコート（偶数時は両者とも右コート）
+  const receiver = servingTeam === 'A' ? teamB.right : teamA.right
 
   return {
     score: { teamA: 0, teamB: 0 },

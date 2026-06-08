@@ -80,7 +80,9 @@ const rowFixture = {
   ta1: { id: 'p1', name: '佐藤' },
   ta2: { id: 'p2', name: '鈴木(削除済)' },
   tb1: { id: 'p3', name: '高橋' },
-  tb2: { id: 'p4', name: '田中' }
+  tb2: { id: 'p4', name: '田中' },
+  completed_at: '2026-06-08T00:00:00Z',
+  sets: [{ winner: 'A', deleted_at: null }, { winner: 'A', deleted_at: null }]
 }
 
 describe('useMatches', () => {
@@ -115,5 +117,18 @@ describe('useMatches', () => {
   it('TC4: 削除済 player も名前解決される (EDGE-007)', async () => {
     const { data } = await useMatches()
     expect(data.value?.[0]?.teamA[1].name).toBe('鈴木(削除済)')
+  })
+
+  it('TC5: completed_at で完了状態を導出、sets.winner でセット数を集計', async () => {
+    const { data } = await useMatches()
+    expect(data.value?.[0]?.recordingStatus).toBe('done') // completed_at あり
+    expect(data.value?.[0]?.setsWonA).toBe(2)
+    expect(data.value?.[0]?.setsWonB).toBe(0)
+  })
+
+  it('TC6: completed_at=null + セットあり は recording', async () => {
+    order2Mock.mockResolvedValue({ data: [{ ...rowFixture, completed_at: null }], error: null })
+    const { data } = await useMatches()
+    expect(data.value?.[0]?.recordingStatus).toBe('recording')
   })
 })

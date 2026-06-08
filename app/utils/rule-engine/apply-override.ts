@@ -14,8 +14,8 @@ export function applyOverride(state: GameState, team: Team): GameState {
   const servingTeamKey = state.servingTeam === 'A' ? 'teamA' : 'teamB' as const
   const receivingTeamKey = state.servingTeam === 'A' ? 'teamB' : 'teamA' as const
   const server = positions[servingTeamKey][state.serverPosition]
-  const receiverPosition = state.serverPosition === 'right' ? 'left' : 'right' as const
-  const receiver = positions[receivingTeamKey][receiverPosition]
+  // レシーバーはサーバーの対角＝相手チームの同じサービスコート（同じ position ラベル）
+  const receiver = positions[receivingTeamKey][state.serverPosition]
 
   return {
     ...state,

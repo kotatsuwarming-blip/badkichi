@@ -23,7 +23,7 @@ export function useMatches() {
     //   するため players 側に deleted_at フィルタをかけない (EDGE-007)。
     const { data, error } = await client
       .from('matches')
-      .select('id, name, match_date, created_at, video_source_type, video_source_url, ta1:players!matches_group_id_team_a_player1_id_fkey(id, name), ta2:players!matches_group_id_team_a_player2_id_fkey(id, name), tb1:players!matches_group_id_team_b_player1_id_fkey(id, name), tb2:players!matches_group_id_team_b_player2_id_fkey(id, name)')
+      .select('id, name, match_date, created_at, video_source_type, video_source_url, completed_at, ta1:players!matches_group_id_team_a_player1_id_fkey(id, name), ta2:players!matches_group_id_team_a_player2_id_fkey(id, name), tb1:players!matches_group_id_team_b_player1_id_fkey(id, name), tb2:players!matches_group_id_team_b_player2_id_fkey(id, name), sets(winner, deleted_at)')
       .eq('group_id', gid)
       .is('deleted_at', null)
       .order('match_date', { ascending: false })
@@ -32,14 +32,26 @@ export function useMatches() {
     if (error) throw error
 
     // 【マッピング】: snake_case 列 + 埋め込み → MatchListItem[]
-    return (data ?? []).map((row): MatchListItem => ({
-      id: row.id,
-      name: row.name,
-      matchDate: row.match_date,
-      teamA: [{ id: row.ta1.id, name: row.ta1.name }, { id: row.ta2.id, name: row.ta2.name }],
-      teamB: [{ id: row.tb1.id, name: row.tb1.name }, { id: row.tb2.id, name: row.tb2.name }],
-      videoSourceType: row.video_source_type as VideoSourceType,
-      videoSourceUrl: row.video_source_url
-    }))
+    return (data ?? []).map((row): MatchListItem => {
+      // 録画状態を sets.winner から導出 (② B-7 / best-of-3)
+      const liveSets = (row.sets ?? []).filter(s => s.deleted_at === null)
+      const setsWonA = liveSets.filter(s => s.winner === 'A').length
+      const setsWonB = liveSets.filter(s => s.winner === 'B').length
+      // 完了は明示フラグ (completed_at) で判定。未完了でセットがあれば「記録中」。
+      const recordingStatus: MatchListItem['recordingStatus']
+        = row.completed_at !== null ? 'done' : liveSets.length > 0 ? 'recording' : 'none'
+      return {
+        id: row.id,
+        name: row.name,
+        matchDate: row.match_date,
+        teamA: [{ id: row.ta1.id, name: row.ta1.name }, { id: row.ta2.id, name: row.ta2.name }],
+        teamB: [{ id: row.tb1.id, name: row.tb1.name }, { id: row.tb2.id, name: row.tb2.name }],
+        videoSourceType: row.video_source_type as VideoSourceType,
+        videoSourceUrl: row.video_source_url,
+        recordingStatus,
+        setsWonA,
+        setsWonB
+      }
+    })
   })
 }

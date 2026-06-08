@@ -20,6 +20,11 @@ export interface MatchListItem {
   teamB: [MatchPlayerRef, MatchPlayerRef]
   videoSourceType: VideoSourceType
   videoSourceUrl: string // NOT NULL: local=ファイル名ラベル / youtube=抽出後ID
+  // 録画状態 (match-recording): sets.winner から導出。'done'=試合勝者確定(2セット先取) /
+  // 'recording'=セットあり未決着 / 'none'=未記録。
+  recordingStatus: 'none' | 'recording' | 'done'
+  setsWonA: number
+  setsWonB: number
 }
 
 /** 作成入力。group_id は composable が useCurrentGroup から付与。REQ-002 系。 */
