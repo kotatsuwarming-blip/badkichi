@@ -29,12 +29,13 @@ const view = {
     playerRates: [{ playerId: 'p0', playerName: '田中', serve: { rate: 0.5, denominator: 2, numerator: 1 }, receive: { rate: null, denominator: 0, numerator: 0 } }],
     pairRates: [{ player1Id: 'p0', player2Id: 'p1', pairLabel: '田中 / 佐藤', serve: { rate: 0.5, denominator: 2, numerator: 1 }, receive: { rate: null, denominator: 0, numerator: 0 } }]
   }),
-  breakdown: ref<unknown>(null),
+  entityRates: ref<unknown>([]),
+  subjectIds: ref<string[]>([]),
   rallyLengthBins: ref([]),
   tableRows: ref<unknown>([{ rally_id: 'r1', video_start_timestamp_ms: 3000 }]),
   entityRows: ref([]),
   isEmpty: ref(false),
-  setEntity: vi.fn(), setDrillRole: vi.fn(), setDrillPosition: vi.fn(), setDrillBins: vi.fn()
+  setEntity: vi.fn(), setDrillPosition: vi.fn(), setDrillMember: vi.fn(), setDrillBins: vi.fn()
 }
 
 vi.mock('~/composables/useMatchForRecording', () => ({ useMatchForRecording: () => ({ data: matchData, refresh: vi.fn() }) }))
@@ -51,7 +52,7 @@ const stubs = {
   StatsGlobalFilterBar: { props: ['players', 'matchesMeta', 'globalFilter', 'includedMatchIds', 'showPeriod'], template: '<div data-testid="filter-bar" />' },
   StatsEmptyState: { template: '<div data-testid="empty" />' },
   StatsRateChart: RateChartStub,
-  StatsBreakdownChart: { props: ['breakdown', 'drilldown'], template: '<div data-testid="breakdown" />' },
+  StatsPositionToggle: { props: ['position'], template: '<div data-testid="position-toggle" />' },
   StatsRallyLengthChart: { props: ['bins', 'selectedKeys'], template: '<div />' },
   StatsRallyTable: RallyTableStub,
   StatsVideoPane: { props: ['source', 'rallyMarkersMs'], methods: { seekToMs(ms: number) { paneSeekSpy(ms) } }, template: '<div data-testid="pane" />' }
@@ -79,14 +80,15 @@ describe('試合単位 stats ページ', () => {
     expect(w.findComponent(RateChartStub).props('mode')).toBe('pair')
   })
 
-  it('選手選択時はブレイクダウンを表示', () => {
+  it('選手選択時はポジション選択 + 得点率グラフ(棒)を表示', () => {
     view.globalFilter.value.entity = { kind: 'player', playerId: 'p0' }
-    view.breakdown.value = { serve: { rate: 0.5, denominator: 2, numerator: 1 }, receive: { rate: null, denominator: 0, numerator: 0 }, cells: [] }
+    view.entityRates.value = [{ playerId: 'p0', playerName: '田中', serve: { rate: 0.5, denominator: 2, numerator: 1 }, receive: { rate: null, denominator: 0, numerator: 0 } }]
     const w = mountPage()
-    expect(w.find('[data-testid="breakdown"]').exists()).toBe(true)
-    expect(w.find('[data-testid="rate-chart"]').exists()).toBe(false)
+    expect(w.find('[data-testid="position-toggle"]').exists()).toBe(true)
+    expect(w.find('[data-testid="rate-chart"]').exists()).toBe(true)
+    expect(w.find('[data-testid="mode-player"]').exists()).toBe(false) // 全体用トグルは出ない
     view.globalFilter.value.entity = { kind: 'all' }
-    view.breakdown.value = null
+    view.entityRates.value = []
   })
 
   it('isEmpty=true では空状態を表示', () => {

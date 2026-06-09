@@ -175,13 +175,16 @@ export interface StatsGlobalFilter {
 }
 
 /**
- * ドリルダウン（チャート内で段階的に設定）: 役割（サーブ/レシーブ）× サービスポジション（右=偶/左=奇）+ ラリー長ビン。
- * null / 空配列 = その軸では絞らない。選択中は UI で濃淡表示。
- * 🔵 受け入れ2026-06-09
+ * ドリルダウン: サービスポジション（右=偶/左=奇）+ ペアからの個人フォーカス + ラリー長ビン。
+ * null / 空配列 = その軸では絞らない。役割（サーブ/レシーブ）はグラフの 2 系列として常時表示する。
+ * 🔵 受け入れ2026-06-09/10（残すのは右/左の選択。ペア→個人ドリルダウン）
  */
 export interface StatsDrilldown {
-  role: StatsRole | null
+  /** サービスポジション（右=偶/左=奇）。null = 両方 */
   position: ServePosition | null
+  /** ペア選択時に個人へドリルダウン（その選手にフォーカス）。null = ペア両名 */
+  memberId: string | null
+  /** ラリー長ビン（複数選択・和集合） */
   shotBinKeys: string[]
 }
 
@@ -202,21 +205,6 @@ export interface MatchMeta {
 // ========================================
 // 集計結果型
 // ========================================
-
-/** 役割×ポジションの 1 セル（選択選手/ペアのブレイクダウン） 🔵 受け入れ2026-06-09 */
-export interface BreakdownCell {
-  role: StatsRole
-  position: ServePosition
-  rate: RateValue
-}
-
-/** 選択選手/ペアのブレイクダウン（serve/receive × right/left の 4 セル） 🔵 受け入れ2026-06-09 */
-export interface EntityBreakdown {
-  /** serve 合計（位置をまとめた値）/ receive 合計 */
-  serve: RateValue
-  receive: RateValue
-  cells: BreakdownCell[]
-}
 
 /** 全体オーバービュー集計（entity=all 時の選手別/ペア別一覧） 🔵 */
 export interface StatsOverview {
