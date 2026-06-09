@@ -18,13 +18,14 @@ const view = {
   includedMatchIds: ref<string[] | null>(['m1']),
   namesMap: ref<Record<string, string>>({ p0: '田中' }),
   overview: ref<unknown>({ playerRates: [{ playerId: 'p0', playerName: '田中', serve: { rate: 0.5, denominator: 2, numerator: 1 }, receive: { rate: null, denominator: 0, numerator: 0 } }], pairRates: [] }),
-  breakdown: ref<unknown>(null),
+  entityRates: ref<unknown>([]),
+  subjectIds: ref<string[]>([]),
   rallyLengthBins: ref([]),
   tableRows: ref<unknown>([{ rally_id: 'r1', match_id: 'm1', video_start_timestamp_ms: 3000, video_source_type: 'youtube', video_source_url: 'u' }]),
   entityRows: ref([]),
   isEmpty: ref(false),
   setEntity: vi.fn(), setDateRange: vi.fn(), toggleMatchExclusion: vi.fn(),
-  setDrillRole: vi.fn(), setDrillPosition: vi.fn(), setDrillBins: vi.fn()
+  setDrillPosition: vi.fn(), setDrillMember: vi.fn(), setDrillBins: vi.fn()
 }
 
 vi.mock('~/composables/useStatsView', () => ({ useStatsView: () => view }))
@@ -40,7 +41,7 @@ const stubs = {
   StatsGlobalFilterBar: FilterBarStub,
   StatsEmptyState: { template: '<div data-testid="empty" />' },
   StatsRateChart: { props: ['entries', 'mode'], emits: ['select'], template: '<div data-testid="rate-chart" />' },
-  StatsBreakdownChart: { props: ['breakdown', 'drilldown'], template: '<div data-testid="breakdown" />' },
+  StatsPositionToggle: { props: ['position'], template: '<div data-testid="position-toggle" />' },
   StatsRallyLengthChart: { props: ['bins', 'selectedKeys'], template: '<div />' },
   StatsRallyTable: RallyTableStub,
   StatsVideoPane: { props: ['source', 'rallyMarkersMs', 'autoSeekMs'], template: '<div data-testid="pane" />' }

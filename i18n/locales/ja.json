@@ -265,9 +265,11 @@
       "receive": "レシーブ時"
     },
     "position": {
+      "all": "両方",
       "right": "右（偶数点）",
       "left": "左（奇数点）"
     },
+    "backToPair": "ペア全体に戻る",
     "entity": {
       "all": "全体",
       "player": "選手",

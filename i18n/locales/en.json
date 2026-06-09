@@ -265,9 +265,11 @@
       "receive": "Receiving"
     },
     "position": {
+      "all": "Both",
       "right": "Right (even)",
       "left": "Left (odd)"
     },
+    "backToPair": "Back to pair",
     "entity": {
       "all": "All",
       "player": "Player",

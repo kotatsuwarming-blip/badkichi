@@ -13,28 +13,28 @@ function row(servingTeam: Team, server: string, receiver: string, pos: ServePosi
   }
 }
 
-const base: StatsDrilldown = { role: null, position: null, shotBinKeys: [] }
+const base: StatsDrilldown = { position: null, memberId: null, shotBinKeys: [] }
 const rows: RallyRow[] = [
-  row('A', 'p0', 'x', 'right', 2), // r1 p0 serve right
-  row('A', 'y', 'p0', 'left', 5), // r2 p0 receive left
-  row('A', 'p0', 'x', 'left', 10) // r3 p0 serve left
+  row('A', 'p0', 'x', 'right', 2), // r1
+  row('A', 'y', 'p0', 'left', 5), // r2 (p0 receiver)
+  row('A', 'z', 'w', 'left', 10) // r3 (p0 不在)
 ]
 const ids = (rs: RallyRow[]) => rs.map(r => r.rally_id)
 
 describe('applyDrilldown', () => {
-  it('role=serve は member が server のラリーのみ', () => {
-    expect(ids(applyDrilldown(rows, { ...base, role: 'serve' }, ['p0']))).toEqual(['r1', 'r3'])
-  })
-  it('role=receive は member が receiver のラリーのみ', () => {
-    expect(ids(applyDrilldown(rows, { ...base, role: 'receive' }, ['p0']))).toEqual(['r2'])
-  })
   it('position=right はサービスポジション一致のみ', () => {
-    expect(ids(applyDrilldown(rows, { ...base, position: 'right' }, ['p0']))).toEqual(['r1'])
+    expect(ids(applyDrilldown(rows, { ...base, position: 'right' }))).toEqual(['r1'])
   })
-  it('role + position + ラリー長ビンの AND', () => {
-    expect(ids(applyDrilldown(rows, { role: 'serve', position: 'left', shotBinKeys: ['8-12'] }, ['p0']))).toEqual(['r3'])
+  it('memberId はその選手が server/receiver のラリーのみ（ペア→個人）', () => {
+    expect(ids(applyDrilldown(rows, { ...base, memberId: 'p0' }))).toEqual(['r1', 'r2'])
   })
-  it('members 空（全体）では role 絞りを無視', () => {
-    expect(applyDrilldown(rows, { ...base, role: 'serve' }, [])).toHaveLength(3)
+  it('ラリー長ビンの和集合', () => {
+    expect(ids(applyDrilldown(rows, { ...base, shotBinKeys: ['8-12'] }))).toEqual(['r3'])
+  })
+  it('position + memberId + ビンの AND', () => {
+    expect(ids(applyDrilldown(rows, { position: 'left', memberId: 'p0', shotBinKeys: ['4-7'] }))).toEqual(['r2'])
+  })
+  it('未指定は全件', () => {
+    expect(applyDrilldown(rows, base)).toHaveLength(3)
   })
 })

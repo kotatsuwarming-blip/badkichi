@@ -56,6 +56,18 @@ function onOverviewSelect(payload: { playerId?: string, pair?: { player1Id: stri
   if (payload.pair) view.setEntity({ kind: 'pair', player1Id: payload.pair.player1Id, player2Id: payload.pair.player2Id })
   else if (payload.playerId) view.setEntity({ kind: 'player', playerId: payload.playerId })
 }
+
+// 選手/ペアの棒クリック → ペアなら個人へドリルダウン
+function onEntitySelect(payload: { playerId?: string }): void {
+  const e = view.globalFilter.value.entity
+  if (e.kind === 'pair' && !view.drilldown.value.memberId && payload.playerId) {
+    view.setDrillMember(payload.playerId)
+  }
+}
+function backToPair(): void {
+  const m = view.drilldown.value.memberId
+  if (m) view.setDrillMember(m)
+}
 </script>
 
 <template>
@@ -98,12 +110,25 @@ function onOverviewSelect(payload: { playerId?: string, pair?: { player1Id: stri
     >
       <section class="charts-col">
         <template v-if="isEntity">
-          <StatsBreakdownChart
-            v-if="view.breakdown.value"
-            :breakdown="view.breakdown.value"
-            :drilldown="view.drilldown.value"
-            @drill-role="view.setDrillRole"
-            @drill-position="view.setDrillPosition"
+          <div class="entity-controls">
+            <StatsPositionToggle
+              :position="view.drilldown.value.position"
+              @change="view.setDrillPosition"
+            />
+            <UButton
+              v-if="view.drilldown.value.memberId"
+              size="xs"
+              variant="ghost"
+              data-testid="back-to-pair"
+              @click="backToPair"
+            >
+              {{ $t('stats.backToPair') }}
+            </UButton>
+          </div>
+          <StatsRateChart
+            :entries="view.entityRates.value"
+            mode="player"
+            @select="onEntitySelect"
           />
         </template>
         <template v-else>
@@ -177,6 +202,7 @@ function onOverviewSelect(payload: { playerId?: string, pair?: { player1Id: stri
 .match-name { font-weight: 600; }
 .record-btn { margin-left: auto; }
 .mode-toggle { display: flex; gap: 0.5rem; align-items: center; }
+.entity-controls { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
 .charts-col, .video-col, .table-col { display: flex; flex-direction: column; gap: 1rem; }
 .source-picker { display: flex; flex-direction: column; gap: 0.5rem; }
 .stats-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }

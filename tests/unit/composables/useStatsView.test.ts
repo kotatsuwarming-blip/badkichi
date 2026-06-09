@@ -82,8 +82,8 @@ describe('useStatsView (group)', () => {
     v.setEntity({ kind: 'player', playerId: 'p0' })
     await v.refresh()
     expect(rpcMock).toHaveBeenCalledWith('stats_rallies', expect.objectContaining({ p_group_id: 'g1', p_player_id: 'p0' }))
-    // breakdown: serve right(勝1/1) + serve left(勝0/1) → serve 合計 2 本
-    expect(v.breakdown.value?.serve.denominator).toBe(2)
+    // entityRates: p0 の serve は r1(right,勝) + r2(left,負) → 母数 2
+    expect(v.entityRates.value[0]?.serve.denominator).toBe(2)
     expect(v.tableRows.value).toHaveLength(2)
   })
 

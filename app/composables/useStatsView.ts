@@ -14,7 +14,7 @@
 import { computed, ref } from 'vue'
 import { buildAggregate } from '~/utils/stats-dashboard/build-aggregate'
 import { callStatsRpc } from '~/utils/stats-dashboard/stats-rpc'
-import { computeEntityBreakdown } from '~/utils/stats-dashboard/entity-breakdown'
+import { computeSubjectRates } from '~/utils/stats-dashboard/compute-subject-rates'
 import { applyDrilldown } from '~/utils/stats-dashboard/apply-drilldown'
 import { ralliesToLengthBins } from '~/utils/stats-dashboard/rally-length-bins'
 import { resolveIncludedMatchIds } from '~/utils/stats-dashboard/resolve-match-ids'
@@ -22,9 +22,9 @@ import { usePlayers } from '~/composables/usePlayers'
 import { useMatches } from '~/composables/useMatches'
 import type { Database } from '~/types/supabase'
 import type {
-  EntityBreakdown,
   MatchMeta,
   PairRateRow,
+  PlayerRate,
   PlayerRateRow,
   RallyLengthBin,
   RallyLengthRow,
@@ -33,8 +33,7 @@ import type {
   StatsDrilldown,
   StatsEntity,
   StatsGlobalFilter,
-  StatsOverview,
-  StatsRole
+  StatsOverview
 } from '~/types/stats-dashboard'
 
 export type StatsViewScope
@@ -61,7 +60,7 @@ export function useStatsView(scope: StatsViewScope) {
   })
 
   const globalFilter = ref<StatsGlobalFilter>({ entity: { kind: 'all' }, dateFrom: null, dateTo: null, excludedMatchIds: [] })
-  const drilldown = ref<StatsDrilldown>({ role: null, position: null, shotBinKeys: [] })
+  const drilldown = ref<StatsDrilldown>({ position: null, memberId: null, shotBinKeys: [] })
 
   // 対象試合 ID（Group のみ。match scope は p_match_id を使うため null）
   const includedMatchIds = computed<string[] | null>(() => {
@@ -115,23 +114,33 @@ export function useStatsView(scope: StatsViewScope) {
   )
   const entityRows = computed<RallyRow[]>(() => (raw.value?.mode === 'entity' ? raw.value.rows : []))
 
-  // ブレイクダウンは全関与ラリーから（ドリルダウンで絞らず、選択中は強調）
-  const breakdown = computed<EntityBreakdown | null>(() =>
-    raw.value?.mode === 'entity' ? computeEntityBreakdown(entityRows.value, memberIds.value) : null
+  // 選手/ペアのグラフ対象（ペアは両名、個人ドリルダウン時はその1名）
+  const subjectIds = computed<string[]>(() => {
+    const e = globalFilter.value.entity
+    if (e.kind === 'player') return [e.playerId]
+    if (e.kind === 'pair') return drilldown.value.memberId ? [drilldown.value.memberId] : [e.player1Id, e.player2Id]
+    return []
+  })
+
+  // 選択選手/ペアの serve/receive 得点率（棒グラフ用。position 連動）
+  const entityRates = computed<PlayerRate[]>(() =>
+    raw.value?.mode === 'entity'
+      ? computeSubjectRates(entityRows.value, subjectIds.value, nameOf, drilldown.value.position)
+      : []
   )
 
-  // ラリー長グラフ: 役割・ポジションのドリルダウンは連動、ビン選択自身では絞らない
+  // ラリー長グラフ: ポジション・個人ドリルダウンは連動、ビン選択自身では絞らない
   const rallyLengthBins = computed<RallyLengthBin[]>(() => {
     if (raw.value?.mode === 'all') return raw.value.agg.rallyLength
     const forLength = applyDrilldown(
-      entityRows.value, { role: drilldown.value.role, position: drilldown.value.position, shotBinKeys: [] }, memberIds.value
+      entityRows.value, { position: drilldown.value.position, memberId: drilldown.value.memberId, shotBinKeys: [] }
     )
     return ralliesToLengthBins(forLength)
   })
 
   // テーブル: 全ドリルダウン適用
   const tableRows = computed<RallyRow[]>(() =>
-    raw.value?.mode === 'entity' ? applyDrilldown(entityRows.value, drilldown.value, memberIds.value) : []
+    raw.value?.mode === 'entity' ? applyDrilldown(entityRows.value, drilldown.value) : []
   )
 
   const isEmpty = computed(() =>
@@ -140,7 +149,7 @@ export function useStatsView(scope: StatsViewScope) {
 
   // ---- 操作 ----
   function resetDrilldown(): void {
-    drilldown.value = { role: null, position: null, shotBinKeys: [] }
+    drilldown.value = { position: null, memberId: null, shotBinKeys: [] }
   }
   function setEntity(entity: StatsEntity): void {
     globalFilter.value.entity = entity
@@ -154,19 +163,20 @@ export function useStatsView(scope: StatsViewScope) {
     const ex = globalFilter.value.excludedMatchIds
     globalFilter.value.excludedMatchIds = ex.includes(matchId) ? ex.filter(id => id !== matchId) : [...ex, matchId]
   }
-  function setDrillRole(role: StatsRole): void {
-    drilldown.value.role = drilldown.value.role === role ? null : role
+  function setDrillPosition(position: ServePosition | null): void {
+    drilldown.value.position = position
   }
-  function setDrillPosition(position: ServePosition): void {
-    drilldown.value.position = drilldown.value.position === position ? null : position
+  /** ペアから個人へドリルダウン（同一再選択でペア両名に戻る） */
+  function setDrillMember(memberId: string): void {
+    drilldown.value.memberId = drilldown.value.memberId === memberId ? null : memberId
   }
   function setDrillBins(keys: string[]): void {
     drilldown.value.shotBinKeys = keys
   }
 
   return {
-    globalFilter, drilldown, matchesMeta, includedMatchIds, namesMap, nameOf, memberIds,
-    overview, breakdown, rallyLengthBins, tableRows, entityRows, isEmpty, pending, error, refresh,
-    setEntity, setDateRange, toggleMatchExclusion, setDrillRole, setDrillPosition, setDrillBins, resetDrilldown
+    globalFilter, drilldown, matchesMeta, includedMatchIds, namesMap, nameOf, memberIds, subjectIds,
+    overview, entityRates, rallyLengthBins, tableRows, entityRows, isEmpty, pending, error, refresh,
+    setEntity, setDateRange, toggleMatchExclusion, setDrillPosition, setDrillMember, setDrillBins, resetDrilldown
   }
 }
