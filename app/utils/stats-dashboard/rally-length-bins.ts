@@ -10,7 +10,7 @@
  */
 
 import { RALLY_LENGTH_BINS } from '~/types/stats-dashboard'
-import type { RallyLengthBin, RallyLengthRow, ShotBin, ShotRange } from '~/types/stats-dashboard'
+import type { RallyLengthBin, RallyLengthRow, RallyRow, ShotBin, ShotRange } from '~/types/stats-dashboard'
 
 /** shot_count が bin の範囲 [min, max]（max=null は上限なし）に入るか */
 function inBin(shotCount: number, bin: ShotBin): boolean {
@@ -49,4 +49,28 @@ export function binsToRanges(
   return bins
     .filter(bin => binKeys.includes(bin.key))
     .map(bin => ({ min: bin.min, max: bin.max }))
+}
+
+/**
+ * ラリー行（クライアント保持）から直接ビン集約する。
+ * 確定ラリーのみ・shot_count>0。勝率はサーブ側勝率（point_winner = serving_team）。
+ * グローバルフィルタ／ドリルダウン適用後の行を渡すことでラリー長グラフを連動させる（受け入れ2026-06-09）。
+ */
+export function ralliesToLengthBins(
+  rows: RallyRow[],
+  bins: readonly ShotBin[] = RALLY_LENGTH_BINS
+): RallyLengthBin[] {
+  const byCount = new Map<number, { rallies: number, won: number }>()
+  for (const r of rows) {
+    if (r.is_let || !r.is_point_confirmed || r.point_winner === null) continue
+    if (r.shot_count <= 0) continue
+    const e = byCount.get(r.shot_count) ?? { rallies: 0, won: 0 }
+    e.rallies += 1
+    if (r.point_winner === r.serving_team) e.won += 1
+    byCount.set(r.shot_count, e)
+  }
+  const lengthRows: RallyLengthRow[] = [...byCount.entries()].map(
+    ([shot_count, v]) => ({ shot_count, rallies: v.rallies, serve_won: v.won })
+  )
+  return toRallyLengthBins(lengthRows, bins)
 }
