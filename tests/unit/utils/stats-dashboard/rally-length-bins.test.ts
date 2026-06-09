@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { binsToRanges, toRallyLengthBins } from '~/utils/stats-dashboard/rally-length-bins'
+import { binsToRanges, ralliesToLengthBins, toRallyLengthBins } from '~/utils/stats-dashboard/rally-length-bins'
 import { toRallyLengthSeries } from '~/utils/stats-dashboard/to-rally-length-series'
 import { RALLY_LENGTH_BINS } from '~/types/stats-dashboard'
-import type { RallyLengthRow } from '~/types/stats-dashboard'
+import type { RallyLengthRow, RallyRow } from '~/types/stats-dashboard'
 
 describe('toRallyLengthBins', () => {
   const rows: RallyLengthRow[] = [
@@ -44,6 +44,28 @@ describe('binsToRanges', () => {
 
   it('空選択は空配列（フィルタなし）', () => {
     expect(binsToRanges([])).toEqual([])
+  })
+})
+
+describe('ralliesToLengthBins', () => {
+  function rr(shots: number, winner: 'A' | 'B' | null, isLet = false, confirmed = true): RallyRow {
+    return {
+      rally_id: `r${shots}-${winner}`, match_id: 'm', match_name: 'M', match_date: null, set_number: 1, rally_number: 1,
+      serving_team: 'A', server_position: 'right', server_player_id: 's', receiver_player_id: 'r',
+      point_winner: winner, is_let: isLet, is_point_confirmed: confirmed,
+      shot_count: shots, video_start_timestamp_ms: 0, video_source_type: 'youtube', video_source_url: 'u'
+    }
+  }
+  it('ラリー行から直接ビン集約（確定のみ・shot0/レット除外、サーブ側勝率）', () => {
+    const rows: RallyRow[] = [
+      rr(2, 'A'), rr(3, 'B'), // 1-3: 2本, サーブ側勝1
+      rr(0, 'A'), // shot0 除外
+      rr(2, null, true) // レット除外
+    ]
+    const bins = ralliesToLengthBins(rows)
+    const b13 = bins.find(b => b.bin.key === '1-3')!
+    expect(b13.rallies).toBe(2)
+    expect(b13.serveWinRate).toBeCloseTo(0.5)
   })
 })
 

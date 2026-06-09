@@ -9,7 +9,6 @@
  * スタイル: セミコロンなし / no comma dangle（CLAUDE.md ESLint 規約）
  */
 
-import type { Ref } from 'vue'
 import type { VideoSource } from '~/types/video-playback'
 
 // ========================================
@@ -21,6 +20,9 @@ export type Team = 'A' | 'B'
 
 /** 集計の役割視点 🔵 REQ-003（サービス時 / レシーブ時） */
 export type StatsRole = 'serve' | 'receive'
+
+/** サービスポジション（偶数点=right / 奇数点=left）。rallies.server_position 由来 🔵 受け入れ2026-06-09 */
+export type ServePosition = 'right' | 'left'
 
 /** ダッシュボードのスコープ 🔵 REQ-001 / REQ-002 */
 export type StatsScope
@@ -66,9 +68,12 @@ export interface RallyRow {
   rally_id: string
   match_id: string
   match_name: string
+  match_date: string | null
   set_number: number
   rally_number: number
   serving_team: Team
+  /** サービスポジション（偶数=right/奇数=left） 🔵 受け入れ2026-06-09 */
+  server_position: ServePosition
   server_player_id: string
   receiver_player_id: string
   point_winner: Team | null
@@ -148,22 +153,35 @@ export interface RallyLengthBin {
 }
 
 // ========================================
-// クロスフィルタ 🔵 REQ-010 / REQ-012
+// グローバルフィルタ + ドリルダウン 🔵 受け入れ2026-06-09
 // ========================================
 
+/** 分析対象（グローバル）。未選択は全体（全選手サマリ） 🔵 受け入れ2026-06-09 */
+export type StatsEntity
+  = | { kind: 'all' }
+    | { kind: 'player', playerId: string }
+    | { kind: 'pair', player1Id: string, player2Id: string }
+
 /**
- * クロスフィルタ状態。チャート選択で更新し、ラリーテーブルへ連動。
- * すべて未指定（null / 空配列）= 絞り込みなし。
- * 🔵 REQ-010 / REQ-012
+ * グローバルフィルタ（チャート外で設定）: 対象（選手/ペア）+ 試合期間。
+ * dateFrom/dateTo は YYYY-MM-DD（null = 制限なし）。excludedMatchIds は期間内から個別除外する試合。
+ * 🔵 受け入れ2026-06-09（選手/ペア・期間はグローバル、個別調整も可）
  */
-export interface StatsFilter {
-  /** 1 選手で絞る（role と併用＝サーブ時/レシーブ時） 🔵 REQ-004 */
-  playerId: string | null
-  /** ペアで絞る（同一の 2 選手＝player_id の組）。playerId と排他。role と連動 🔵 REQ-012 */
-  pair: { player1Id: string, player2Id: string } | null
-  /** 役割（サーブ時 / レシーブ時）。未指定は両方。選手・ペアと連動 🔵 REQ-003 */
+export interface StatsGlobalFilter {
+  entity: StatsEntity
+  dateFrom: string | null
+  dateTo: string | null
+  excludedMatchIds: string[]
+}
+
+/**
+ * ドリルダウン（チャート内で段階的に設定）: 役割（サーブ/レシーブ）× サービスポジション（右=偶/左=奇）+ ラリー長ビン。
+ * null / 空配列 = その軸では絞らない。選択中は UI で濃淡表示。
+ * 🔵 受け入れ2026-06-09
+ */
+export interface StatsDrilldown {
   role: StatsRole | null
-  /** ラリー長ビンで絞る（複数選択可・和集合）。空配列 = フィルタなし 🔵 ヒアリング2026-06-09 */
+  position: ServePosition | null
   shotBinKeys: string[]
 }
 
@@ -174,60 +192,43 @@ export interface ShotRange {
   max: number | null
 }
 
-/** stats_rallies のサーバー側フィルタ引数（Group 横断の絞り込み後取得） 🔵 REQ-010 */
-export interface RallyQueryArgs {
-  serverPlayerId?: string | null
-  receiverPlayerId?: string | null
-  pairPlayer1Id?: string | null
-  pairPlayer2Id?: string | null
-  /** 選手・ペア絞り込みの役割連動（serve/receive） 🔵 ヒアリング2026-06-09 */
-  role?: StatsRole | null
-  /** ラリー長ビンの和集合範囲（OR）。jsonb として RPC へ渡す 🔵 ヒアリング2026-06-09 */
-  shotRanges?: ShotRange[] | null
-  limit?: number
-  offset?: number
+/** 試合メタ（期間フィルタ UI・対象表示用） 🔵 受け入れ2026-06-09 */
+export interface MatchMeta {
+  id: string
+  name: string
+  matchDate: string | null
 }
 
 // ========================================
-// composable 戻り値 🔵 ADR-007 / useAsyncData 既存パターン
+// 集計結果型
 // ========================================
 
-/** 集計結果（試合単位 / Group 横断 共通） 🔵 */
+/** 役割×ポジションの 1 セル（選択選手/ペアのブレイクダウン） 🔵 受け入れ2026-06-09 */
+export interface BreakdownCell {
+  role: StatsRole
+  position: ServePosition
+  rate: RateValue
+}
+
+/** 選択選手/ペアのブレイクダウン（serve/receive × right/left の 4 セル） 🔵 受け入れ2026-06-09 */
+export interface EntityBreakdown {
+  /** serve 合計（位置をまとめた値）/ receive 合計 */
+  serve: RateValue
+  receive: RateValue
+  cells: BreakdownCell[]
+}
+
+/** 全体オーバービュー集計（entity=all 時の選手別/ペア別一覧） 🔵 */
+export interface StatsOverview {
+  playerRates: PlayerRate[]
+  pairRates: PairRate[]
+}
+
+/** RPC 集計をまとめた値（buildAggregate の戻り） 🔵 */
 export interface StatsAggregate {
   playerRates: PlayerRate[]
   pairRates: PairRate[]
-  /** ラリー長は既定ビンへ集約済み（チャート直消費, ヒアリング2026-06-09） */
   rallyLength: RallyLengthBin[]
-  /** 確定ラリーが 0 件（空状態判定用） 🔵 REQ-103 */
-  isEmpty: boolean
-}
-
-/** useMatchStats / useGroupStats の戻り値（useAsyncData 準拠） 🔵 */
-export interface UseStatsReturn {
-  data: Ref<StatsAggregate | null>
-  pending: Ref<boolean>
-  error: Ref<unknown>
-  refresh: () => Promise<void>
-}
-
-/** useMatchRallies / useGroupRallies の戻り値 🔵 */
-export interface UseRalliesReturn {
-  data: Ref<RallyRow[] | null>
-  pending: Ref<boolean>
-  error: Ref<unknown>
-  refresh: () => Promise<void>
-}
-
-/** useStatsFilter の戻り値（クロスフィルタ状態 + 操作） 🔵 REQ-010 / REQ-012 */
-export interface UseStatsFilterReturn {
-  filter: Ref<StatsFilter>
-  /** チャート選択 → フィルタ設定（同一選択の再クリックでトグル解除） */
-  setFilter: (patch: Partial<StatsFilter>) => void
-  clear: () => void
-  /** per-match: 読み込み済みラリー行へクライアント絞り込みを適用 */
-  apply: (rows: RallyRow[]) => RallyRow[]
-  /** group: サーバー側フェッチ用の引数へ変換 */
-  toQueryArgs: () => RallyQueryArgs
 }
 
 // ========================================

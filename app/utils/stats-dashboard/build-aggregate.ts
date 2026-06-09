@@ -28,8 +28,6 @@ export function buildAggregate(
     playerRates: toPlayerRates(playerRows, nameOf),
     pairRates: toPairRates(pairRows, nameOf),
     // ショット数粒度の RPC 行を既定ビンへ集約（ヒアリング2026-06-09）
-    rallyLength: toRallyLengthBins(rallyLengthRows),
-    // 確定ラリーが 1 件も無い（得点率も長さ分布も空）= 空状態（REQ-103）
-    isEmpty: playerRows.length === 0 && rallyLengthRows.length === 0
+    rallyLength: toRallyLengthBins(rallyLengthRows)
   }
 }
