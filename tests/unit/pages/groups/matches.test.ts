@@ -58,6 +58,7 @@ const stubs = {
     template: '<div class="alert">{{ title }}<slot name="actions" /></div>'
   },
   USkeleton: { template: '<div class="skeleton" />' },
+  UBadge: { props: ['color', 'variant', 'size'], template: '<span class="badge"><slot /></span>' },
   UModal: {
     inheritAttrs: false,
     props: ['open'],
@@ -155,5 +156,23 @@ describe('matches.vue', () => {
     const modal = wrapper.findComponent('.form-modal')
     expect(modal.props('open')).toBe(true)
     expect(modal.props('mode')).toBe('create')
+  })
+
+  // TASK-0018: stats 相互導線
+  it('TC8: グループ統計リンクをヘッダーに表示 (REQ-008)', () => {
+    const wrapper = mountPage()
+    expect(btnByText(wrapper, 'matches.groupStats')).toBeTruthy()
+  })
+
+  it('TC9: 録画ありの試合に「統計を見る」を表示 (REQ-008)', () => {
+    matchesData.value = [{ ...matchWithName, recordingStatus: 'done' }]
+    const wrapper = mountPage()
+    expect(btnByText(wrapper, 'matches.stats')).toBeTruthy()
+  })
+
+  it('TC10: 未記録 (none) の試合には「統計を見る」を表示しない', () => {
+    matchesData.value = [{ ...matchWithName, recordingStatus: 'none' }]
+    const wrapper = mountPage()
+    expect(btnByText(wrapper, 'matches.stats')).toBeFalsy()
   })
 })
