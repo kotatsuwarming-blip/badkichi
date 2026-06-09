@@ -54,8 +54,13 @@ async function insertRally(
     video_start_timestamp_ms: opts.videoMs ?? null
   }).select('id').single()
   if (error || !data) throw new Error(`insertRally failed: ${error?.message}`)
-  for (let i = 1; i <= (opts.shots ?? 0); i++) {
-    await client.from('shots').insert({ rally_id: data.id, shot_number: i, input_source: 'manual' })
+  // ショットは 1 回の insert にまとめて round-trip を削減（beforeAll タイムアウト対策）
+  const shotRows = Array.from({ length: opts.shots ?? 0 }, (_, i) => ({
+    rally_id: data.id, shot_number: i + 1, input_source: 'manual'
+  }))
+  if (shotRows.length > 0) {
+    const { error: shotErr } = await client.from('shots').insert(shotRows)
+    if (shotErr) throw new Error(`insertShots failed: ${shotErr.message}`)
   }
   return data.id
 }
@@ -129,11 +134,11 @@ describe.skipIf(skip)('stats-dashboard 集計 RPC 統合テスト', () => {
     const m2 = await insertMatchWithSet(serviceClient, groupId, [p[2], p[3]], [p[0], p[1]])
     // R1: B serve(p0)/recv(p2) → B 得点（{p0,p1} が serving 側で勝, shots=4）
     await insertRally(serviceClient, m2.setId, { rallyNumber: 1, servingTeam: 'B', server: p[0], receiver: p[2], pointWinner: 'B', videoMs: 1000, shots: 4 })
-  })
+  }, 30000)
 
   afterAll(async () => {
     if (groupId) await cleanupUserBData(serviceClient, groupId)
-  })
+  }, 30000)
 
   // ---- TASK-0003: stats_player_rates ----
 
