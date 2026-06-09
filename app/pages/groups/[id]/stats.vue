@@ -68,10 +68,12 @@ function onOverviewSelect(payload: { playerId?: string, pair?: { player1Id: stri
   else if (payload.playerId) view.setEntity({ kind: 'player', playerId: payload.playerId })
 }
 
-function onEntitySelect(payload: { playerId?: string }): void {
+function onEntitySelect(payload: { playerId?: string, role: StatsRole }): void {
   const e = view.globalFilter.value.entity
   if (e.kind === 'pair' && !view.drilldown.value.memberId && payload.playerId) {
     view.setDrillMember(payload.playerId)
+  } else {
+    view.setDrillRole(payload.role)
   }
 }
 function backToPair(): void {
@@ -131,6 +133,7 @@ function backToPair(): void {
           <StatsRateChart
             :entries="view.entityRates.value"
             mode="player"
+            :selected-role="view.drilldown.value.role"
             @select="onEntitySelect"
           />
         </template>

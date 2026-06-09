@@ -57,11 +57,13 @@ function onOverviewSelect(payload: { playerId?: string, pair?: { player1Id: stri
   else if (payload.playerId) view.setEntity({ kind: 'player', playerId: payload.playerId })
 }
 
-// 選手/ペアの棒クリック → ペアなら個人へドリルダウン
-function onEntitySelect(payload: { playerId?: string }): void {
+// 選手/ペアの棒クリック → ペア(未フォーカス)なら個人へドリルダウン、それ以外は役割ドリルダウン
+function onEntitySelect(payload: { playerId?: string, role: StatsRole }): void {
   const e = view.globalFilter.value.entity
   if (e.kind === 'pair' && !view.drilldown.value.memberId && payload.playerId) {
     view.setDrillMember(payload.playerId)
+  } else {
+    view.setDrillRole(payload.role)
   }
 }
 function backToPair(): void {
@@ -128,6 +130,7 @@ function backToPair(): void {
           <StatsRateChart
             :entries="view.entityRates.value"
             mode="player"
+            :selected-role="view.drilldown.value.role"
             @select="onEntitySelect"
           />
         </template>

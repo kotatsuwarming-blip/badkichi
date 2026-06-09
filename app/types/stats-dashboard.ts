@@ -180,6 +180,8 @@ export interface StatsGlobalFilter {
  * 🔵 受け入れ2026-06-09/10（残すのは右/左の選択。ペア→個人ドリルダウン）
  */
 export interface StatsDrilldown {
+  /** 役割（サーブ/レシーブ）。棒クリックで選択、非選択側はグラフで薄く表示。null = 両方 */
+  role: StatsRole | null
   /** サービスポジション（右=偶/左=奇）。null = 両方 */
   position: ServePosition | null
   /** ペア選択時に個人へドリルダウン（その選手にフォーカス）。null = ペア両名 */
