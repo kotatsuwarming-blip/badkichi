@@ -1,0 +1,32 @@
+# Dependabot: 依存パッケージと GitHub Actions の脆弱性検知 + 自動更新 PR
+# - セキュリティ更新(既知 CVE)は schedule に関係なく自動で PR が立つ
+# - 通常のバージョン更新は weekly でまとめて PR
+# 併用: リポジトリ Settings > Security の「Dependabot alerts」「Dependabot security updates」を ON にすること
+# (このファイルは version-update を有効化するもので、alert/security-update は repo 設定側のトグル)
+version: 2
+updates:
+  # npm エコシステム (pnpm-lock.yaml も対応)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    groups:
+      # minor/patch はまとめて 1 PR にしてレビュー負荷を下げる
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    # major は破壊的変更を伴うため個別 PR (グループ化しない)
+
+  # GitHub Actions (ワークフローで使う action のバージョン)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "github-actions"
