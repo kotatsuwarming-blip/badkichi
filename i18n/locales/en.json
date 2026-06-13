@@ -35,6 +35,26 @@
   "common": {
     "backToHome": ""
   },
+  "landing": {
+    "brand": "",
+    "heading": "",
+    "subheading": "",
+    "cta": "",
+    "features": {
+      "record": {
+        "title": "",
+        "description": ""
+      },
+      "analyze": {
+        "title": "",
+        "description": ""
+      },
+      "video": {
+        "title": "",
+        "description": ""
+      }
+    }
+  },
   "login": {
     "title": "",
     "google": "",

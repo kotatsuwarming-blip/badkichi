@@ -113,18 +113,18 @@ describe('auth.global middleware (TC1〜TC7 / ADR-008 D8)', () => {
     // 【初期条件設定】: beforeEach で null に設定済みのため追加操作不要
     userRef.value = null
 
-    // 【to オブジェクト】: / は最も基本的な保護ページ（ダッシュボード）
-    // fullPath === '/' のため redirect クエリは /login?redirect=/ になる
-    const to = { path: '/', fullPath: '/' }
+    // 【to オブジェクト】: 保護ページの代表として試合一覧を使用（'/' は公開 LP 化したため protected ではない / ADR-015）
+    // fullPath === '/groups/g1/matches' のため redirect クエリはエンコードされた当該パスになる
+    const to = { path: '/groups/g1/matches', fullPath: '/groups/g1/matches' }
 
     // 【実際の処理実行】: default export (middleware 本体) に to を渡して await 実行
     // 【処理内容】: dataflow.md §1 の「非 public → !user.value → navigateTo」分岐を通る
     await middleware(to as Parameters<typeof middleware>[0])
 
-    // 【結果検証】: navigateTo('/login?redirect=%2F') が 1 回呼ばれること
-    // 【期待値確認】: encodeURIComponent('/') = '%2F' のため期待値は '/login?redirect=%2F'
+    // 【結果検証】: navigateTo('/login?redirect=%2Fgroups%2Fg1%2Fmatches') が 1 回呼ばれること
+    // 【期待値確認】: encodeURIComponent('/groups/g1/matches') = '%2Fgroups%2Fg1%2Fmatches'
     // 🔵 仕様書 §2 出力値: navigateTo('/login?redirect=' + encodeURIComponent(to.fullPath)) に厳密対応
-    expect(navigateToMock).toHaveBeenCalledWith('/login?redirect=%2F') // 【確認内容】: redirect クエリ付き /login へ 1 回リダイレクト 🔵
+    expect(navigateToMock).toHaveBeenCalledWith('/login?redirect=%2Fgroups%2Fg1%2Fmatches') // 【確認内容】: redirect クエリ付き /login へ 1 回リダイレクト 🔵
     expect(navigateToMock).toHaveBeenCalledTimes(1) // 【確認内容】: navigateTo が正確に 1 回だけ呼ばれること 🔵
   })
 
@@ -168,11 +168,11 @@ describe('auth.global middleware (TC1〜TC7 / ADR-008 D8)', () => {
     userRef.value = userX
     currentGroupRef.value = null
 
-    // 【to オブジェクト】: / は保護ページの代表（GROUP_OPTIONAL_PATHS に含まれない非許可 path）
-    const to = { path: '/', fullPath: '/' }
+    // 【to オブジェクト】: 保護ページの代表として試合一覧を使用（GROUP_OPTIONAL_PATHS に含まれない非許可 path / '/' は公開 LP 化したため別ケースで検証）
+    const to = { path: '/groups/g1/matches', fullPath: '/groups/g1/matches' }
 
     // 【実際の処理実行】: middleware 本体に to を渡して await 実行
-    // 【処理内容】: 非 public → ログイン済 → !currentGroup.value=true && !GROUP_OPTIONAL_PATHS.includes('/')=true → navigateTo('/onboarding')
+    // 【処理内容】: 非 public → ログイン済 → !currentGroup.value=true && !GROUP_OPTIONAL_PATHS.includes(path)=true → navigateTo('/onboarding')
     await middleware(to as Parameters<typeof middleware>[0])
 
     // 【結果検証】: navigateTo('/onboarding') が 1 回呼ばれること
@@ -283,8 +283,8 @@ describe('auth.global middleware (TC1〜TC7 / ADR-008 D8)', () => {
     userRef.value = userX
     currentGroupRef.value = groupG
 
-    // 【to オブジェクト】: / は保護ページの代表（認証・所属が整った正規ユーザーの一般的なアクセス）
-    const to = { path: '/', fullPath: '/' }
+    // 【to オブジェクト】: 保護ページの代表として試合一覧を使用（認証・所属が整った正規ユーザーの一般的なアクセス / '/' は公開 LP 化したため別ケースで検証）
+    const to = { path: '/groups/g1/matches', fullPath: '/groups/g1/matches' }
 
     // 【実際の処理実行】: middleware 本体に to を渡して await 実行
     // 【処理内容】: 非 public → ログイン済 → !currentGroup.value=false（AND 条件偽・スキップ）→
@@ -294,5 +294,69 @@ describe('auth.global middleware (TC1〜TC7 / ADR-008 D8)', () => {
     // 【結果検証】: navigateTo が一度も呼ばれないこと
     // 【期待値確認】: 全分岐をすり抜けて何もリダイレクトせず、正規ユーザーへの誤リダイレクトがない
     expect(navigateToMock).not.toHaveBeenCalled() // 【確認内容】: 通常利用では navigateTo が一度も呼ばれない 🔵
+  })
+
+  // ===================================================================
+  // TC8: 未認証ユーザーが / (公開 LP) にアクセス → 通過（リダイレクトなし）
+  // ===================================================================
+  it('TC8: 未認証で / (公開LP) にアクセスすると通過する（リダイレクトなし）', async () => {
+    // 【テスト目的】: '/' を PUBLIC_PATHS に追加したため、未認証ユーザーが LP を閲覧できること (ADR-015)
+    // 【テスト内容】: 初見の訪問者に「何のアプリか」を見せる入口を塞がない（public + 未認証 分岐）
+    // 🔵 ADR-015 + dataflow.md §1（public + 未認証 分岐）
+
+    // 【初期条件設定】: beforeEach で null（未認証）
+    userRef.value = null
+
+    // 【to オブジェクト】: '/' は PUBLIC_PATHS に含まれる公開 LP
+    const to = { path: '/', fullPath: '/' }
+
+    await middleware(to as Parameters<typeof middleware>[0])
+
+    // 【結果検証】: navigateTo が一度も呼ばれず LP がそのまま表示される
+    expect(navigateToMock).not.toHaveBeenCalled() // 【確認内容】: 公開 LP のため navigateTo が一度も呼ばれない 🔵
+  })
+
+  // ===================================================================
+  // TC9: ログイン済・所属ユーザーが / (公開 LP) にアクセス → アプリホーム（試合一覧）へ
+  // ===================================================================
+  it('TC9: ログイン済所属で / にアクセスすると本来のホーム（試合一覧）へリダイレクトする', async () => {
+    // 【テスト目的】: ログイン済ユーザーには LP を見せず本来の居場所へ送る (ADR-015)
+    // 【テスト内容】: 所属済 → /groups/{group_id}/matches へ誘導（public 分岐内で処理）
+    // 🔵 ADR-015 + dataflow.md §1（public + / + ログイン済所属 分岐）
+
+    // 【初期条件設定】: ログイン済（X）、所属済（G = group_id 'g1'）
+    userRef.value = userX
+    currentGroupRef.value = groupG
+
+    // 【to オブジェクト】: '/' は公開 LP だがログイン済はアプリホームへ転送される
+    const to = { path: '/', fullPath: '/' }
+
+    await middleware(to as Parameters<typeof middleware>[0])
+
+    // 【結果検証】: navigateTo('/groups/g1/matches') が 1 回呼ばれること
+    expect(navigateToMock).toHaveBeenCalledWith('/groups/g1/matches') // 【確認内容】: アプリホーム（試合一覧）へ 1 回リダイレクト 🔵
+    expect(navigateToMock).toHaveBeenCalledTimes(1) // 【確認内容】: navigateTo が正確に 1 回だけ呼ばれること 🔵
+  })
+
+  // ===================================================================
+  // TC10: ログイン済・未所属ユーザーが / (公開 LP) にアクセス → /onboarding へ
+  // ===================================================================
+  it('TC10: ログイン済未所属で / にアクセスするとオンボーディングへリダイレクトする', async () => {
+    // 【テスト目的】: ログイン済だが未所属のユーザーは LP ではなくオンボーディングへ送る (ADR-015)
+    // 【テスト内容】: public + / + ログイン済未所属 → navigateTo('/onboarding')
+    // 🔵 ADR-015 + dataflow.md §1（public + / + ログイン済未所属 分岐）
+
+    // 【初期条件設定】: ログイン済（X）、未所属（null）
+    userRef.value = userX
+    currentGroupRef.value = null
+
+    // 【to オブジェクト】: '/' は公開 LP だがログイン済未所属はオンボーディングへ転送される
+    const to = { path: '/', fullPath: '/' }
+
+    await middleware(to as Parameters<typeof middleware>[0])
+
+    // 【結果検証】: navigateTo('/onboarding') が 1 回呼ばれること
+    expect(navigateToMock).toHaveBeenCalledWith('/onboarding') // 【確認内容】: オンボーディングへ 1 回リダイレクト 🔵
+    expect(navigateToMock).toHaveBeenCalledTimes(1) // 【確認内容】: navigateTo が正確に 1 回だけ呼ばれること 🔵
   })
 })

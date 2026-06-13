@@ -11,7 +11,8 @@
 
 // 【PUBLIC_PATHS】: 認証チェックをスキップする固定パス一覧 🔵
 // /join/** は動的パスのため startsWith で別途判定 (dataflow.md §1)
-const PUBLIC_PATHS = ['/login', '/confirm']
+// '/' = 公開ランディングページ (LP)。未ログインの初見ユーザーに「何のアプリか」を見せる入口 (ADR-015)。
+const PUBLIC_PATHS = ['/', '/login', '/confirm']
 
 // 【GROUP_OPTIONAL_PATHS】: ログイン済・未所属でも通過を許可するパス一覧 🔵
 // REQ-102 例外: Group 作成・オンボーディング動線は未所属のままアクセス可能にする
@@ -35,7 +36,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
       const { data: currentGroup } = await useCurrentGroup()
       if (currentGroup.value) return navigateTo('/')
     }
-    // /login+未所属、/confirm、/join/** などは何もせず通す
+    // 【/ (公開LP) + ログイン済】: ADR-015 — ログイン済ユーザーには LP を見せず本来の居場所へ送る。
+    // 所属済 → 試合一覧 (アプリホーム) / 未所属 → オンボーディング。未ログインはそのまま LP を表示する。
+    if (to.path === '/' && user.value) {
+      const { data: currentGroup } = await useCurrentGroup()
+      if (currentGroup.value) return navigateTo(`/groups/${currentGroup.value.group_id}/matches`)
+      return navigateTo('/onboarding')
+    }
+    // /login+未所属、/ (未ログイン LP)、/confirm、/join/** などは何もせず通す
     return
   }
 
