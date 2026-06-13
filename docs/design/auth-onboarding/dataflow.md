@@ -1,6 +1,7 @@
 # auth-onboarding データフロー
 
 **作成日**: 2026-05-30
+**更新**: 2026-06-13 — §1 に公開ランディングページ `/` の分岐を追記 ([ADR-015](../../decisions/015-validation-approach.md) 駆動)
 **関連**: [architecture.md](architecture.md) / [interfaces.ts](interfaces.ts) / [error-handling.md](../cross-cutting/error-handling.md)
 
 **信頼性**: 🔵 *ADR-008 (middleware) + ADR-007 (§補遺含む) + error-handling.md §6 + 既存 API マッピング (architecture.md)*
@@ -17,10 +18,14 @@ ADR-008 D1: 全分岐を 1 ファイルで判定。データ取得は `useCurren
 
 ```mermaid
 flowchart TD
-    Start([navigation: to]) --> Pub{to は public path?<br/>/login /confirm /join/**}
+    Start([navigation: to]) --> Pub{to は public path?<br/>/ /login /confirm /join/**}
     Pub -->|Yes| PubLogin{to == /login<br/>かつ Group 所属済?}
     PubLogin -->|Yes| GoHome[navigateTo '/']
-    PubLogin -->|No| Pass1([通過 / page へ])
+    PubLogin -->|No| PubRoot{to == / かつ ログイン済?}
+    PubRoot -->|No| Pass1([通過 / LP・/login・/confirm・/join])
+    PubRoot -->|Yes| RootGrp{Group 所属?<br/>useCurrentGroup}
+    RootGrp -->|Yes| GoMatches["navigateTo<br/>'/groups/{group_id}/matches'"]
+    RootGrp -->|No| GoOnb0[navigateTo '/onboarding']
     Pub -->|No| Auth{ログイン済?<br/>useSupabaseUser}
     Auth -->|No| GoLogin["navigateTo<br/>'/login?redirect=' + encodeURIComponent(to.fullPath)"]
     Auth -->|Yes| Grp{Group 所属?<br/>useCurrentGroup}
@@ -32,9 +37,14 @@ flowchart TD
     OnbRedir -->|No| Pass3([通過 / page へ])
 ```
 
+- **公開ランディングページ `/`** ([ADR-015](../../decisions/015-validation-approach.md)、2026-06-13 追記): `/` を public path に追加。
+  未ログインの初見ユーザーには「何のアプリか」を伝える LP をそのまま表示する。ログイン済ユーザーには LP を見せず
+  本来の居場所へ転送する (Group 所属済 → `/groups/{group_id}/matches` アプリホーム / 未所属 → `/onboarding`)。
+  これは ADR-008 の middleware 戦略を覆すものではなく、public path を 1 つ拡張する整合的な追加。
 - **未所属許可 path** (`/onboarding`, `/groups/new`): ログイン済だが Group 未所属でも通す。
   `/groups/new` は「未所属ユーザがここで Group を作って所属する」動線の終点 (ADR-008 D1、2026-05-30 修正)。
-- `/login` で Group 所属済 → `/` の分岐は **public path 側** (図上部 `PubLogin`) で処理。認証済ブランチでは `/onboarding` のみ判定。
+- `/login` で Group 所属済 → `/` の分岐は **public path 側** (図上部 `PubLogin`) で処理。`/` 着地後さらに
+  上記 `PubRoot` 分岐でアプリホームへ転送される (2 段リダイレクト)。認証済ブランチでは `/onboarding` のみ判定。
 - public path の `/join/**` は未ログインでも通過させ、**page 内で未認証リダイレクト** (ADR-008 D1 例外)。
 - 関連 REQ: REQ-101/108 (未認証→/login+redirect)、REQ-102 (未所属→/onboarding)、REQ-103 (所属済→/)。
 
@@ -198,4 +208,4 @@ sequenceDiagram
 - [architecture.md](architecture.md) §認証 middleware / §画面構成 / §既存 API の利用マッピング
 - [interfaces.ts](interfaces.ts) — 各 composable の戻り契約
 - [error-handling.md](../cross-cutting/error-handling.md) §6 UI チャネル決定木
-- ADR: [007](../../decisions/007-composable-naming-conventions.md) / [008](../../decisions/008-middleware-strategy.md) / [011](../../decisions/011-layout-strategy.md)
+- ADR: [007](../../decisions/007-composable-naming-conventions.md) / [008](../../decisions/008-middleware-strategy.md) / [011](../../decisions/011-layout-strategy.md) / [015](../../decisions/015-validation-approach.md) (§1 公開 LP `/` の駆動元)
