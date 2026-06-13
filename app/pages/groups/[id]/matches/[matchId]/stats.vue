@@ -2,66 +2,38 @@
 /**
  * stats.vue（試合単位ダッシュボード）— /groups/[id]/matches/[matchId]/stats
  *
- * チャート（得点率・ラリー長）+ ラリーテーブル + 埋め込みプレーヤーを共存させ、
- * クロスフィルタ（per-match はクライアント絞り込み）→ ラリー選択で該当 ms 再生。
+ * グローバルフィルタ（対象=全体/選手/ペア）+ ドリルダウン（役割×ポジション×ラリー長）。
+ * 全体: 選手別/ペア別の得点率一覧。選手/ペア選択時: サーブ/レシーブ×右(偶)/左(奇)のブレイクダウン。
+ * ラリーテーブル・ラリー長グラフはドリルダウンに連動。行選択で 2 秒前から埋め込み再生。
  *
- * 関連設計: docs/design/stats-dashboard/{architecture.md,dataflow.md}
- * 関連要件: REQ-001/003/004/005/006/007/010/011/103/201/NFR-202/203
+ * 関連要件: REQ-001/003/004/005/006/007/010/011/103 + 受け入れ2026-06-09
  */
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { VideoSource } from '~/types/video-playback'
 import type { PairRate, PlayerRate, RallyRow, StatsRole } from '~/types/stats-dashboard'
 import { useMatchForRecording } from '~/composables/useMatchForRecording'
-import { useMatchStats } from '~/composables/useMatchStats'
-import { useMatchRallies } from '~/composables/useMatchRallies'
-import { useStatsFilter } from '~/composables/useStatsFilter'
-import type { MatchRoster } from '~/utils/stats-dashboard/filter-rallies'
+import { useStatsView } from '~/composables/useStatsView'
+
+const SEEK_LEAD_MS = 2000 // 再生はサーブの 2 秒前から（受け入れ2026-06-09）
 
 const route = useRoute()
 const matchId = route.params.matchId as string
 const groupId = route.params.id as string
 
 const { data: match } = useMatchForRecording(matchId)
-const { data: stats } = useMatchStats(matchId)
-const { data: rallies } = useMatchRallies(matchId)
+const view = useStatsView({ kind: 'match', matchId, groupId })
 
-const names = computed<Record<string, string>>(() => {
-  const map: Record<string, string> = {}
-  for (const r of match.value?.roster ?? []) map[r.playerId] = r.name
-  return map
-})
+// 対象選択用の選手一覧（この試合の 4 選手）
+const players = computed(() => (match.value?.roster ?? []).map(r => ({ id: r.playerId, name: r.name })))
 
-// per-match のペア絞り込み用ロスター（team A/B → player_id の組。フィルタ自体は player_id ベース）
-const matchRoster = computed<MatchRoster | undefined>(() => {
-  const r = match.value?.roster
-  if (!r || r.length !== 4) return undefined
-  const a = r.filter(x => x.team === 'A').map(x => x.playerId)
-  const b = r.filter(x => x.team === 'B').map(x => x.playerId)
-  if (a.length !== 2 || b.length !== 2) return undefined
-  return { pairA: [a[0]!, a[1]!], pairB: [b[0]!, b[1]!] }
-})
-
-const { filter, setFilter, clear, apply } = useStatsFilter({ roster: () => matchRoster.value })
-
-// 表示モード（選手別 / ペア別）
-const mode = ref<'player' | 'pair'>('player')
-const rateEntries = computed<(PlayerRate | PairRate)[]>(() =>
-  mode.value === 'pair' ? (stats.value?.pairRates ?? []) : (stats.value?.playerRates ?? [])
+const overviewMode = ref<'player' | 'pair'>('player')
+const overviewEntries = computed<(PlayerRate | PairRate)[]>(() =>
+  overviewMode.value === 'pair' ? (view.overview.value?.pairRates ?? []) : (view.overview.value?.playerRates ?? [])
 )
+const isEntity = computed(() => view.globalFilter.value.entity.kind !== 'all')
 
-// クロスフィルタ後のラリー（per-match はクライアント側）
-const filteredRallies = computed<RallyRow[]>(() => apply(rallies.value ?? []))
-const rallyMarkersMs = computed<number[]>(() =>
-  filteredRallies.value
-    .map(r => r.video_start_timestamp_ms)
-    .filter((ms): ms is number => ms !== null)
-)
-const isFiltered = computed(() =>
-  filter.value.playerId !== null || filter.value.pair !== null || filter.value.shotBinKeys.length > 0
-)
-
-// 動画ソース（youtube は即時、local は方式 A 再選択）
+// 動画ソース（youtube 即時 / local 再選択）
 const videoSource = ref<VideoSource | null>(null)
 watch(match, (m) => {
   if (m && m.videoSourceType === 'youtube' && !videoSource.value) {
@@ -73,20 +45,30 @@ function onPickLocalFile(e: Event): void {
   if (file) videoSource.value = { type: 'local', file }
 }
 
-// 埋め込みプレーヤー（ラリー行選択で seekToMs）
 const videoPane = ref<{ seekToMs: (ms: number) => void } | null>(null)
 function onSelectRally(rally: RallyRow): void {
-  if (rally.video_start_timestamp_ms !== null) {
-    videoPane.value?.seekToMs(rally.video_start_timestamp_ms)
-  }
+  if (rally.video_start_timestamp_ms === null) return
+  videoPane.value?.seekToMs(Math.max(0, rally.video_start_timestamp_ms - SEEK_LEAD_MS))
 }
 
-// チャート選択 → クロスフィルタ
-function onSelectRate(payload: { playerId?: string, pair?: { player1Id: string, player2Id: string }, role: StatsRole }): void {
-  setFilter({ playerId: payload.playerId ?? null, pair: payload.pair ?? null, role: payload.role })
+// 全体オーバービューの棒クリック → その選手/ペアを対象に（ドリルイン）
+function onOverviewSelect(payload: { playerId?: string, pair?: { player1Id: string, player2Id: string }, role: StatsRole }): void {
+  if (payload.pair) view.setEntity({ kind: 'pair', player1Id: payload.pair.player1Id, player2Id: payload.pair.player2Id })
+  else if (payload.playerId) view.setEntity({ kind: 'player', playerId: payload.playerId })
 }
-function onSelectBins(keys: string[]): void {
-  setFilter({ shotBinKeys: keys })
+
+// 選手/ペアの棒クリック → ペア(未フォーカス)なら個人へドリルダウン、それ以外は役割ドリルダウン
+function onEntitySelect(payload: { playerId?: string, role: StatsRole }): void {
+  const e = view.globalFilter.value.entity
+  if (e.kind === 'pair' && !view.drilldown.value.memberId && payload.playerId) {
+    view.setDrillMember(payload.playerId)
+  } else {
+    view.setDrillRole(payload.role)
+  }
+}
+function backToPair(): void {
+  const m = view.drilldown.value.memberId
+  if (m) view.setDrillMember(m)
 }
 </script>
 
@@ -113,50 +95,74 @@ function onSelectBins(keys: string[]): void {
       </UButton>
     </header>
 
-    <StatsEmptyState v-if="stats?.isEmpty" />
+    <StatsGlobalFilterBar
+      :players="players"
+      :matches-meta="[]"
+      :global-filter="view.globalFilter.value"
+      :included-match-ids="view.includedMatchIds.value"
+      :show-period="false"
+      @set-entity="view.setEntity"
+    />
+
+    <StatsEmptyState v-if="view.isEmpty.value" />
 
     <div
       v-else
       class="stats-grid"
     >
       <section class="charts-col">
-        <div class="mode-toggle">
-          <UButton
-            size="xs"
-            :variant="mode === 'player' ? 'solid' : 'ghost'"
-            data-testid="mode-player"
-            @click="mode = 'player'"
-          >
-            {{ $t('stats.mode.player') }}
-          </UButton>
-          <UButton
-            size="xs"
-            :variant="mode === 'pair' ? 'solid' : 'ghost'"
-            data-testid="mode-pair"
-            @click="mode = 'pair'"
-          >
-            {{ $t('stats.mode.pair') }}
-          </UButton>
-          <UButton
-            v-if="isFiltered"
-            size="xs"
-            color="neutral"
-            variant="soft"
-            data-testid="clear-filter"
-            @click="clear"
-          >
-            {{ $t('stats.filter.clear') }}
-          </UButton>
-        </div>
-        <StatsRateChart
-          :entries="rateEntries"
-          :mode="mode"
-          @select="onSelectRate"
-        />
+        <template v-if="isEntity">
+          <div class="entity-controls">
+            <StatsPositionToggle
+              :position="view.drilldown.value.position"
+              @change="view.setDrillPosition"
+            />
+            <UButton
+              v-if="view.drilldown.value.memberId"
+              size="xs"
+              variant="ghost"
+              data-testid="back-to-pair"
+              @click="backToPair"
+            >
+              {{ $t('stats.backToPair') }}
+            </UButton>
+          </div>
+          <StatsRateChart
+            :entries="view.entityRates.value"
+            mode="player"
+            :selected-role="view.drilldown.value.role"
+            @select="onEntitySelect"
+          />
+        </template>
+        <template v-else>
+          <div class="mode-toggle">
+            <UButton
+              size="xs"
+              :variant="overviewMode === 'player' ? 'solid' : 'ghost'"
+              data-testid="mode-player"
+              @click="overviewMode = 'player'"
+            >
+              {{ $t('stats.mode.player') }}
+            </UButton>
+            <UButton
+              size="xs"
+              :variant="overviewMode === 'pair' ? 'solid' : 'ghost'"
+              data-testid="mode-pair"
+              @click="overviewMode = 'pair'"
+            >
+              {{ $t('stats.mode.pair') }}
+            </UButton>
+          </div>
+          <StatsRateChart
+            :entries="overviewEntries"
+            :mode="overviewMode"
+            @select="onOverviewSelect"
+          />
+        </template>
         <StatsRallyLengthChart
-          :bins="stats?.rallyLength ?? []"
-          :selected-keys="filter.shotBinKeys"
-          @select-bins="onSelectBins"
+          :bins="view.rallyLengthBins.value"
+          :selected-keys="view.drilldown.value.shotBinKeys"
+          @select-bins="view.setDrillBins"
         />
       </section>
 
@@ -164,9 +170,8 @@ function onSelectBins(keys: string[]): void {
         <StatsVideoPane
           v-if="videoSource"
           ref="videoPane"
-          :key="match?.videoSourceType + ':' + (match?.videoSourceUrl ?? '')"
           :source="videoSource"
-          :rally-markers-ms="rallyMarkersMs"
+          :rally-markers-ms="[]"
         />
         <div
           v-else
@@ -185,8 +190,8 @@ function onSelectBins(keys: string[]): void {
 
       <section class="table-col">
         <StatsRallyTable
-          :rows="filteredRallies"
-          :names="names"
+          :rows="view.tableRows.value"
+          :names="view.namesMap.value"
           @select="onSelectRally"
         />
       </section>
@@ -200,6 +205,7 @@ function onSelectBins(keys: string[]): void {
 .match-name { font-weight: 600; }
 .record-btn { margin-left: auto; }
 .mode-toggle { display: flex; gap: 0.5rem; align-items: center; }
+.entity-controls { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
 .charts-col, .video-col, .table-col { display: flex; flex-direction: column; gap: 1rem; }
 .source-picker { display: flex; flex-direction: column; gap: 0.5rem; }
 .stats-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }

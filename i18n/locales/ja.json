@@ -264,6 +264,26 @@
       "serve": "サービス時",
       "receive": "レシーブ時"
     },
+    "position": {
+      "all": "両方",
+      "right": "右（偶数点）",
+      "left": "左（奇数点）"
+    },
+    "backToPair": "ペア全体に戻る",
+    "entity": {
+      "all": "全体",
+      "player": "選手",
+      "pair": "ペア",
+      "select": "対象を選択"
+    },
+    "period": {
+      "label": "試合期間",
+      "from": "開始日",
+      "to": "終了日",
+      "matches": "対象試合",
+      "included": "対象",
+      "excluded": "除外"
+    },
     "rate": {
       "serve": "サービス得点率",
       "receive": "レシーブ得点率",

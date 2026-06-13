@@ -15,6 +15,8 @@ import type { PairRate, PlayerRate, StatsRole } from '~/types/stats-dashboard'
 const props = defineProps<{
   entries: (PlayerRate | PairRate)[]
   mode: 'player' | 'pair'
+  /** ドリルダウン中の役割。指定すると非選択系列を薄く表示（受け入れ2026-06-10） */
+  selectedRole?: StatsRole | null
 }>()
 
 const emit = defineEmits<{
@@ -54,11 +56,17 @@ const option = computed(() => {
     xAxis: { type: 'category', data: labels },
     yAxis: { type: 'value', min: 0, max: 100 },
     series: [
-      { name: t('stats.rate.serve'), type: 'bar', data: serve },
-      { name: t('stats.rate.receive'), type: 'bar', data: receive }
+      { name: t('stats.rate.serve'), type: 'bar', data: serve, itemStyle: { opacity: roleOpacity('serve') } },
+      { name: t('stats.rate.receive'), type: 'bar', data: receive, itemStyle: { opacity: roleOpacity('receive') } }
     ]
   }
 })
+
+// 選択中の役割は不透明、非選択は薄く（受け入れ2026-06-10）。未選択時は両方不透明。
+function roleOpacity(role: StatsRole): number {
+  if (!props.selectedRole) return 1
+  return props.selectedRole === role ? 1 : 0.3
+}
 
 // 棒クリック → 選択（seriesIndex 0=serve / 1=receive、dataIndex=エンティティ）
 function onChartClick(params: { seriesIndex: number, dataIndex: number }): void {

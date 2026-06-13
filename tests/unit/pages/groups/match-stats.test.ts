@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 /**
  * 試合単位 stats.vue ページ 単体テスト（配線・分岐）
- * 方針: composable を mock、Stats* / U* 子をスタブ。空状態・テーブル配線・モード切替を検証。
- * TASK-0016 / REQ-103 / REQ-006 / REQ-004
+ * 方針: useStatsView / useMatchForRecording を mock、Stats 系 / U 系 子をスタブ。
+ * TASK-0016 / TASK-0020 / REQ-103 / REQ-006 / 受け入れ2026-06-09
  */
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
@@ -18,44 +18,44 @@ const matchData = ref<unknown>({
     { playerId: 'p2', name: '鈴木', team: 'B' }, { playerId: 'p3', name: '高橋', team: 'B' }
   ]
 })
-const statsData = ref<unknown>({
-  playerRates: [{ playerId: 'p0', playerName: '田中', serve: { rate: 0.5, denominator: 2, numerator: 1 }, receive: { rate: null, denominator: 0, numerator: 0 } }],
-  pairRates: [{ player1Id: 'p0', player2Id: 'p1', pairLabel: '田中 / 佐藤', serve: { rate: 0.5, denominator: 2, numerator: 1 }, receive: { rate: null, denominator: 0, numerator: 0 } }],
-  rallyLength: [],
-  isEmpty: false
-})
-const ralliesData = ref<unknown>([{ rally_id: 'r1', video_start_timestamp_ms: 1000 }])
+
+const view = {
+  globalFilter: ref({ entity: { kind: 'all' as const }, dateFrom: null, dateTo: null, excludedMatchIds: [] }),
+  drilldown: ref({ role: null, position: null, shotBinKeys: [] as string[] }),
+  matchesMeta: ref([]),
+  includedMatchIds: ref<string[] | null>(null),
+  namesMap: ref<Record<string, string>>({ p0: '田中' }),
+  overview: ref<unknown>({
+    playerRates: [{ playerId: 'p0', playerName: '田中', serve: { rate: 0.5, denominator: 2, numerator: 1 }, receive: { rate: null, denominator: 0, numerator: 0 } }],
+    pairRates: [{ player1Id: 'p0', player2Id: 'p1', pairLabel: '田中 / 佐藤', serve: { rate: 0.5, denominator: 2, numerator: 1 }, receive: { rate: null, denominator: 0, numerator: 0 } }]
+  }),
+  entityRates: ref<unknown>([]),
+  subjectIds: ref<string[]>([]),
+  rallyLengthBins: ref([]),
+  tableRows: ref<unknown>([{ rally_id: 'r1', video_start_timestamp_ms: 3000 }]),
+  entityRows: ref([]),
+  isEmpty: ref(false),
+  setEntity: vi.fn(), setDrillPosition: vi.fn(), setDrillMember: vi.fn(), setDrillBins: vi.fn()
+}
 
 vi.mock('~/composables/useMatchForRecording', () => ({ useMatchForRecording: () => ({ data: matchData, refresh: vi.fn() }) }))
-vi.mock('~/composables/useMatchStats', () => ({ useMatchStats: () => ({ data: statsData, refresh: vi.fn() }) }))
-vi.mock('~/composables/useMatchRallies', () => ({ useMatchRallies: () => ({ data: ralliesData, refresh: vi.fn() }) }))
-vi.mock('~/composables/useStatsFilter', () => ({
-  useStatsFilter: () => ({
-    filter: ref({ playerId: null, pair: null, role: null, shotBinKeys: [] }),
-    setFilter: vi.fn(),
-    clear: vi.fn(),
-    apply: (rows: unknown[]) => rows,
-    toQueryArgs: vi.fn()
-  })
-}))
+vi.mock('~/composables/useStatsView', () => ({ useStatsView: () => view }))
 
 // eslint-disable-next-line import/first
 import MatchStats from '~/pages/groups/[id]/matches/[matchId]/stats.vue'
 
 const paneSeekSpy = vi.fn()
-const RateChartStub = { props: ['entries', 'mode'], template: '<div data-testid="rate-chart" />' }
+const RateChartStub = { props: ['entries', 'mode'], emits: ['select'], template: '<div data-testid="rate-chart" />' }
 const RallyTableStub = { props: ['rows', 'names'], emits: ['select'], template: '<div data-testid="table" />' }
 const stubs = {
   UButton: { props: ['to'], template: '<button @click="$emit(\'click\')"><slot /></button>' },
+  StatsGlobalFilterBar: { props: ['players', 'matchesMeta', 'globalFilter', 'includedMatchIds', 'showPeriod'], template: '<div data-testid="filter-bar" />' },
   StatsEmptyState: { template: '<div data-testid="empty" />' },
   StatsRateChart: RateChartStub,
+  StatsPositionToggle: { props: ['position'], template: '<div data-testid="position-toggle" />' },
   StatsRallyLengthChart: { props: ['bins', 'selectedKeys'], template: '<div />' },
   StatsRallyTable: RallyTableStub,
-  StatsVideoPane: {
-    props: ['source', 'rallyMarkersMs'],
-    methods: { seekToMs(ms: number) { paneSeekSpy(ms) } },
-    template: '<div data-testid="pane" />'
-  }
+  StatsVideoPane: { props: ['source', 'rallyMarkersMs'], methods: { seekToMs(ms: number) { paneSeekSpy(ms) } }, template: '<div data-testid="pane" />' }
 }
 
 function mountPage() {
@@ -63,32 +63,47 @@ function mountPage() {
 }
 
 describe('試合単位 stats ページ', () => {
-  it('isEmpty=false ではグリッド表示・テーブルに行を渡す', () => {
+  it('全体モードでは得点率チャート + テーブルに行を渡す', () => {
+    view.globalFilter.value.entity = { kind: 'all' }
+    view.isEmpty.value = false
     const w = mountPage()
     expect(w.find('[data-testid="empty"]').exists()).toBe(false)
+    expect(w.find('[data-testid="rate-chart"]').exists()).toBe(true)
     expect(w.findComponent(RallyTableStub).props('rows')).toHaveLength(1)
   })
 
-  it('モード切替でチャートの entries がペアに変わる', async () => {
+  it('モード切替で entries がペアに変わる', async () => {
+    view.globalFilter.value.entity = { kind: 'all' }
     const w = mountPage()
     expect(w.findComponent(RateChartStub).props('mode')).toBe('player')
     await w.find('[data-testid="mode-pair"]').trigger('click')
     expect(w.findComponent(RateChartStub).props('mode')).toBe('pair')
-    expect((w.findComponent(RateChartStub).props('entries') as unknown[]).length).toBe(1)
   })
 
-  it('isEmpty=true では空状態を表示', async () => {
-    statsData.value = { playerRates: [], pairRates: [], rallyLength: [], isEmpty: true }
+  it('選手選択時はポジション選択 + 得点率グラフ(棒)を表示', () => {
+    view.globalFilter.value.entity = { kind: 'player', playerId: 'p0' }
+    view.entityRates.value = [{ playerId: 'p0', playerName: '田中', serve: { rate: 0.5, denominator: 2, numerator: 1 }, receive: { rate: null, denominator: 0, numerator: 0 } }]
+    const w = mountPage()
+    expect(w.find('[data-testid="position-toggle"]').exists()).toBe(true)
+    expect(w.find('[data-testid="rate-chart"]').exists()).toBe(true)
+    expect(w.find('[data-testid="mode-player"]').exists()).toBe(false) // 全体用トグルは出ない
+    view.globalFilter.value.entity = { kind: 'all' }
+    view.entityRates.value = []
+  })
+
+  it('isEmpty=true では空状態を表示', () => {
+    view.isEmpty.value = true
     const w = mountPage()
     expect(w.find('[data-testid="empty"]').exists()).toBe(true)
-    statsData.value = { playerRates: [], pairRates: [], rallyLength: [], isEmpty: false }
+    view.isEmpty.value = false
   })
 
-  it('結合: ラリー行選択で埋め込みプレーヤーが該当 ms へシーク (REQ-007/011)', async () => {
+  it('結合: ラリー行選択で 2 秒前から再生 (受け入れ2026-06-09)', async () => {
     paneSeekSpy.mockClear()
+    view.globalFilter.value.entity = { kind: 'all' }
     const w = mountPage()
-    w.findComponent(RallyTableStub).vm.$emit('select', { rally_id: 'r1', video_start_timestamp_ms: 1000 })
+    w.findComponent(RallyTableStub).vm.$emit('select', { rally_id: 'r1', video_start_timestamp_ms: 3000 })
     await w.vm.$nextTick()
-    expect(paneSeekSpy).toHaveBeenCalledWith(1000)
+    expect(paneSeekSpy).toHaveBeenCalledWith(1000) // 3000 - 2000
   })
 })

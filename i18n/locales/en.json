@@ -264,6 +264,26 @@
       "serve": "Serving",
       "receive": "Receiving"
     },
+    "position": {
+      "all": "Both",
+      "right": "Right (even)",
+      "left": "Left (odd)"
+    },
+    "backToPair": "Back to pair",
+    "entity": {
+      "all": "All",
+      "player": "Player",
+      "pair": "Pair",
+      "select": "Select target"
+    },
+    "period": {
+      "label": "Match period",
+      "from": "From",
+      "to": "To",
+      "matches": "Target matches",
+      "included": "Included",
+      "excluded": "Excluded"
+    },
     "rate": {
       "serve": "Serve win rate",
       "receive": "Receive win rate",

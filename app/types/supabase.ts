@@ -575,7 +575,11 @@ export type Database = {
       is_member_of: { Args: { target_group_id: string }; Returns: boolean }
       join_group_with_code: { Args: { invite_code: string }; Returns: string }
       stats_pair_rates: {
-        Args: { p_group_id?: string; p_match_id?: string }
+        Args: {
+          p_group_id?: string
+          p_match_id?: string
+          p_match_ids?: string[]
+        }
         Returns: {
           player1_id: string
           player2_id: string
@@ -586,7 +590,11 @@ export type Database = {
         }[]
       }
       stats_player_rates: {
-        Args: { p_group_id?: string; p_match_id?: string }
+        Args: {
+          p_group_id?: string
+          p_match_id?: string
+          p_match_ids?: string[]
+        }
         Returns: {
           player_id: string
           receive_total: number
@@ -600,9 +608,11 @@ export type Database = {
           p_group_id?: string
           p_limit?: number
           p_match_id?: string
+          p_match_ids?: string[]
           p_offset?: number
           p_pair_player1_id?: string
           p_pair_player2_id?: string
+          p_player_id?: string
           p_receiver_player_id?: string
           p_role?: string
           p_server_player_id?: string
@@ -611,6 +621,7 @@ export type Database = {
         Returns: {
           is_let: boolean
           is_point_confirmed: boolean
+          match_date: string
           match_id: string
           match_name: string
           point_winner: string
@@ -618,6 +629,7 @@ export type Database = {
           rally_number: number
           receiver_player_id: string
           server_player_id: string
+          server_position: string
           serving_team: string
           set_number: number
           shot_count: number
@@ -627,7 +639,11 @@ export type Database = {
         }[]
       }
       stats_rally_length: {
-        Args: { p_group_id?: string; p_match_id?: string }
+        Args: {
+          p_group_id?: string
+          p_match_id?: string
+          p_match_ids?: string[]
+        }
         Returns: {
           rallies: number
           serve_won: number

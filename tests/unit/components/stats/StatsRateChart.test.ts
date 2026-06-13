@@ -46,4 +46,11 @@ describe('StatsRateChart', () => {
       .onChartClick({ seriesIndex: 1, dataIndex: 0 })
     expect(w.emitted('select')![0][0]).toEqual({ pair: { player1Id: 'p0', player2Id: 'p1' }, role: 'receive' })
   })
+
+  it('selectedRole 指定で非選択系列を薄く（opacity 0.3）', () => {
+    const w = mount(StatsRateChart, { props: { entries: players, mode: 'player', selectedRole: 'serve' }, global })
+    const option = w.findComponent(VChart).props('option') as { series: { itemStyle: { opacity: number } }[] }
+    expect(option.series[0].itemStyle.opacity).toBe(1) // serve（選択）
+    expect(option.series[1].itemStyle.opacity).toBe(0.3) // receive（非選択）
+  })
 })
