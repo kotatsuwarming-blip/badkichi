@@ -1,3 +1,9 @@
+# サプライチェーン対策: 公開後 1440 分(=24時間)未満の新バージョンはインストールしない。
+# axios(2026-03)/TanStack(2026-05)/Shai-Hulud 等は「公開→数時間で削除」される短命な汚染版が多く、
+# 公開直後を避けるだけで踏むリスクを大幅に下げられる。pnpm 10.16+ の minimumReleaseAge 設定。
+# 既存 lockfile の固定版や CI の --frozen-lockfile install には影響しない(新規解決時のみ作用)。
+minimumReleaseAge: 1440
+
 ignoredBuiltDependencies:
   - '@parcel/watcher'
   - '@tailwindcss/oxide'
