@@ -25,3 +25,21 @@ export function buildLoginRedirect(path: string): string {
   //   redirect クエリ値内で構文を壊さず単一値として安全に運搬される (TC-D2-2 境界値) 🔵
   return '/login?redirect=' + encodeURIComponent(path)
 }
+
+/**
+ * 【機能概要】: redirect 先を「アプリ内部パス」のみに限定する（オープンリダイレクト対策）
+ * 【背景】: confirm.vue は OAuth ラウンドトリップ後 navigateTo(redirect) で遷移する。redirect は
+ *          /login?redirect=... 経由で攻撃者が任意値（外部 URL）を仕込める入口があるため、
+ *          外部 URL (https://evil.com) や protocol-relative (//evil.com, /\evil.com) を弾いて
+ *          fallback へ倒す。Nuxt navigateTo も外部 URL を既定でブロックするが、多層防御として明示検証する。
+ * 【判定】: 単一スラッシュ始まり かつ `//`・`/\`（ブラウザが // へ正規化しうる）でないパスのみ内部とみなす。
+ * 🔵 セキュリティ手当て（オープンリダイレクト防止）。REQ-104 / confirm.vue・login.vue の redirect チェーン
+ * @param path - 正規化済み redirect 値（resolveQueryParam の戻り）
+ * @param fallback - 不正・未指定時の安全な既定遷移先（既定 '/'）
+ * @returns 内部パスならその値、そうでなければ fallback
+ */
+export function sanitizeInternalPath(path: string | null | undefined, fallback = '/'): string {
+  if (typeof path !== 'string' || !path.startsWith('/')) return fallback
+  if (path.startsWith('//') || path.startsWith('/\\')) return fallback
+  return path
+}
