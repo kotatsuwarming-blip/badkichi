@@ -168,6 +168,8 @@
     "updateSuccess": "試合を更新しました",
     "deleteSuccess": "試合を削除しました",
     "record": "録画",
+    "stats": "統計を見る",
+    "groupStats": "グループ統計",
     "statusDone": "完了",
     "statusRecording": "記録中"
   },
@@ -246,6 +248,58 @@
       "markComplete": "この試合を完了にする",
       "completed": "完了済み",
       "unmark": "取り消す"
+    }
+  },
+  "stats": {
+    "matchTitle": "試合統計",
+    "groupTitle": "グループ統計",
+    "toStats": "統計を見る",
+    "backToRecord": "記録に戻る",
+    "backToMatches": "試合一覧へ戻る",
+    "mode": {
+      "player": "選手別",
+      "pair": "ペア別"
+    },
+    "role": {
+      "serve": "サービス時",
+      "receive": "レシーブ時"
+    },
+    "rate": {
+      "serve": "サービス得点率",
+      "receive": "レシーブ得点率",
+      "withCount": "{rate}%（n={n}）",
+      "noData": "-"
+    },
+    "rallyLength": {
+      "title": "ラリー長と得点率",
+      "count": "本数",
+      "winRate": "サーブ側勝率"
+    },
+    "table": {
+      "title": "ラリー一覧",
+      "rally": "ラリー",
+      "match": "試合",
+      "server": "サーバー",
+      "receiver": "レシーバー",
+      "result": "結果",
+      "shots": "ショット数",
+      "play": "この位置から再生",
+      "empty": "表示するラリーがありません",
+      "filterHint": "グラフで選手・ペア・ラリー長を選ぶと、該当ラリーが一覧表示されます"
+    },
+    "outcome": {
+      "pointA": "Aの得点",
+      "pointB": "Bの得点",
+      "let": "レット",
+      "unconfirmed": "未確定"
+    },
+    "filter": {
+      "clear": "絞り込みを解除",
+      "active": "絞り込み中"
+    },
+    "empty": {
+      "title": "データがありません",
+      "description": "この試合にはまだ記録されたラリーがありません"
     }
   }
 }

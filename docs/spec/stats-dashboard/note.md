@@ -25,7 +25,7 @@ stats-dashboard は、録画系テーブルに蓄積された **denormalize 済�
 
 ## 3. 消費するデータ（既存スキーマ・追加不要）
 
-initial_schema.sql で確定済。**stats-dashboard はスキーマ変更を行わない**（読み取りのみ）。
+initial_schema.sql で確定済。**stats-dashboard は既存テーブルのスキーマを変更しない**（読み取りのみ）。集計は**読み取り専用 RPC / View** で行い、その追加のみ additive migration を1本加える（CI 適用、READ専用・RLS 保持）。
 
 | テーブル | stats が使う主な列 |
 |---|---|

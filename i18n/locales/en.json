@@ -168,6 +168,8 @@
     "updateSuccess": "",
     "deleteSuccess": "",
     "record": "Record",
+    "stats": "View stats",
+    "groupStats": "Group stats",
     "statusDone": "Done",
     "statusRecording": "Recording"
   },
@@ -246,6 +248,58 @@
       "markComplete": "Mark match complete",
       "completed": "Completed",
       "unmark": "Undo"
+    }
+  },
+  "stats": {
+    "matchTitle": "Match stats",
+    "groupTitle": "Group stats",
+    "toStats": "View stats",
+    "backToRecord": "Back to recording",
+    "backToMatches": "Back to matches",
+    "mode": {
+      "player": "By player",
+      "pair": "By pair"
+    },
+    "role": {
+      "serve": "Serving",
+      "receive": "Receiving"
+    },
+    "rate": {
+      "serve": "Serve win rate",
+      "receive": "Receive win rate",
+      "withCount": "{rate}% (n={n})",
+      "noData": "-"
+    },
+    "rallyLength": {
+      "title": "Rally length vs win rate",
+      "count": "Rallies",
+      "winRate": "Serve win rate"
+    },
+    "table": {
+      "title": "Rallies",
+      "rally": "Rally",
+      "match": "Match",
+      "server": "Server",
+      "receiver": "Receiver",
+      "result": "Result",
+      "shots": "Shots",
+      "play": "Play from here",
+      "empty": "No rallies to show",
+      "filterHint": "Select a player, pair, or rally length in the charts to list matching rallies"
+    },
+    "outcome": {
+      "pointA": "A point",
+      "pointB": "B point",
+      "let": "Let",
+      "unconfirmed": "Unconfirmed"
+    },
+    "filter": {
+      "clear": "Clear filter",
+      "active": "Filtered"
+    },
+    "empty": {
+      "title": "No data",
+      "description": "No rallies have been recorded for this match yet"
     }
   }
 }

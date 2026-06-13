@@ -19,6 +19,9 @@ export default defineConfig({
     // シェル env で渡す: NUXT_SUPABASE_SECRET_KEY=<key> pnpm test:integration
     envFile: '.env.test',
     testTimeout: 30_000,
+    // beforeAll/afterAll も dev DB へ複数行を順次投入するため、testTimeout と揃える
+    // (デフォルト 10s だと stats-rpc の beforeAll が 2 試合+6 ラリー投入でタイムアウトする)
+    hookTimeout: 30_000,
     pool: 'forks',
     // Vitest 4: poolOptions は非推奨。singleFork は forks プールのトップレベルオプション
     forks: { singleFork: true },

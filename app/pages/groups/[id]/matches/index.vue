@@ -100,12 +100,22 @@ watch(error, (e) => {
         <h1 class="text-2xl font-bold">
           {{ t('matches.title') }}
         </h1>
-        <UButton
-          :label="t('matches.add')"
-          icon="i-lucide-plus"
-          :disabled="!hasEnoughPlayers"
-          @click="openCreate"
-        />
+        <div class="flex items-center gap-2">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-bar-chart-3"
+            :to="`/groups/${route.params.id}/stats`"
+            :label="t('matches.groupStats')"
+            data-testid="group-stats-link"
+          />
+          <UButton
+            :label="t('matches.add')"
+            icon="i-lucide-plus"
+            :disabled="!hasEnoughPlayers"
+            @click="openCreate"
+          />
+        </div>
       </div>
 
       <!-- 選手不足の説明 + 導線（REQ-203） -->
@@ -182,6 +192,17 @@ watch(error, (e) => {
             </div>
           </div>
           <div class="flex items-center gap-2">
+            <UButton
+              v-if="m.recordingStatus !== 'none'"
+              color="primary"
+              variant="ghost"
+              size="sm"
+              icon="i-lucide-bar-chart-3"
+              :to="`/groups/${route.params.id}/matches/${m.id}/stats`"
+              :aria-label="t('matches.stats')"
+              :label="t('matches.stats')"
+              :data-testid="`stats-${m.id}`"
+            />
             <UButton
               color="primary"
               variant="soft"
