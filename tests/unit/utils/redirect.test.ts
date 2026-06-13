@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildLoginRedirect } from '~/utils/redirect'
+import { buildLoginRedirect, sanitizeInternalPath } from '~/utils/redirect'
 
 describe('buildLoginRedirect', () => {
   it('TC-D2-1: 通常パスから redirect クエリ付き login URL を生成する', () => {
@@ -36,5 +36,35 @@ describe('buildLoginRedirect', () => {
     // 【結果検証】: & が %26、スペースが %20 にエンコードされ単一クエリ値になる
     // 【期待値確認】: クエリインジェクション・値破損が起きないことを確認
     expect(result).toBe('/login?redirect=%2Fjoin%2Fa%20b%26c') // 【確認内容】: 特殊文字が URL 安全にエンコードされ redirect 値が単一値として閉じること 🔵
+  })
+})
+
+describe('sanitizeInternalPath（オープンリダイレクト対策）', () => {
+  it('内部パスはそのまま通す', () => {
+    expect(sanitizeInternalPath('/groups/1/matches')).toBe('/groups/1/matches')
+    expect(sanitizeInternalPath('/join/ABC12345')).toBe('/join/ABC12345')
+  })
+
+  it('外部 URL は fallback に倒す', () => {
+    // 【攻撃ベクタ】: /login?redirect=https://evil.com で OAuth 後にフィッシングサイトへ飛ばす
+    expect(sanitizeInternalPath('https://evil.com')).toBe('/')
+    expect(sanitizeInternalPath('http://evil.com/path')).toBe('/')
+  })
+
+  it('protocol-relative (//host, /\\host) を弾く', () => {
+    // 【境界値】: // と /\ はブラウザが外部オリジンとして解釈しうる
+    expect(sanitizeInternalPath('//evil.com')).toBe('/')
+    expect(sanitizeInternalPath('/\\evil.com')).toBe('/')
+  })
+
+  it('スラッシュ始まりでない値・空・null/undefined は fallback', () => {
+    expect(sanitizeInternalPath('javascript:alert(1)')).toBe('/')
+    expect(sanitizeInternalPath('')).toBe('/')
+    expect(sanitizeInternalPath(undefined)).toBe('/')
+    expect(sanitizeInternalPath(null)).toBe('/')
+  })
+
+  it('fallback は引数で差し替えできる', () => {
+    expect(sanitizeInternalPath('//evil.com', '/login')).toBe('/login')
   })
 })

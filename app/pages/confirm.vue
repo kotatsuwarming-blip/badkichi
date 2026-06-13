@@ -40,7 +40,9 @@ watch(
     if (u) {
       // 【redirect 解決】: route.query.redirect を読み、未指定時は '/' をデフォルトにする 🔵
       // route.query.redirect は string | string[] | undefined。resolveQueryParam で string に正規化する
-      const redirect = resolveQueryParam(route.query.redirect, '/')
+      // 【オープンリダイレクト対策】: redirect は /login?redirect=... 経由で外部 URL を仕込める入口があるため、
+      // sanitizeInternalPath で内部パスのみ許可し、外部 URL / protocol-relative は '/' に倒す（多層防御）🔵
+      const redirect = sanitizeInternalPath(resolveQueryParam(route.query.redirect, '/'))
 
       // 【遷移実行】: 遷移先での Group 有無分岐は middleware に委譲。page 側では追加判定しない 🔵
       navigateTo(redirect)
