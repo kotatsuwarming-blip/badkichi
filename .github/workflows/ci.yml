@@ -42,13 +42,17 @@ jobs:
   #   - SUPABASE_DB_PASSWORD
   db-lint:
     runs-on: ubuntu-latest
+    # dependabot 起動の実行には Environment Secrets が注入されない (GitHub のセキュリティ仕様)。
+    # secret 必須のため dependabot PR ではスキップし、赤化を防ぐ。
+    # bump の実質検証は他ジョブ + マージ後の push (main/dev) の本ジョブで担保される。
+    if: ${{ github.actor != 'dependabot[bot]' }}
     environment: dev
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
       - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v2
         with:
           # latest 追従は禁止。v2.106.0 で gen types が TS シェルへ移植され
           # --local でも access token を要求するリグレッションが入ったため、
@@ -77,7 +81,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@v6
 
       - name: Install node
         uses: actions/setup-node@v6
@@ -113,7 +117,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@v6
 
       - name: Install node
         uses: actions/setup-node@v6
@@ -142,6 +146,10 @@ jobs:
   # 注: dev DB を共有するため並行実行を抑止 (concurrency)
   integration-test:
     runs-on: ubuntu-latest
+    # dependabot 起動の実行には Environment Secrets が注入されない (GitHub のセキュリティ仕様)。
+    # secret 必須のため dependabot PR ではスキップし、赤化を防ぐ。
+    # bump の実質検証は他ジョブ + マージ後の push (main/dev) の本ジョブで担保される。
+    if: ${{ github.actor != 'dependabot[bot]' }}
     environment: dev
     concurrency:
       group: integration-test-dev
@@ -155,7 +163,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@v6
 
       - name: Install node
         uses: actions/setup-node@v6
