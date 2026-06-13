@@ -45,7 +45,7 @@ jobs:
           ref: ${{ github.ref_name }}
 
       - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v2
         with:
           # latest 追従は禁止。v2.106.0 で gen types が TS シェルへ移植され
           # --local でも access token を要求するリグレッションが入ったため、
