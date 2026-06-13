@@ -117,12 +117,13 @@ ADR-008 が middleware を global 一本にして「保護漏れゼロ」を構�
 - **レイアウト内部の具体マークアップ** (どの Nuxt UI コンポーネントで組むか) は **kairo-implement で確定**。
   本設計では「枚数・責務・ログアウトの所在」のみ確定する
 
-## 画面構成 (6 page) 🔵
+## 画面構成 (7 page) 🔵
 
-**信頼性**: 🔵 *note.md §画面一覧 + ADR-007 D2-2 + ADR-008 D1*
+**信頼性**: 🔵 *note.md §画面一覧 + ADR-007 D2-2 + ADR-008 D1 (+ `/` 行は ADR-015、2026-06-13 追記)*
 
 | パス | 画面 | layout | 認証要件 | 使う composable | 認証分岐 (auth.global.ts) |
 |------|------|--------|---------|----------------|--------------------------|
+| `/` | ランディングページ (LP) | `layout: false` | 公開 (未ログイン可) | (静的、i18n `landing.*`) | 公開。ログイン済→ホーム転送 (所属済 `/groups/{id}/matches` / 未所属 `/onboarding`)。ADR-015 |
 | `/login` | ログイン | auth | 未ログイン専用 | `useLogin` | 公開。Group 所属済なら `/` へ (REQ-103) |
 | `/confirm` | OAuth コールバック | auth | 遷移中 | `useCurrentGroup`, `useSupabaseUser` | 公開 (判定対象外)。セッション確立後に page 内で遷移 |
 | `/onboarding` | オンボーディング | default | ログイン済 + Group 未所属専用 | (静的、2 ボタン) | Group 所属済なら `/` へ (REQ-103) |
@@ -177,7 +178,9 @@ ADR-008 が middleware を global 一本にして「保護漏れゼロ」を構�
 `app/middleware/auth.global.ts` 1 ファイルで全分岐を判定する (ADR-008 D1)。詳細フローは
 [dataflow.md §middleware 判定フロー](dataflow.md) を参照。要点:
 
-- public path (`/login` `/confirm` `/join/**`) は早期 return (ただし `/login` で Group 所属済なら `/` へ)
+- public path (`/` `/login` `/confirm` `/join/**`) は早期 return。例外 2 つ:
+  - `/login` で Group 所属済 → `/` へ (REQ-103)
+  - `/` (公開 LP) でログイン済 → 本来のホームへ転送 (所属済 → `/groups/{group_id}/matches` / 未所属 → `/onboarding`)。ADR-015、2026-06-13 追記
 - 未認証 → `navigateTo('/login?redirect=' + encodeURIComponent(to.fullPath))` (REQ-101, REQ-108)
 - ログイン済 + Group 未所属 → `navigateTo('/onboarding')`。ただし**未所属許可 path** (`/onboarding`, `/groups/new`) は通す
   (`/groups/new` は未所属ユーザが Group を作る動線、ADR-008 2026-05-30 修正) (REQ-102)
