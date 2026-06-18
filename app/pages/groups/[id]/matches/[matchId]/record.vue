@@ -53,11 +53,18 @@ function initPlayer(src: VideoSource) {
   player.value = useVideoPlayer(src)
 }
 
-watch(match, (m) => {
+// YouTube はクライアント限定で初期化する (ADR-010: 動画 API はブラウザ専用)。
+// immediate watch を SSR (リロード) で発火させると、setup 同期時点では useAsyncData が
+// 未解決で match=null のためサーバーは player=null → source-picker を描画する。一方
+// hydration 後にクライアントだけ player を立てると v-if="!player" 分岐が食い違い、
+// プレーヤーがマウントされず「リロードで YouTube が出ない」状態になる。
+// → 解決済み match は onMounted (クライアント) で拾い、後着 (クライアント遷移) は watch で拾う。
+function initYouTubeIfReady(m: typeof match.value) {
   if (m && m.videoSourceType === 'youtube' && !player.value) {
     initPlayer({ type: 'youtube', url: m.videoSourceUrl })
   }
-}, { immediate: true })
+}
+watch(match, initYouTubeIfReady)
 
 function onPickLocalFile(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
@@ -116,6 +123,8 @@ async function markCompleted(completed: boolean) {
 
 // リロード時: 進行中 (未決着) セットがあれば再開する。空セットの番号加算を防ぐ。
 onMounted(async () => {
+  // SSR で取り逃した解決済み match の YouTube プレーヤーをクライアントで初期化する。
+  initYouTubeIfReady(match.value)
   if (gameState.value) return
   await refreshSets()
   const target = (sets.value ?? [])
