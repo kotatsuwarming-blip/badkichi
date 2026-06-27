@@ -43,6 +43,20 @@ function cell(team: Team, side: CourtSide) {
 // 奥チームは正面から見るため左右がミラー（反転）する → right(偶数側=ファースト)を画面左に出す。
 const farCells = computed(() => [cell(farTeam.value, 'right'), cell(farTeam.value, 'left')])
 const nearCells = computed(() => [cell(nearTeam.value, 'left'), cell(nearTeam.value, 'right')])
+
+// サーバー→レシーバーの斜め矢印用に、4 表示セルへ画面上の座標 (%) を割り当てる。
+// far-row が上 (y≈22%)、near-row が下 (y≈78%)、左右セルは x≈25% / 75%。
+const arrow = computed(() => {
+  const layout = [
+    { ...farCells.value[0], x: 25, y: 22 },
+    { ...farCells.value[1], x: 75, y: 22 },
+    { ...nearCells.value[0], x: 25, y: 78 },
+    { ...nearCells.value[1], x: 75, y: 78 }
+  ]
+  const from = layout.find(c => c.isServer)
+  const to = layout.find(c => c.isReceiver)
+  return from && to ? { from, to } : null
+})
 </script>
 
 <template>
@@ -62,11 +76,36 @@ const nearCells = computed(() => [cell(nearTeam.value, 'left'), cell(nearTeam.va
           :class="{ 'is-server': c.isServer, 'is-receiver': c.isReceiver }"
           :data-testid="`cell-${c.id}`"
         >
-          <span
+          <svg
             v-if="c.isServer"
             class="server-mark"
-          >🏸</span>
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              class="shuttle-skirt"
+              d="M12 2 L18 15 L6 15 Z"
+            />
+            <path
+              class="shuttle-feather"
+              d="M12 2 V15 M9.3 7.5 L8.8 15 M14.7 7.5 L15.2 15"
+            />
+            <circle
+              class="shuttle-cork"
+              cx="12"
+              cy="17.5"
+              r="2.6"
+            />
+          </svg>
           <span class="cell-name">{{ c.name }}</span>
+          <span
+            v-if="c.isServer"
+            class="cell-role"
+          >{{ $t('record.court.serve') }}</span>
+          <span
+            v-else-if="c.isReceiver"
+            class="cell-role"
+          >{{ $t('record.court.receive') }}</span>
         </div>
       </div>
       <div class="service-line" />
@@ -82,13 +121,71 @@ const nearCells = computed(() => [cell(nearTeam.value, 'left'), cell(nearTeam.va
           :class="{ 'is-server': c.isServer, 'is-receiver': c.isReceiver }"
           :data-testid="`cell-${c.id}`"
         >
-          <span
+          <svg
             v-if="c.isServer"
             class="server-mark"
-          >🏸</span>
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              class="shuttle-skirt"
+              d="M12 2 L18 15 L6 15 Z"
+            />
+            <path
+              class="shuttle-feather"
+              d="M12 2 V15 M9.3 7.5 L8.8 15 M14.7 7.5 L15.2 15"
+            />
+            <circle
+              class="shuttle-cork"
+              cx="12"
+              cy="17.5"
+              r="2.6"
+            />
+          </svg>
           <span class="cell-name">{{ c.name }}</span>
+          <span
+            v-if="c.isServer"
+            class="cell-role"
+          >{{ $t('record.court.serve') }}</span>
+          <span
+            v-else-if="c.isReceiver"
+            class="cell-role"
+          >{{ $t('record.court.receive') }}</span>
         </div>
       </div>
+      <svg
+        v-if="arrow"
+        class="serve-arrow"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        data-testid="serve-arrow"
+      >
+        <defs>
+          <marker
+            id="serve-arrowhead"
+            markerWidth="6"
+            markerHeight="6"
+            refX="5"
+            refY="3"
+            orient="auto"
+          >
+            <path
+              d="M0 0 L6 3 L0 6 Z"
+              fill="#ffd54f"
+            />
+          </marker>
+        </defs>
+        <line
+          :x1="`${arrow.from.x}%`"
+          :y1="`${arrow.from.y}%`"
+          :x2="`${arrow.to.x}%`"
+          :y2="`${arrow.to.y}%`"
+          stroke="#ffd54f"
+          stroke-width="2"
+          stroke-linecap="round"
+          marker-end="url(#serve-arrowhead)"
+        />
+      </svg>
     </div>
     <p class="court-label">
       {{ $t('record.court.near') }}: {{ $t(`record.team.${nearTeam}`) }}
@@ -102,6 +199,7 @@ const nearCells = computed(() => [cell(nearTeam.value, 'left'), cell(nearTeam.va
 
 /* バドミントンコート風: 緑面 + 白ライン */
 .court {
+  position: relative; /* serve-arrow オーバーレイの基準 */
   width: 100%;
   max-width: 18rem;
   background: #2e7d4f;
@@ -131,7 +229,6 @@ const nearCells = computed(() => [cell(nearTeam.value, 'left'), cell(nearTeam.va
 
 .court-cell.is-server { background: var(--ui-primary); color: #1a1a1a; text-shadow: none; }
 .court-cell.is-server .cell-name { font-weight: 800; }
-.court-cell.is-receiver { box-shadow: inset 0 0 0 3px #ffd54f; }
 
 /* ショートサービスライン (ネット手前の白線) */
 .service-line { height: 2px; background: rgba(255, 255, 255, 0.9); }
@@ -160,5 +257,15 @@ const nearCells = computed(() => [cell(nearTeam.value, 'left'), cell(nearTeam.va
   padding: 0 0.4rem;
   border-radius: 2px;
 }
-.server-mark { font-size: 0.875rem; line-height: 1; }
+/* サーバー印: 羽根 (シャトル) だけのアイコン。ラケットは描かない (U-01) */
+.server-mark { width: 1.25rem; height: 1.25rem; display: block; }
+.shuttle-skirt { fill: #fff; stroke: #1a1a1a; stroke-width: 1; stroke-linejoin: round; }
+.shuttle-feather { stroke: #1a1a1a; stroke-width: 0.8; fill: none; }
+.shuttle-cork { fill: #d84315; stroke: #1a1a1a; stroke-width: 1; }
+
+/* サーブ / レシーブ の役割ラベル (名前の下) */
+.cell-role { font-size: 0.625rem; line-height: 1; opacity: 0.85; }
+
+/* サーバー→レシーバーの斜め矢印 (誰が誰に打つか) */
+.serve-arrow { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 </style>
