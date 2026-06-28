@@ -83,6 +83,11 @@ export interface RallyRow {
   video_start_timestamp_ms: number | null
   video_source_type: 'youtube' | 'local'
   video_source_url: string
+  /** ラリー開始時の確定スコア（同一セット内・自分より前の確定得点を積算） 🔵 U-06 */
+  score_a: number
+  score_b: number
+  /** ラリー時間 ms（最初〜最後のショットの経過。ショット 0/1 本・時刻なしは null） 🔵 U-06 */
+  rally_duration_ms: number | null
 }
 
 // ========================================

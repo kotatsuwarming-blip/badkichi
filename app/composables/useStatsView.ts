@@ -90,12 +90,14 @@ export function useStatsView(scope: StatsViewScope) {
     async () => {
       const e = globalFilter.value.entity
       if (e.kind === 'all') {
-        const [pr, pair, len] = await Promise.all([
+        // 全体でもラリーを取得し、テーブル（再生候補）を出す（U-05: フィルタ前提の発見性を解消）
+        const [pr, pair, len, rows] = await Promise.all([
           callStatsRpc<PlayerRateRow>(client, 'stats_player_rates', scopeArgs()),
           callStatsRpc<PairRateRow>(client, 'stats_pair_rates', scopeArgs()),
-          callStatsRpc<RallyLengthRow>(client, 'stats_rally_length', scopeArgs())
+          callStatsRpc<RallyLengthRow>(client, 'stats_rally_length', scopeArgs()),
+          callStatsRpc<RallyRow>(client, 'stats_rallies', scopeArgs())
         ])
-        return { mode: 'all' as const, agg: buildAggregate(pr, pair, len, nameOf) }
+        return { mode: 'all' as const, agg: buildAggregate(pr, pair, len, nameOf), rows }
       }
       const args = scopeArgs()
       if (e.kind === 'player') args.p_player_id = e.playerId
@@ -141,13 +143,17 @@ export function useStatsView(scope: StatsViewScope) {
     return ralliesToLengthBins(forLength)
   })
 
-  // テーブル: 全ドリルダウン適用
-  const tableRows = computed<RallyRow[]>(() =>
-    raw.value?.mode === 'entity' ? applyDrilldown(entityRows.value, drilldown.value, subjectIds.value) : []
-  )
+  // テーブル: 全体は全ラリー、選手/ペアはドリルダウン適用
+  const tableRows = computed<RallyRow[]>(() => {
+    if (raw.value?.mode === 'all') return raw.value.rows
+    if (raw.value?.mode === 'entity') return applyDrilldown(entityRows.value, drilldown.value, subjectIds.value)
+    return []
+  })
 
   const isEmpty = computed(() =>
-    raw.value?.mode === 'all' ? (raw.value.agg.playerRates.length === 0) : entityRows.value.length === 0
+    raw.value?.mode === 'all'
+      ? (raw.value.agg.playerRates.length === 0 && raw.value.rows.length === 0)
+      : entityRows.value.length === 0
   )
 
   // ---- 操作 ----

@@ -70,6 +70,13 @@ describe('useStatsView (group)', () => {
     expect(v.overview.value?.playerRates[0]?.playerName).toBe('田中')
   })
 
+  it('全体でも stats_rallies を呼びテーブルに全ラリーを出す（U-05）', async () => {
+    const v = useStatsView({ kind: 'group', groupId: 'g1' })
+    await flushPromises()
+    expect(rpcMock).toHaveBeenCalledWith('stats_rallies', { p_group_id: 'g1', p_match_ids: ['m1', 'm2'] })
+    expect(v.tableRows.value).toHaveLength(2) // フィルタ無し（全体）でも候補が出る
+  })
+
   it('期間フィルタで includedMatchIds を解決', () => {
     const v = useStatsView({ kind: 'group', groupId: 'g1' })
     v.setDateRange('2026-06-05', null)
