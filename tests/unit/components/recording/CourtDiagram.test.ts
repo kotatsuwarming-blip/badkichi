@@ -71,4 +71,15 @@ describe('CourtDiagram', () => {
     expect(nearCells[0].text()).toContain('佐藤') // A1 (left) が向かって左
     expect(nearCells[1].text()).toContain('鈴木') // A2 (right) が向かって右
   })
+
+  it('サーバー/レシーバーのセルに役割ラベルを出す', () => {
+    const w = mountCourt('A')
+    expect(w.find('[data-testid="cell-A2"]').text()).toContain('record.court.serve') // server
+    expect(w.find('[data-testid="cell-B1"]').text()).toContain('record.court.receive') // receiver
+  })
+
+  it('サーバー→レシーバーの斜め矢印を描画する', () => {
+    const w = mountCourt('A')
+    expect(w.find('[data-testid="serve-arrow"]').exists()).toBe(true)
+  })
 })

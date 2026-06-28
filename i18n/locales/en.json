@@ -206,7 +206,27 @@
     "court": {
       "far": "Far",
       "near": "Near",
-      "net": "Net"
+      "net": "Net",
+      "serve": "Serve",
+      "receive": "Receive"
+    },
+    "guide": {
+      "title": "How to record",
+      "intro": "Record rallies one by one while watching the video. You can use the mouse or the keyboard.",
+      "step1Title": "1. Record each shot",
+      "step1Body": "Press [Shot] each time a player hits the shuttle.",
+      "step1Tempo": "Pressing in time with each hit also reveals fast vs. slow rallies.",
+      "step2Title": "2. End the rally with the result",
+      "step2Point": "[Team A point] / [Team B point] … the side that scored",
+      "step2Let": "[Let] … replay",
+      "step2Skip": "[Skip] … when the scoring side is unclear (confirm later)",
+      "step2Next": "It advances to the next rally automatically.",
+      "step3": "3. Made a mistake? [Undo] steps back one action (feel free to experiment).",
+      "step4Title": "4. Fix the court if it differs from reality",
+      "step4Body": "Positions are shown automatically. If left/right is reversed from the video, fix it with [Swap A] / [Swap B].",
+      "legend": "Court: the shuttle mark is the server, the arrow points to the receiver. The keyboard is faster once you get used to it.",
+      "start": "Start recording",
+      "reopen": "View how to record"
     },
     "score": {
       "set": "Set",
