@@ -325,14 +325,14 @@
       "excluded": "Excluded"
     },
     "rate": {
-      "title": "Scoring rate",
+      "title": "Scoring rate by position",
       "serve": "Scoring rate on serve",
       "receive": "Scoring rate on receive",
       "withCount": "{rate}% (n={n})",
       "noData": "-"
     },
     "rallyLength": {
-      "title": "Rally length vs win rate",
+      "title": "Rally length vs scoring rate",
       "count": "Rallies",
       "winRate": "Serve win rate"
     },
