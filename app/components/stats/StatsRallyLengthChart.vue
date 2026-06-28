@@ -29,12 +29,13 @@ const option = computed(() => {
   const s = series.value
   return {
     tooltip: { trigger: 'axis' },
-    legend: { data: [t('stats.rallyLength.count'), t('stats.rallyLength.winRate')] },
-    grid: { left: 40, right: 40, top: 32, bottom: 24 },
+    // 凡例は下部へ。軸名（本数/%）と凡例の衝突を解消（U-06: 凡例がグラフに被る）
+    legend: { data: [t('stats.rallyLength.count'), t('stats.rallyLength.winRate')], bottom: 0 },
+    grid: { left: 48, right: 48, top: 28, bottom: 44 },
     xAxis: { type: 'category', data: s.labels },
     yAxis: [
-      { type: 'value', name: t('stats.rallyLength.count'), min: 0 },
-      { type: 'value', name: '%', min: 0, max: 100 }
+      { type: 'value', name: t('stats.rallyLength.count'), min: 0, nameGap: 12 },
+      { type: 'value', name: '%', min: 0, max: 100, nameGap: 12 }
     ],
     series: [
       {
@@ -88,5 +89,5 @@ defineExpose({ onChartClick })
 
 <style scoped>
 .stats-rally-length-chart { width: 100%; }
-.chart { width: 100%; height: 280px; }
+.chart { width: 100%; height: 300px; }
 </style>

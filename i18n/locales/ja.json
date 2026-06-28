@@ -338,12 +338,16 @@
     "table": {
       "title": "ラリー一覧",
       "rally": "ラリー",
+      "set": "セット",
+      "score": "スコア",
+      "duration": "ラリー時間",
       "match": "試合",
       "server": "サーバー",
       "receiver": "レシーバー",
       "result": "結果",
       "shots": "ショット数",
       "play": "この位置から再生",
+      "playColumn": "ラリー再生",
       "empty": "表示するラリーがありません",
       "filterHint": "グラフで選手・ペア・ラリー長を選ぶと、該当ラリーが一覧表示されます"
     },

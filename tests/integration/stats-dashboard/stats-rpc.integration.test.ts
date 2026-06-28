@@ -212,6 +212,17 @@ describe.skipIf(skip)('stats-dashboard 集計 RPC 統合テスト', () => {
     expect(rows.every(r => typeof r.video_source_url === 'string')).toBe(true)
   })
 
+  it('U-06: ラリー開始時スコアを積算（レット/未確定は加点せず）。ショット時刻なしは時間 null', async () => {
+    const { data } = await userAClient.rpc('stats_rallies', { p_match_id: match1Id })
+    const rows = (data as Array<Record<string, number | null>>)
+      .slice()
+      .sort((a, b) => Number(a.rally_number) - Number(b.rally_number))
+    // R1=0-0, R2=1-0(R1 A), R3=1-1(R1 A,R2 B), R4(let)=2-1, R5(未確定)=2-1
+    expect(rows.map(r => `${r.score_a}-${r.score_b}`)).toEqual(['0-0', '1-0', '1-1', '2-1', '2-1'])
+    // シードのショットは video_timestamp_ms 未設定 → ラリー時間は null
+    expect(rows.every(r => r.rally_duration_ms === null)).toBe(true)
+  })
+
   it('REQ-010: ラリー長ビンの和集合（OR）で絞り込む', async () => {
     const { data } = await userAClient.rpc('stats_rallies', {
       p_match_id: match1Id,
