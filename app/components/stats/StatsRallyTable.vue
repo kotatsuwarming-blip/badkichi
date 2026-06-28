@@ -75,7 +75,7 @@ function onSelect(row: RallyRow): void {
             {{ row.match_name }}
           </td>
           <td :data-testid="`rally-set-${row.rally_id}`">
-            {{ $t('stats.table.setShort', { n: row.set_number }) }}
+            {{ row.set_number }}
           </td>
           <td class="score-cell">
             <span
