@@ -26,6 +26,22 @@ Badminton analytics app for team use. Built with Nuxt 4 (Vue 3) + Nuxt UI + Type
 - Use Nuxt UI components for UI elements
 - ESLint config: 1tbs brace style, no comma dangle
 
+## Branch & PR workflow
+
+- `main` is the source of truth and the production branch (Vercel auto-deploys `main`).
+- `dev` is an integration branch for local verification only — never use it as a PR base.
+- Always branch off `main`, named by purpose:
+  - `feature/xxx` — new features
+  - `fix/xxx` — bug fixes
+  - `docs/xxx` — documentation additions/changes
+- Flow for every change:
+  1. Branch off `main`.
+  2. Make the change.
+  3. Merge the branch into `dev` (direct merge, no PR) and push.
+  4. Host `dev` locally and verify the behavior.
+  5. Once it works, open a PR from the branch to `main`.
+- Keep each PR to a single logical unit.
+
 ## Directory Structure
 
 - `app/` — Application source code
