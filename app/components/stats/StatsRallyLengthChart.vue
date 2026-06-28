@@ -29,14 +29,16 @@ const option = computed(() => {
   const s = series.value
   return {
     tooltip: { trigger: 'axis' },
+    // チャート全文字を濃いめ・標準サイズに（U-06: グラフの文字が薄く小さく読みづらい）
+    textStyle: { color: '#1f2937', fontSize: 13 },
     // 凡例は下部へ。軸名（本数/%）と凡例の衝突を解消（U-06: 凡例がグラフに被る）
-    legend: { data: [t('stats.rallyLength.count'), t('stats.rallyLength.winRate')], bottom: 0 },
+    legend: { data: [t('stats.rallyLength.count'), t('stats.rallyLength.winRate')], bottom: 0, textStyle: { color: '#1f2937', fontSize: 13 } },
     grid: { left: 48, right: 48, top: 28, bottom: 44 },
-    // 軸ラベルが薄く読みづらいため濃いグレーに（U-06）
-    xAxis: { type: 'category', data: s.labels, axisLabel: { color: '#374151' } },
+    // 軸ラベル・軸名はほぼ黒・やや大きめで視認性を上げる（U-06）
+    xAxis: { type: 'category', data: s.labels, axisLabel: { color: '#111827', fontSize: 13, fontWeight: 500 } },
     yAxis: [
-      { type: 'value', name: t('stats.rallyLength.count'), min: 0, nameGap: 12, axisLabel: { color: '#374151' } },
-      { type: 'value', name: '%', min: 0, max: 100, nameGap: 12, axisLabel: { color: '#374151' } }
+      { type: 'value', name: t('stats.rallyLength.count'), min: 0, nameGap: 12, axisLabel: { color: '#111827', fontSize: 13 }, nameTextStyle: { color: '#111827', fontSize: 12 } },
+      { type: 'value', name: '%', min: 0, max: 100, nameGap: 12, axisLabel: { color: '#111827', fontSize: 13 }, nameTextStyle: { color: '#111827', fontSize: 12 } }
     ],
     series: [
       {
