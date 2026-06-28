@@ -24,11 +24,12 @@ const names = { p0: '田中', p2: '佐藤' }
 
 function row(id: string, ms: number | null, opts: Partial<RallyRow> = {}): RallyRow {
   return {
-    rally_id: id, match_id: 'm', match_name: 'M', set_number: 1, rally_number: 1,
-    serving_team: 'A' as Team, server_player_id: 'p0', receiver_player_id: 'p2',
+    rally_id: id, match_id: 'm', match_name: 'M', match_date: null, set_number: 1, rally_number: 1,
+    serving_team: 'A' as Team, server_position: 'right', server_player_id: 'p0', receiver_player_id: 'p2',
     point_winner: 'A', is_let: false, is_point_confirmed: true,
     shot_count: 5, video_start_timestamp_ms: ms,
-    video_source_type: 'youtube', video_source_url: 'u', ...opts
+    video_source_type: 'youtube', video_source_url: 'u',
+    score_a: 3, score_b: 2, rally_duration_ms: 8500, ...opts
   }
 }
 
@@ -55,5 +56,19 @@ describe('StatsRallyTable', () => {
   it('0 件は空状態を表示', () => {
     const w = mount(StatsRallyTable, { props: { rows: [], names }, global })
     expect(w.find('[data-testid="rally-table-empty"]').exists()).toBe(true)
+  })
+
+  it('ラリー開始時スコアを表示（U-06）', () => {
+    const w = mount(StatsRallyTable, { props: { rows: [row('r1', 1000)], names }, global })
+    expect(w.find('[data-testid="rally-score-r1"]').text()).toBe('3-2')
+  })
+
+  it('ラリー時間を秒で表示。null は「-」（U-06）', () => {
+    const w = mount(StatsRallyTable, {
+      props: { rows: [row('r1', 1000, { rally_duration_ms: 8500 }), row('r2', 2000, { rally_duration_ms: null })], names },
+      global
+    })
+    expect(w.find('[data-testid="rally-duration-r1"]').text()).toBe('8.5s')
+    expect(w.find('[data-testid="rally-duration-r2"]').text()).toBe('-')
   })
 })

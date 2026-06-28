@@ -34,6 +34,12 @@ function jumpable(row: RallyRow): boolean {
   return row.video_start_timestamp_ms !== null
 }
 
+// ラリー時間 ms → 秒表示（小数1桁）。null は「-」。
+function formatDuration(ms: number | null): string {
+  if (ms === null || ms <= 0) return '-'
+  return `${(ms / 1000).toFixed(1)}s`
+}
+
 function onSelect(row: RallyRow): void {
   if (jumpable(row)) emit('select', row)
 }
@@ -57,7 +63,7 @@ function onSelect(row: RallyRow): void {
     >
       <thead>
         <tr>
-          <th>{{ $t('stats.table.rally') }}</th>
+          <th>{{ $t('stats.table.score') }}</th>
           <th v-if="showMatch">
             {{ $t('stats.table.match') }}
           </th>
@@ -65,6 +71,7 @@ function onSelect(row: RallyRow): void {
           <th>{{ $t('stats.table.receiver') }}</th>
           <th>{{ $t('stats.table.result') }}</th>
           <th>{{ $t('stats.table.shots') }}</th>
+          <th>{{ $t('stats.table.duration') }}</th>
           <th />
         </tr>
       </thead>
@@ -77,7 +84,13 @@ function onSelect(row: RallyRow): void {
           :data-testid="`rally-row-${row.rally_id}`"
           @click="onSelect(row)"
         >
-          <td>{{ row.set_number }}-{{ row.rally_number }}</td>
+          <td class="score-cell">
+            <span
+              class="score"
+              :data-testid="`rally-score-${row.rally_id}`"
+            >{{ row.score_a }}-{{ row.score_b }}</span>
+            <span class="set-no">{{ $t('stats.table.setShort', { n: row.set_number }) }}</span>
+          </td>
           <td v-if="showMatch">
             {{ row.match_name }}
           </td>
@@ -85,6 +98,9 @@ function onSelect(row: RallyRow): void {
           <td>{{ nameOf(row.receiver_player_id) }}</td>
           <td>{{ $t(resultLabelKey(row)) }}</td>
           <td>{{ row.shot_count }}</td>
+          <td :data-testid="`rally-duration-${row.rally_id}`">
+            {{ formatDuration(row.rally_duration_ms) }}
+          </td>
           <td>
             <UButton
               v-if="jumpable(row)"
@@ -110,4 +126,7 @@ function onSelect(row: RallyRow): void {
 .row.is-disabled { cursor: default; opacity: 0.55; }
 .row.is-unconfirmed { font-style: italic; opacity: 0.8; }
 .empty { color: var(--ui-text-muted, #6b7280); padding: 1rem 0; }
+.score-cell { white-space: nowrap; }
+.score { font-variant-numeric: tabular-nums; font-weight: 600; }
+.set-no { margin-left: 0.375rem; font-size: 0.75rem; color: var(--ui-text-muted, #6b7280); }
 </style>

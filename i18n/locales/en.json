@@ -338,6 +338,9 @@
     "table": {
       "title": "Rallies",
       "rally": "Rally",
+      "score": "Score",
+      "setShort": "S{n}",
+      "duration": "Rally time",
       "match": "Match",
       "server": "Server",
       "receiver": "Receiver",

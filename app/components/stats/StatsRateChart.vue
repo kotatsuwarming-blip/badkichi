@@ -51,8 +51,9 @@ const option = computed(() => {
         return `${p.name}<br/>${p.seriesName}: ${rate}`
       }
     },
-    legend: { data: [t('stats.rate.serve'), t('stats.rate.receive')] },
-    grid: { left: 40, right: 16, top: 32, bottom: 24 },
+    // 凡例はプロット領域と重ならないよう下部に配置（U-06: 凡例がグラフに被る）
+    legend: { data: [t('stats.rate.serve'), t('stats.rate.receive')], bottom: 0 },
+    grid: { left: 44, right: 16, top: 16, bottom: 44 },
     xAxis: { type: 'category', data: labels },
     yAxis: { type: 'value', min: 0, max: 100 },
     series: [
@@ -102,5 +103,5 @@ defineExpose({ onChartClick })
 
 <style scoped>
 .stats-rate-chart { width: 100%; }
-.chart { width: 100%; height: 280px; }
+.chart { width: 100%; height: 300px; }
 </style>
