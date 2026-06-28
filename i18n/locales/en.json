@@ -325,8 +325,9 @@
       "excluded": "Excluded"
     },
     "rate": {
-      "serve": "Serve win rate",
-      "receive": "Receive win rate",
+      "title": "Scoring rate",
+      "serve": "Scoring rate on serve",
+      "receive": "Scoring rate on receive",
       "withCount": "{rate}% (n={n})",
       "noData": "-"
     },

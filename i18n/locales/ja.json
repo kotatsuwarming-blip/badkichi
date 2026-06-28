@@ -325,13 +325,14 @@
       "excluded": "除外"
     },
     "rate": {
-      "serve": "サービス得点率",
-      "receive": "レシーブ得点率",
+      "title": "得点率",
+      "serve": "サーブ時の得点率",
+      "receive": "レシーブ時の得点率",
       "withCount": "{rate}%（n={n}）",
       "noData": "-"
     },
     "rallyLength": {
-      "title": "ラリー長と得点率",
+      "title": "ラリー長と勝率",
       "count": "本数",
       "winRate": "サーブ側勝率"
     },
