@@ -39,7 +39,7 @@ jobs:
 
     steps:
       - name: Checkout (push 先ブランチを取得)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           # detached HEAD を避け、commit-back できるよう対象ブランチを明示
           ref: ${{ github.ref_name }}
