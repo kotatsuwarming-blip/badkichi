@@ -354,14 +354,19 @@ export function useRecordingSession(
       const shotId = await step.shotIdP.catch(() => null) // REQ-110d: insert 解決を待つ
       if (cr && cr.rallyId === step.rallyId) {
         cr.shots.pop()
-        if (shotId) track(deleteShot({ shotId }))
+        // shots.rally_id は ON DELETE CASCADE なし & rallies は UNIQUE(set_id, rally_number)。
+        // 「ショット削除 → ラリー削除」の順を保証し (逆順だと FK 違反でラリーが消えない)、
+        // 削除完了を await してから undo を返す。await しないと、直後の「打った」が同じ
+        // rally_number で createRally し、物理削除前の行と UNIQUE 衝突 → ラリー生成失敗 →
+        // ショットが記録されない (打っても認識されないバグ、REQ-110a)。
+        if (shotId) await track(deleteShot({ shotId }))
         if (cr.shots.length === 0 && !cr.isPending) {
           const rid = cr.rallyId
           cr.rallyId = null
-          if (rid) track(deleteRally({ rallyId: rid }))
+          if (rid) await track(deleteRally({ rallyId: rid }))
         }
       } else if (shotId) {
-        track(deleteShot({ shotId }))
+        await track(deleteShot({ shotId }))
       }
     } else if (step.kind === 'override') {
       gameState.value = step.prevState

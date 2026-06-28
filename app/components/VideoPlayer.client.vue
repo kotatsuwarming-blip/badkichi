@@ -16,7 +16,7 @@
  * スタイル: セミコロンなし / no comma dangle（CLAUDE.md ESLint 規約）
  */
 
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { PlaybackRate, VideoPlayerProps, VideoPlayerSlotProps } from '~/types/video-playback'
 import { PLAYBACK_RATES, VIDEO_PLAYER_ERROR_CODE } from '~/types/video-playback'
 
@@ -115,11 +115,25 @@ function onWindowBlur(): void {
   }, 0)
 }
 
-onMounted(async () => {
+// attach は playerEl が実在した時点で1回だけ行う。
+// `.client` コンポーネントがリロード (SSR→hydration) 経由かつ動的マウントで挿入されると、
+// onMounted 時点では内側 DOM (playerEl) が未描画で ref が null になりうるため、
+// onMounted 固定ではなく playerEl を watch して、要素が入ったら attach する。
+let attached = false
+async function attachWhenReady(el: HTMLElement | null): Promise<void> {
+  if (attached || !el) return
+  attached = true
+  await props.player.attach(el)
+}
+
+onMounted(() => {
   window.addEventListener('keydown', onKeydown, true)
   window.addEventListener('blur', onWindowBlur)
-  if (playerEl.value) await props.player.attach(playerEl.value)
 })
+
+// flush: 'post' = DOM 反映後に評価。immediate で初回 (要素があれば即 attach)、
+// 後から playerEl が入った場合も発火して attach する。
+watch(playerEl, attachWhenReady, { immediate: true, flush: 'post' })
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown, true)

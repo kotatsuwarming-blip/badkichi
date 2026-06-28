@@ -8,6 +8,7 @@
  * REQ-002〜008 / REQ-101〜107 / REQ-110 / REQ-410
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
 
 const m = vi.hoisted(() => ({
   createSet: vi.fn(),
@@ -170,6 +171,28 @@ describe('useRecordingSession: 統一 undo', () => {
     expect(s.currentRally.value?.shots).toHaveLength(0)
     expect(m.deleteShot).toHaveBeenCalledWith({ shotId: 'sh1' })
     expect(m.deleteRally).toHaveBeenCalled() // 空になった遅延生成 rally
+  })
+
+  it('ショット取り消しはラリーの物理削除完了を待ってから解決する (再記録時の UNIQUE 衝突回避)', async () => {
+    // rallies は UNIQUE(set_id, rally_number)・shots.rally_id は CASCADE なし。
+    // 取り消しの物理削除を await せずに次の「打った」を押すと、同じ rally_number で
+    // createRally して未削除の行と衝突 → ラリー生成失敗 → ショットが認識されないバグになる。
+    // ここでは「ラリー削除が解決するまで undoLast が解決しない」ことを検証する。
+    let resolveDelete: (() => void) | null = null
+    m.deleteRally.mockImplementation(() => new Promise((res) => {
+      resolveDelete = () => res({ data: true, error: null })
+    }))
+    const s = await startedSession()
+    await s.recordShot()
+    let undone = false
+    const p = s.undoLast().then(() => {
+      undone = true
+    })
+    await flushPromises() // shot 削除は解決、ラリー削除は保留
+    expect(undone).toBe(false)
+    resolveDelete!()
+    await p
+    expect(undone).toBe(true)
   })
 
   it('得点の取り消し: engine 復元・履歴 pop・ラリー reopen', async () => {
