@@ -11,6 +11,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { PairRate, PlayerRate, StatsRole } from '~/types/stats-dashboard'
+import { useChartTextColor } from '~/composables/useChartTextColor'
 
 const props = defineProps<{
   entries: (PlayerRate | PairRate)[]
@@ -24,6 +25,9 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+
+// テーマ（ライト/ダーク）に追従する文字色。ダーク背景では濃い文字が見えないため切替える（U-06）。
+const chartText = useChartTextColor()
 
 function labelOf(e: PlayerRate | PairRate): string {
   return props.mode === 'pair' ? (e as PairRate).pairLabel : (e as PlayerRate).playerName
@@ -51,14 +55,14 @@ const option = computed(() => {
         return `${p.name}<br/>${p.seriesName}: ${rate}`
       }
     },
-    // チャート全文字を濃いめ・標準サイズに（U-06: グラフの文字が薄く小さく読みづらい）
-    textStyle: { color: '#1f2937', fontSize: 13 },
+    // チャート全文字をテーマ追従色・標準サイズに（U-06: 文字が読みづらい / ダーク背景対応）
+    textStyle: { color: chartText.value, fontSize: 13 },
     // 凡例はプロット領域と重ならないよう下部に配置（U-06: 凡例がグラフに被る）
-    legend: { data: [t('stats.rate.serve'), t('stats.rate.receive')], bottom: 0, textStyle: { color: '#1f2937', fontSize: 13 } },
+    legend: { data: [t('stats.rate.serve'), t('stats.rate.receive')], bottom: 0, textStyle: { color: chartText.value, fontSize: 13 } },
     grid: { left: 44, right: 16, top: 16, bottom: 44 },
-    // 軸ラベル（選手名）はほぼ黒・やや大きめで視認性を上げる（U-06）
-    xAxis: { type: 'category', data: labels, axisLabel: { color: '#111827', fontSize: 13, fontWeight: 500 } },
-    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { color: '#111827', fontSize: 13 } },
+    // 軸ラベル（選手名）はやや大きめ・太めで視認性を上げる（U-06）
+    xAxis: { type: 'category', data: labels, axisLabel: { color: chartText.value, fontSize: 13, fontWeight: 500 } },
+    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { color: chartText.value, fontSize: 13 } },
     series: [
       { name: t('stats.rate.serve'), type: 'bar', data: serve, itemStyle: { opacity: roleOpacity('serve') } },
       { name: t('stats.rate.receive'), type: 'bar', data: receive, itemStyle: { opacity: roleOpacity('receive') } }
@@ -109,6 +113,6 @@ defineExpose({ onChartClick })
 
 <style scoped>
 .stats-rate-chart { width: 100%; }
-.chart-title { font-size: 0.9375rem; font-weight: 700; margin: 0 0 0.25rem; }
+.chart-title { font-size: 0.9375rem; font-weight: 700; margin: 0 0 0.25rem; color: var(--ui-text); }
 .chart { width: 100%; height: 300px; }
 </style>

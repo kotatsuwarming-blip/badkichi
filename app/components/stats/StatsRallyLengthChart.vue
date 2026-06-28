@@ -11,6 +11,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { toRallyLengthSeries } from '~/utils/stats-dashboard/to-rally-length-series'
+import { useChartTextColor } from '~/composables/useChartTextColor'
 import type { RallyLengthBin } from '~/types/stats-dashboard'
 
 const props = defineProps<{
@@ -23,22 +24,25 @@ const emit = defineEmits<{ selectBins: [keys: string[]] }>()
 
 const { t } = useI18n()
 
+// テーマ（ライト/ダーク）に追従する文字色（U-06: ダーク背景で濃い文字が見えない）。
+const chartText = useChartTextColor()
+
 const series = computed(() => toRallyLengthSeries(props.bins))
 
 const option = computed(() => {
   const s = series.value
   return {
     tooltip: { trigger: 'axis' },
-    // チャート全文字を濃いめ・標準サイズに（U-06: グラフの文字が薄く小さく読みづらい）
-    textStyle: { color: '#1f2937', fontSize: 13 },
+    // チャート全文字をテーマ追従色・標準サイズに（U-06）
+    textStyle: { color: chartText.value, fontSize: 13 },
     // 凡例は下部へ。軸名（本数/%）と凡例の衝突を解消（U-06: 凡例がグラフに被る）
-    legend: { data: [t('stats.rallyLength.count'), t('stats.rallyLength.winRate')], bottom: 0, textStyle: { color: '#1f2937', fontSize: 13 } },
+    legend: { data: [t('stats.rallyLength.count'), t('stats.rallyLength.winRate')], bottom: 0, textStyle: { color: chartText.value, fontSize: 13 } },
     grid: { left: 48, right: 48, top: 28, bottom: 44 },
-    // 軸ラベル・軸名はほぼ黒・やや大きめで視認性を上げる（U-06）
-    xAxis: { type: 'category', data: s.labels, axisLabel: { color: '#111827', fontSize: 13, fontWeight: 500 } },
+    // 軸ラベル・軸名はやや大きめで視認性を上げる（U-06）
+    xAxis: { type: 'category', data: s.labels, axisLabel: { color: chartText.value, fontSize: 13, fontWeight: 500 } },
     yAxis: [
-      { type: 'value', name: t('stats.rallyLength.count'), min: 0, nameGap: 12, axisLabel: { color: '#111827', fontSize: 13 }, nameTextStyle: { color: '#111827', fontSize: 12 } },
-      { type: 'value', name: '%', min: 0, max: 100, nameGap: 12, axisLabel: { color: '#111827', fontSize: 13 }, nameTextStyle: { color: '#111827', fontSize: 12 } }
+      { type: 'value', name: t('stats.rallyLength.count'), min: 0, nameGap: 12, axisLabel: { color: chartText.value, fontSize: 13 }, nameTextStyle: { color: chartText.value, fontSize: 12 } },
+      { type: 'value', name: '%', min: 0, max: 100, nameGap: 12, axisLabel: { color: chartText.value, fontSize: 13 }, nameTextStyle: { color: chartText.value, fontSize: 12 } }
     ],
     series: [
       {
@@ -95,6 +99,6 @@ defineExpose({ onChartClick })
 
 <style scoped>
 .stats-rally-length-chart { width: 100%; }
-.chart-title { font-size: 0.9375rem; font-weight: 700; margin: 0 0 0.25rem; }
+.chart-title { font-size: 0.9375rem; font-weight: 700; margin: 0 0 0.25rem; color: var(--ui-text); }
 .chart { width: 100%; height: 300px; }
 </style>
