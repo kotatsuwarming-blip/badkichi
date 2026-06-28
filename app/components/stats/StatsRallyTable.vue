@@ -4,37 +4,26 @@
  *
  * 行選択で select を emit（埋め込みプレーヤーが該当 ms へシーク）。
  * video_start_timestamp_ms が null の行は再生不可（非リンク・dimmed, EDGE-103）。
- * レット・未確定は結果列で視覚区別。
+ * 列: 試合(Group横断のみ) / セット / スコア(ラリー開始時) / ショット数 / ラリー時間 / 再生。
  *
  * 関連設計: docs/design/stats-dashboard/{interfaces.ts,dataflow.md}
- * 関連要件: REQ-006 / REQ-007 / REQ-011 / EDGE-103
+ * 関連要件: REQ-006 / REQ-007 / REQ-011 / EDGE-103 / U-06
  */
 import type { RallyRow } from '~/types/stats-dashboard'
 
-const props = defineProps<{
+defineProps<{
   rows: RallyRow[]
-  names: Record<string, string>
   /** Group 横断では試合名列を表示する */
   showMatch?: boolean
 }>()
 
 const emit = defineEmits<{ select: [rally: RallyRow] }>()
 
-function nameOf(id: string): string {
-  return props.names[id] ?? id
-}
-
-function resultLabelKey(row: RallyRow): string {
-  if (!row.is_point_confirmed) return 'stats.outcome.unconfirmed'
-  if (row.is_let) return 'stats.outcome.let'
-  return row.point_winner === 'A' ? 'stats.outcome.pointA' : 'stats.outcome.pointB'
-}
-
 function jumpable(row: RallyRow): boolean {
   return row.video_start_timestamp_ms !== null
 }
 
-// ラリー時間 ms → 秒表示（小数1桁）。null は「-」。
+// ラリー時間 ms → 秒表示（小数1桁）。null・0 は「-」。
 function formatDuration(ms: number | null): string {
   if (ms === null || ms <= 0) return '-'
   return `${(ms / 1000).toFixed(1)}s`
@@ -63,16 +52,14 @@ function onSelect(row: RallyRow): void {
     >
       <thead>
         <tr>
-          <th>{{ $t('stats.table.score') }}</th>
           <th v-if="showMatch">
             {{ $t('stats.table.match') }}
           </th>
-          <th>{{ $t('stats.table.server') }}</th>
-          <th>{{ $t('stats.table.receiver') }}</th>
-          <th>{{ $t('stats.table.result') }}</th>
+          <th>{{ $t('stats.table.set') }}</th>
+          <th>{{ $t('stats.table.score') }}</th>
           <th>{{ $t('stats.table.shots') }}</th>
           <th>{{ $t('stats.table.duration') }}</th>
-          <th />
+          <th>{{ $t('stats.table.playColumn') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -84,19 +71,18 @@ function onSelect(row: RallyRow): void {
           :data-testid="`rally-row-${row.rally_id}`"
           @click="onSelect(row)"
         >
+          <td v-if="showMatch">
+            {{ row.match_name }}
+          </td>
+          <td :data-testid="`rally-set-${row.rally_id}`">
+            {{ $t('stats.table.setShort', { n: row.set_number }) }}
+          </td>
           <td class="score-cell">
             <span
               class="score"
               :data-testid="`rally-score-${row.rally_id}`"
             >{{ row.score_a }}-{{ row.score_b }}</span>
-            <span class="set-no">{{ $t('stats.table.setShort', { n: row.set_number }) }}</span>
           </td>
-          <td v-if="showMatch">
-            {{ row.match_name }}
-          </td>
-          <td>{{ nameOf(row.server_player_id) }}</td>
-          <td>{{ nameOf(row.receiver_player_id) }}</td>
-          <td>{{ $t(resultLabelKey(row)) }}</td>
           <td>{{ row.shot_count }}</td>
           <td :data-testid="`rally-duration-${row.rally_id}`">
             {{ formatDuration(row.rally_duration_ms) }}
@@ -128,5 +114,4 @@ function onSelect(row: RallyRow): void {
 .empty { color: var(--ui-text-muted, #6b7280); padding: 1rem 0; }
 .score-cell { white-space: nowrap; }
 .score { font-variant-numeric: tabular-nums; font-weight: 600; }
-.set-no { margin-left: 0.375rem; font-size: 0.75rem; color: var(--ui-text-muted, #6b7280); }
 </style>

@@ -338,6 +338,7 @@
     "table": {
       "title": "Rallies",
       "rally": "Rally",
+      "set": "Set",
       "score": "Score",
       "setShort": "S{n}",
       "duration": "Rally time",
@@ -347,6 +348,7 @@
       "result": "Result",
       "shots": "Shots",
       "play": "Play from here",
+      "playColumn": "Play",
       "empty": "No rallies to show",
       "filterHint": "Select a player, pair, or rally length in the charts to list matching rallies"
     },

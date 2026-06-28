@@ -195,7 +195,6 @@ function backToPair(): void {
       <section class="table-col">
         <StatsRallyTable
           :rows="view.tableRows.value"
-          :names="view.namesMap.value"
           :show-match="true"
           @select="onSelectRally"
         />
