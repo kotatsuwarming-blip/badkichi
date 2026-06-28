@@ -625,9 +625,12 @@ export type Database = {
           match_id: string
           match_name: string
           point_winner: string
+          rally_duration_ms: number
           rally_id: string
           rally_number: number
           receiver_player_id: string
+          score_a: number
+          score_b: number
           server_player_id: string
           server_position: string
           serving_team: string
