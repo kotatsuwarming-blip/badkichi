@@ -325,8 +325,9 @@
       "excluded": "除外"
     },
     "rate": {
-      "serve": "サービス得点率",
-      "receive": "レシーブ得点率",
+      "title": "ポジション別得点率",
+      "serve": "サーブ時の得点率",
+      "receive": "レシーブ時の得点率",
       "withCount": "{rate}%（n={n}）",
       "noData": "-"
     },
