@@ -41,6 +41,7 @@ Badminton analytics app for team use. Built with Nuxt 4 (Vue 3) + Nuxt UI + Type
   4. Host `dev` locally and verify the behavior.
   5. Once it works, open a PR from the branch to `main`.
 - Keep each PR to a single logical unit.
+- Local dev hosting: serve `dev` at `http://localhost:3000` from a dedicated git worktree pinned to `dev` (a sibling `badkichi-dev/`), so switching branches in the main checkout never changes what is hosted. Run `pnpm dev` there. Because `dev` lives in that worktree, do the step-3 merge from it: `git -C ../badkichi-dev merge <branch> && git -C ../badkichi-dev push` — the running server (HMR) then reflects the integration.
 
 ## Directory Structure
 
