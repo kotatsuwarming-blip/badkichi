@@ -91,6 +91,24 @@ const shotMarkers = computed(() => (currentRally.value?.shots ?? []).map(s => s.
 const recordDisabled = computed(() => !currentRally.value || currentRally.value.isPending)
 const shotCount = computed(() => currentRally.value?.shots.length ?? 0)
 
+// 記録のしかた 初回ガイド (U-01)。初回だけ自動表示し、以降はヘッダの [?] から再表示する。
+const GUIDE_SEEN_KEY = 'badkichi:record-guide-seen'
+const guideOpen = ref(false)
+function guideSeen() {
+  return import.meta.client && localStorage.getItem(GUIDE_SEEN_KEY) === '1'
+}
+function openGuide() {
+  guideOpen.value = true
+}
+function onGuideOpenChange(open: boolean) {
+  guideOpen.value = open
+  if (!open && import.meta.client) localStorage.setItem(GUIDE_SEEN_KEY, '1')
+}
+// gameState が初めて立った瞬間 (= 操作対象が画面に出る) に初回だけ表示する。
+watch(gameState, (val, old) => {
+  if (val && !old && !guideSeen()) guideOpen.value = true
+})
+
 async function onSetupSubmit(payload: BuildSetResult) {
   const { error } = await session.configureAndStartSet(payload.setup, payload.positions)
   if (error) {
@@ -153,6 +171,15 @@ onMounted(async () => {
         {{ $t('record.back') }}
       </UButton>
       <span class="match-name">{{ match?.name ?? $t('record.untitledMatch') }}</span>
+      <UButton
+        class="help-btn"
+        variant="ghost"
+        icon="i-lucide-circle-help"
+        :aria-label="$t('record.guide.reopen')"
+        :title="$t('record.guide.reopen')"
+        data-testid="guide-open"
+        @click="openGuide"
+      />
       <UButton
         class="finish-btn"
         color="primary"
@@ -309,13 +336,18 @@ onMounted(async () => {
         </div>
       </template>
     </UModal>
+
+    <RecordingGuide
+      :open="guideOpen"
+      @update:open="onGuideOpenChange"
+    />
   </div>
 </template>
 
 <style scoped>
 .record-page { display: flex; flex-direction: column; gap: 1rem; padding: 1rem; }
 .record-header { display: flex; align-items: center; gap: 1rem; }
-.finish-btn { margin-left: auto; }
+.help-btn { margin-left: auto; }
 .summary-modal { display: flex; flex-direction: column; gap: 1rem; padding: 1.25rem; }
 .summary-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
 .match-name { font-weight: 600; }
