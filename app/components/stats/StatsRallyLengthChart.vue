@@ -32,10 +32,11 @@ const option = computed(() => {
     // 凡例は下部へ。軸名（本数/%）と凡例の衝突を解消（U-06: 凡例がグラフに被る）
     legend: { data: [t('stats.rallyLength.count'), t('stats.rallyLength.winRate')], bottom: 0 },
     grid: { left: 48, right: 48, top: 28, bottom: 44 },
-    xAxis: { type: 'category', data: s.labels },
+    // 軸ラベルが薄く読みづらいため濃いグレーに（U-06）
+    xAxis: { type: 'category', data: s.labels, axisLabel: { color: '#374151' } },
     yAxis: [
-      { type: 'value', name: t('stats.rallyLength.count'), min: 0, nameGap: 12 },
-      { type: 'value', name: '%', min: 0, max: 100, nameGap: 12 }
+      { type: 'value', name: t('stats.rallyLength.count'), min: 0, nameGap: 12, axisLabel: { color: '#374151' } },
+      { type: 'value', name: '%', min: 0, max: 100, nameGap: 12, axisLabel: { color: '#374151' } }
     ],
     series: [
       {
@@ -76,6 +77,9 @@ defineExpose({ onChartClick })
     class="stats-rally-length-chart"
     data-testid="stats-rally-length-chart"
   >
+    <h3 class="chart-title">
+      {{ t('stats.rallyLength.title') }}
+    </h3>
     <ClientOnly>
       <VChart
         class="chart"
@@ -89,5 +93,6 @@ defineExpose({ onChartClick })
 
 <style scoped>
 .stats-rally-length-chart { width: 100%; }
+.chart-title { font-size: 0.9375rem; font-weight: 700; margin: 0 0 0.25rem; }
 .chart { width: 100%; height: 300px; }
 </style>
