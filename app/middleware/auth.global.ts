@@ -12,7 +12,8 @@
 // 【PUBLIC_PATHS】: 認証チェックをスキップする固定パス一覧 🔵
 // /join/** は動的パスのため startsWith で別途判定 (dataflow.md §1)
 // '/' = 公開ランディングページ (LP)。未ログインの初見ユーザーに「何のアプリか」を見せる入口 (ADR-015)。
-const PUBLIC_PATHS = ['/', '/login', '/confirm']
+// '/privacy' '/terms' = 法務ページ。未ログインでも到達可 (Google OAuth ブランド検証クローラ要件)。
+const PUBLIC_PATHS = ['/', '/login', '/confirm', '/privacy', '/terms']
 
 // 【GROUP_OPTIONAL_PATHS】: ログイン済・未所属でも通過を許可するパス一覧 🔵
 // REQ-102 例外: Group 作成・オンボーディング動線は未所属のままアクセス可能にする
