@@ -366,5 +366,10 @@
       "title": "No data",
       "description": "No rallies have been recorded for this match yet"
     }
+  },
+  "legal": {
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "backToHome": "Back to home"
   }
 }
