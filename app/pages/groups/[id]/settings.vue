@@ -312,6 +312,29 @@ function getMemberAvatarUrl(userId: string): string | undefined {
           {{ t('groups.settings.noMembers') }}
         </div>
       </section>
+
+      <!-- ─── このアプリについて (法務ページ導線) ──────────────────────────────── -->
+      <!-- ログイン後はランディング(/)へ転送されフッターの規約リンクを見られないため、
+           アプリ内からも privacy/terms へ辿れる導線をここに置く (どちらも公開パス登録済み) -->
+      <section>
+        <h2 class="mb-4 text-xl font-semibold">
+          {{ t('groups.settings.aboutTitle') }}
+        </h2>
+        <div class="flex flex-col gap-2">
+          <NuxtLink
+            to="/privacy"
+            class="text-primary underline"
+          >
+            {{ t('legal.privacy') }}
+          </NuxtLink>
+          <NuxtLink
+            to="/terms"
+            class="text-primary underline"
+          >
+            {{ t('legal.terms') }}
+          </NuxtLink>
+        </div>
+      </section>
     </div>
   </UContainer>
 </template>
