@@ -80,5 +80,21 @@ const features = computed(() => [
         </p>
       </div>
     </div>
+
+    <!-- 【フッター】: 法務ページへのリンク (Google OAuth ブランド検証はホームからの到達を重視) -->
+    <div class="flex flex-wrap items-center justify-center gap-4 text-sm text-muted">
+      <NuxtLink
+        to="/privacy"
+        class="underline"
+      >
+        {{ t('legal.privacy') }}
+      </NuxtLink>
+      <NuxtLink
+        to="/terms"
+        class="underline"
+      >
+        {{ t('legal.terms') }}
+      </NuxtLink>
+    </div>
   </div>
 </template>

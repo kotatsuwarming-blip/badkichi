@@ -91,7 +91,8 @@
       "issuedAt": "発行日",
       "expiresAt": "期限",
       "noInvitations": "まだ招待リンクがありません。「招待リンクを発行」ボタンで発行してください",
-      "noMembers": "メンバーがいません"
+      "noMembers": "メンバーがいません",
+      "aboutTitle": "このアプリについて"
     }
   },
   "join": {
@@ -366,5 +367,10 @@
       "title": "データがありません",
       "description": "この試合にはまだ記録されたラリーがありません"
     }
+  },
+  "legal": {
+    "privacy": "プライバシーポリシー",
+    "terms": "利用規約",
+    "backToHome": "トップへ戻る"
   }
 }
