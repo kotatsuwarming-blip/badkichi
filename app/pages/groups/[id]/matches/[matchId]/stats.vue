@@ -8,18 +8,23 @@
  *
  * 関連要件: REQ-001/003/004/005/006/007/010/011/103 + 受け入れ2026-06-09
  */
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { VideoSource } from '~/types/video-playback'
 import type { PairRate, PlayerRate, RallyRow, StatsRole } from '~/types/stats-dashboard'
 import { useMatchForRecording } from '~/composables/useMatchForRecording'
 import { useStatsView } from '~/composables/useStatsView'
+import { useAnalytics } from '~/composables/useAnalytics'
 
 const SEEK_LEAD_MS = 2000 // 再生はサーブの 2 秒前から（受け入れ2026-06-09）
 
 const route = useRoute()
 const matchId = route.params.matchId as string
 const groupId = route.params.id as string
+
+// 統計ダッシュボード閲覧 (ADR-016 第1ゲート: 記録→統計ファネルの到達点)
+const { capture } = useAnalytics()
+onMounted(() => capture('stats_viewed', { scope: 'match', match_id: matchId, group_id: groupId }))
 
 const { data: match } = useMatchForRecording(matchId)
 const view = useStatsView({ kind: 'match', matchId, groupId })

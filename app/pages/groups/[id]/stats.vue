@@ -7,17 +7,22 @@
  *
  * 関連要件: REQ-002/004/010/012/104 + 受け入れ2026-06-09
  */
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import type { VideoSource } from '~/types/video-playback'
 import type { PairRate, PlayerRate, RallyRow, StatsRole } from '~/types/stats-dashboard'
 import { useStatsView } from '~/composables/useStatsView'
 import { usePlayers } from '~/composables/usePlayers'
+import { useAnalytics } from '~/composables/useAnalytics'
 
 const SEEK_LEAD_MS = 2000
 
 const route = useRoute()
 const groupId = route.params.id as string
+
+// 統計ダッシュボード閲覧 (ADR-016 第1ゲート: 記録→統計ファネルの到達点)
+const { capture } = useAnalytics()
+onMounted(() => capture('stats_viewed', { scope: 'group', group_id: groupId }))
 
 const view = useStatsView({ kind: 'group', groupId })
 const { data: players } = usePlayers()
