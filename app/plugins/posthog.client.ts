@@ -1,0 +1,67 @@
+/**
+ * posthog.client.ts — PostHog (product analytics / session replay) の CSR 初期化 (ADR-016)
+ *
+ * 方針:
+ *   - `.client.ts` 命名で CSR 限定 (ADR-010 / posthog-js はブラウザ専用)。echarts.client.ts と同様。
+ *   - key 未設定 (dev / 鍵配布前) は init せず即 return → $posthog を provide しない。
+ *     useAnalytics 側の optional chaining で安全に no-op 化する (Sentry DSN 空と同思想)。
+ *   - Nuxt は SPA 遷移のため自動 pageview が初回しか飛ばない。router.afterEach で明示送信する。
+ *   - 認証状態に追随して identify / reset。作者・DF アカウントは opt_out で送信自体を止める (§3)。
+ *   - セッションリプレイ有効 (§3 の中心機能)。入力値は全マスク。表示テキスト (選手名等) の
+ *     マスク方針は PostHog ダッシュボードで要確認 (§5)。
+ */
+import posthog from 'posthog-js'
+
+export default defineNuxtPlugin(() => {
+  const config = useRuntimeConfig()
+  const { key, host, excludeEmails } = config.public.posthog
+
+  // 鍵が無ければ計測基盤を起動しない (no-op)。$posthog は undefined のままとなる。
+  if (!key) return
+
+  posthog.init(key, {
+    api_host: host,
+    // SPA 遷移では自動 pageview が初回だけになるため手動送信に切り替える。
+    capture_pageview: false,
+    // セッションリプレイ: 入力値は全マスク (§5)。
+    session_recording: {
+      maskAllInputs: true
+    },
+    persistence: 'localStorage+cookie'
+  })
+
+  // ルート遷移ごとに pageview を送る (流入・ファネルの土台)。
+  const router = useRouter()
+  router.afterEach((to) => {
+    posthog.capture('$pageview', { path: to.fullPath })
+  })
+
+  // 認証状態に追随。作者・DF アカウントは送信停止、それ以外は identify。
+  const user = useSupabaseUser()
+  const excluded = excludeEmails
+    .split(',')
+    .map(s => s.trim().toLowerCase())
+    .filter(Boolean)
+
+  watch(user, (u) => {
+    if (!u) {
+      posthog.reset()
+      return
+    }
+    const email = (u.email ?? '').toLowerCase()
+    // 作者・DF は自分の操作でメトリクスが濁るため送信自体を止める (§3)。
+    if (email && excluded.includes(email)) {
+      posthog.opt_out_capturing()
+      return
+    }
+    posthog.opt_in_capturing()
+    // uid は user.sub (user.id ではない、既存 composable と同じ規約)。
+    posthog.identify(u.sub, { email })
+  }, { immediate: true })
+
+  return {
+    provide: {
+      posthog
+    }
+  }
+})

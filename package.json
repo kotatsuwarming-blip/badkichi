@@ -26,6 +26,7 @@
     "@sentry/nuxt": "^10.55.0",
     "echarts": "^6.1.0",
     "nuxt": "^4.4.8",
+    "posthog-js": "^1.297.4",
     "tailwindcss": "^4.2.1",
     "vue-echarts": "^8.0.1",
     "zod": "^4.4.3"

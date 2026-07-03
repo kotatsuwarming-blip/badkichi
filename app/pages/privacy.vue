@@ -17,7 +17,7 @@ const { t } = useI18n()
 useHead({ title: 'プライバシーポリシー｜バドきち' })
 
 // 【制定日】: 改定時はここを更新
-const lastUpdated = '2026年6月30日'
+const lastUpdated = '2026年7月2日'
 // 【連絡先】: OAuth 同意画面のサポートメールと揃える (要確認)
 const contactEmail = 'kotatsu.warming@gmail.com'
 </script>
@@ -56,9 +56,13 @@ const contactEmail = 'kotatsu.warming@gmail.com'
             <li>Google アカウント情報（メールアドレス、氏名、プロフィール画像）— Google ログインによる認証時に取得します。</li>
             <li>本サービス上で利用者が入力・作成したデータ（チーム・選手情報、試合およびラリーの記録など）。</li>
             <li>サービスの提供・改善・不具合調査のための利用ログや端末に関する技術情報。</li>
+            <li>サービス改善のための操作ログ（アクセスした画面、ボタン操作、機能の利用状況、参照元・おおまかな地域などのアクセス解析情報）、および画面操作の記録（セッションリプレイ）。</li>
           </ul>
           <p class="text-sm text-muted">
             ※ 試合映像（動画）は、再生時に利用者ご自身の端末上のファイルを参照する方式であり、本サービスのサーバーへアップロード・保存されません。
+          </p>
+          <p class="text-sm text-muted">
+            ※ セッションリプレイは、UI 改善のために画面上の操作を記録・再生するものです。パスワード等の入力項目はマスク（記録しない）されます。
           </p>
         </section>
 
@@ -94,6 +98,8 @@ const contactEmail = 'kotatsu.warming@gmail.com'
             <li>Google（ログイン認証）</li>
             <li>Supabase（データベース・認証基盤）</li>
             <li>Vercel（アプリケーションのホスティング）</li>
+            <li>PostHog（アクセス解析・セッションリプレイ）</li>
+            <li>Sentry（エラー監視）</li>
           </ul>
           <p class="text-sm text-muted">
             各サービスにおける情報の取り扱いは、それぞれの提供事業者のプライバシーポリシーに従います。
