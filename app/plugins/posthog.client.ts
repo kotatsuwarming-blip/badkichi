@@ -21,19 +21,13 @@ export default defineNuxtPlugin(() => {
 
   posthog.init(key, {
     api_host: host,
-    // SPA 遷移では自動 pageview が初回だけになるため手動送信に切り替える。
-    capture_pageview: false,
+    // pageview は posthog-js に任せる (既定 capture_pageview:true で初回ロード + SPA history 遷移を自動送信)。
+    // 手動 router.afterEach は初回ロードで発火せず初回 pageview を取り逃すため使わない (併用は二重計上)。
     // セッションリプレイ: 入力値は全マスク (§5)。
     session_recording: {
       maskAllInputs: true
     },
     persistence: 'localStorage+cookie'
-  })
-
-  // ルート遷移ごとに pageview を送る (流入・ファネルの土台)。
-  const router = useRouter()
-  router.afterEach((to) => {
-    posthog.capture('$pageview', { path: to.fullPath })
   })
 
   // 認証状態に追随。作者・DF アカウントは送信停止、それ以外は identify。
