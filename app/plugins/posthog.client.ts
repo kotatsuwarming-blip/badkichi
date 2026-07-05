@@ -30,6 +30,11 @@ export default defineNuxtPlugin(() => {
     persistence: 'localStorage+cookie'
   })
 
+  // 全イベントに環境ラベルを付与する (ADR-016)。dev のテスト操作が本番メトリクスに混ざるのを避けるため、
+  // PostHog 側で `environment=prd` に絞れば dev ノイズを除外できる (dev/prd は同一プロジェクト運用)。
+  // env は NUXT_PUBLIC_ENV 由来 (dev=development / 本番=prd を Vercel で設定)。
+  posthog.register({ environment: config.public.env })
+
   // dev 限定デバッグ: 送信ログをコンソールに出し、`window.posthog` から触れるようにする。
   // (本番ビルドでは import.meta.dev=false で無効。計測挙動には影響しない)
   if (import.meta.dev) {
