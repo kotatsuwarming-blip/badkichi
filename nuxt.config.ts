@@ -25,7 +25,18 @@ export default defineNuxtConfig({
       sentry: {
         dsn: ''
       },
-      env: 'development'
+      env: 'development',
+      // PostHog (ADR-016)。値は env で注入:
+      //   NUXT_PUBLIC_POSTHOG_KEY / NUXT_PUBLIC_POSTHOG_HOST / NUXT_PUBLIC_POSTHOG_EXCLUDE_EMAILS
+      // key は publishable な公開鍵 (ブラウザ露出前提) のため secret 扱いしない (Sentry DSN と同思想)。
+      // key 空 = 計測 no-op (dev や鍵配布前でも安全)。
+      posthog: {
+        key: '',
+        host: 'https://us.i.posthog.com',
+        // 作者・ドッグフーディング用アカウントのメール (カンマ区切り)。
+        // 一致ユーザーは送信自体を停止しメトリクスを濁さない (ADR-016 §3)。
+        excludeEmails: ''
+      }
     }
   },
 

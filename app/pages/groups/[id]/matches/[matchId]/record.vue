@@ -22,6 +22,7 @@ import { useSetRallies } from '~/composables/useSetRallies'
 import { useMatchSummary } from '~/composables/useMatchSummary'
 import { useCompleteMatch } from '~/composables/useCompleteMatch'
 import { useToastErrors } from '~/composables/useToastErrors'
+import { useAnalytics } from '~/composables/useAnalytics'
 
 const route = useRoute()
 const matchId = route.params.matchId as string
@@ -31,6 +32,7 @@ const { data: match, refresh: refreshMatch } = useMatchForRecording(matchId)
 const { data: sets, refresh: refreshSets } = useSets(matchId)
 const { setCompleted, pending: completePending } = useCompleteMatch()
 const { showError } = useToastErrors()
+const { capture } = useAnalytics()
 
 const isCompleted = computed(() => match.value?.completedAt != null)
 
@@ -136,6 +138,9 @@ async function markCompleted(completed: boolean) {
     showError(error)
     return
   }
+  // 試合を「完了」にした瞬間が記録保存の完了シグナル (ADR-016 第1/第2ゲートの中心)。
+  // 取り消し (completed=false) は送らない。
+  if (completed) capture('match_recorded', { match_id: matchId, group_id: groupId })
   await refreshMatch()
 }
 
