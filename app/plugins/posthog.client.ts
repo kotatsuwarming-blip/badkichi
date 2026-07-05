@@ -30,6 +30,13 @@ export default defineNuxtPlugin(() => {
     persistence: 'localStorage+cookie'
   })
 
+  // dev 限定デバッグ: 送信ログをコンソールに出し、`window.posthog` から触れるようにする。
+  // (本番ビルドでは import.meta.dev=false で無効。計測挙動には影響しない)
+  if (import.meta.dev) {
+    posthog.debug()
+    Object.assign(window, { posthog })
+  }
+
   // 認証状態に追随。作者・DF アカウントは送信停止、それ以外は identify。
   const user = useSupabaseUser()
   const excluded = excludeEmails
