@@ -53,12 +53,12 @@
 
 - REQ-001: システムは、アノテーションスタジオを `/groups/[id]/matches/[matchId]/annotate` で提供し、対象試合（所属 Group・未削除）の全セット・ラリー・ショットを読み込まなければならない 🔵 *ADR-017 §3 + 既存ルート規約*
 - REQ-002: システムは、additive migration 1本で以下の列を追加しなければならない 🔵 *ADR-017 §5*
-  - `shots`: `hit_player_id` / `shot_type` / `hand` / `hit_x` / `hit_y` / `land_x` / `land_y` / `annotation_source` / `ai_model_version` / `ai_confidence`
+  - `shots`: `hit_player_id` / `shot_type` / `hand` / `hit_x` / `hit_y` / `annotation_source` / `ai_model_version` / `ai_confidence`
   - `shots`: `annotated_timestamp_ms integer`（打点パスで人間が確定した打球時刻。元の押下時刻 `video_timestamp_ms` は**上書きせず保持**する — 「押下時刻 → 真の打球時刻」のペアが Stage 2 の教師データになるため） 🔵 *ヒアリング2026-07-19（採用確定・ADR-017 §5 へ追補済み）*
-  - `rallies`: `end_reason`（7値 CHECK）/ `out_direction`（side / back / both）
+  - `rallies`: `end_reason`（7値 CHECK）/ `land_x` `land_y`（決着の落下点。1ラリーに高々1点のラリー属性のため shots ではなく rallies に持つ、ユーザー指摘 2026-07-19）/ `out_direction`（side / back / both）
 - REQ-003: システムは、3モードを任意の順で開始・途中打ち切り・再開できるようにしなければならない（全注釈列は nullable であり部分的な注釈を正常状態として扱う） 🔵 *ADR-017 §3*
 - REQ-004: システムは、クイックパスでラリーごとに最終ショット付近（±2秒程度）を自動ループ再生し、`end_reason` の入力後、次のラリーへ自動遷移しなければならない 🔵 *ADR-017 §3*
-- REQ-005: システムは、`end_reason` が `in` / `out` の場合に限り落下点（`land_x` / `land_y`）の入力を求め、コート図は**ライン外領域を含めて**描画しなければならない。`out` の細分（side / back / both）は落下点座標から導出し、落下点がスキップされた場合のみ `out_direction` のサブ選択を提示しなければならない 🔵 *ADR-017 §5 / §7*
+- REQ-005: システムは、`end_reason` が `in` / `out` の場合に限り落下点（`rallies.land_x` / `land_y`）の入力を求め、コート図は**ライン外領域を含めて**描画しなければならない。`out` の細分（side / back / both）は落下点座標から導出し、落下点がスキップされた場合のみ `out_direction` のサブ選択を提示しなければならない 🔵 *ADR-017 §5 / §7*
 - REQ-006: システムは、クイックパスで決定打（= 勝者チームの最後のショット。in / body なら最終ショット、out / net / not_over ならその1つ前）を自動特定し、その `shot_type` の入力を促さなければならない 🔵 *ADR-017 §7*
 - REQ-007: システムは、種別パスで動画を連続再生しながら、キー入力を**順番マッチング**（ラリー内 k 回目の入力 = k 番目のショット）で `shot_type` に対応づけなければならない。キー配置は固定（数字段 1-0 + QWE = レシーブ3種）とし、文脈でキー割当を変えてはならない 🔵 *ADR-017 §4 / §6*
 - REQ-008: システムは、種別パスでラリー境界での自動一時停止・ラリー間の自動スキップ・再生速度のユーザー可変（少なくとも 0.5〜1.5 倍）を提供しなければならない 🔵 *ADR-017 §4*
