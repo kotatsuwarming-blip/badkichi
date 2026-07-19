@@ -188,7 +188,6 @@ ALTER TABLE shots ADD COLUMN
   shot_type          text,                          -- §6 の16種 (CHECK)
   hand               text CHECK (hand IN ('forehand', 'backhand')),  -- 任意入力
   hit_x  real, hit_y real,                          -- 打点 (正規化コート座標)
-  land_x real, land_y real,                         -- 落下点 (最終ショットのみ、in/out 決着時)
   annotated_timestamp_ms integer,                   -- 人間が確定した打球時刻 (押下時刻は上書きせず保持 → ペアが Stage 2 の教師データ。追補 2026-07-19)
   annotation_source  text CHECK (annotation_source IN ('human', 'ai')),
   ai_model_version   text,
@@ -197,6 +196,9 @@ ALTER TABLE shots ADD COLUMN
 ALTER TABLE rallies ADD COLUMN
   end_reason    text CHECK (end_reason IN
     ('in', 'out', 'net', 'not_over', 'body', 'service_fault', 'unknown')),
+  -- 決着の落下点 (in/out のときのみ)。1ラリーに高々1点のラリー属性なので
+  -- shots ではなく rallies に持つ (追補 2026-07-19)
+  land_x real, land_y real,
   -- out の細分は通常 land_x/y から導出。落下点未入力時のみのフォールバック
   out_direction text CHECK (out_direction IN ('side', 'back', 'both'));
 
@@ -215,10 +217,12 @@ CREATE TABLE shot_corrections (
 
 - **位置は連続座標で保存し、ゾーン (3×3 等) は表示・集計時に導出** (選択肢 D を却下)。
   AI 出力 (座標) と互換で、情報を捨てない。ADR-013 §6-4「特徴量はケチらず広く」と同じ論理。
-- **座標は2種類で役割が別**: 打点 (hit_x/y) は**全ショット**で入力 (打点パス)。
-  落下点 (land_x/y) は**最終ショットのみ** (クイックパスで end_reason が in / out のとき)。
-  ラリー中の球は床に落ちる前に打ち返されるため落下点は存在せず、
-  n 打目の軌道の行き先は n+1 打目の打点が代替する (§4)。
+- **座標は2種類で役割とテーブルが別**: 打点 (`shots.hit_x/y`) は**ショットの属性**で
+  全ショットに入力 (打点パス)。落下点 (`rallies.land_x/y`) は**ラリーの決着の属性**で、
+  end_reason が in / out のとき1ラリーに1点だけ入力 (クイックパス)。
+  ラリー中の球は床に落ちる前に打ち返されるためショットに落下点は存在せず、
+  n 打目の軌道の行き先は n+1 打目の打点が代替する (§4)。1ラリーに高々1つの値を
+  子テーブル (shots) に置かない (追補 2026-07-19)。
 - **コート図はライン外の領域まで描画**する。アウトの落下点はライン外のその場所をタップ:
   x がサイドライン外 → サイドアウト、y がバックバウンダリー外 → バックアウト、
   **両方外 (コーナー奥) → 「どちらも」が座標として自然に表現**される。
