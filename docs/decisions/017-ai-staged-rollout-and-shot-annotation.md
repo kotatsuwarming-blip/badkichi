@@ -156,6 +156,8 @@ UI ヒアリング 2026-06-05 で確定) には**一切手を入れない**。
 
 - **人間のナッジ操作 (押下時刻 → 真の打球時刻) はそのまま Stage 2 スナッピングの
   検証・学習データになる**。フライホイールは種別・位置より先にタイムスタンプで回り始める。
+  訂正後時刻は `annotated_timestamp_ms` として別列に保存し、押下時刻
+  (`video_timestamp_ms`) は上書きせずペアで保持する (追補 2026-07-19)。
 - **動画ソース制約**: フレーム精度シーク・フレーム画像の取得 (canvas 描画) は
   ローカル動画のみ可能。YouTube iframe API は `seekTo(秒)` のみでフレーム制御が無く、
   クロスオリジンのためピクセルにもアクセスできない。よって
@@ -187,6 +189,7 @@ ALTER TABLE shots ADD COLUMN
   hand               text CHECK (hand IN ('forehand', 'backhand')),  -- 任意入力
   hit_x  real, hit_y real,                          -- 打点 (正規化コート座標)
   land_x real, land_y real,                         -- 落下点 (最終ショットのみ、in/out 決着時)
+  annotated_timestamp_ms integer,                   -- 人間が確定した打球時刻 (押下時刻は上書きせず保持 → ペアが Stage 2 の教師データ。追補 2026-07-19)
   annotation_source  text CHECK (annotation_source IN ('human', 'ai')),
   ai_model_version   text,
   ai_confidence      real;

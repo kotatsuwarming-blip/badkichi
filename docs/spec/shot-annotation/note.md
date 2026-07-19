@@ -59,9 +59,8 @@ shot-annotation は、**記録済み試合への後付け注釈 UI（スタジ�
 
 - **stats-dashboard 拡張**（別要件、次に定義）: 配球ヒートマップ・決定打/エラー傾向の
   2〜3枚。「捨てる前提の安い探針」（ADR-018 §3）
-- **kairo-design で確定**: 座標系軸の最終確認、undo 仕様、同時注釈 UX、composable 分割、
-  サムネイル帯の描画実装（canvas / requestVideoFrameCallback）
-- **ADR への反映検討**: `annotated_timestamp_ms` は ADR-017 §5 に未記載（REQ-002 で追加）。
-  設計レビュー時に ADR-017 の追補を検討
+- **kairo-design で確定**: サムネイル帯の描画実装（canvas / requestVideoFrameCallback）、
+  UI レイアウト詳細（座標系・undo・同時注釈・composable 分割は 2026-07-19 に要件で確定済み）
+- **ADR 追補済み**: `annotated_timestamp_ms` を ADR-017 §5 へ追補（2026-07-19、本ブランチ内）
 - **運用**: 作者チームの試合でドッグフーディング（QA + ラベル蓄積）→ テスター限定代行
   （ADR-018 §2）が本スタジオの最初の実利用
