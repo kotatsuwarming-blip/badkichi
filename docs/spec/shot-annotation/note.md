@@ -31,7 +31,7 @@ shot-annotation は、**記録済み試合への後付け注釈 UI（スタジ�
 
 | テーブル | 追加列 | 用途 |
 |---|---|---|
-| `shots` | `hit_player_id` / `shot_type`(16種 CHECK) / `hand` / `hit_x` `hit_y` / `hit_height`(high/low・対象球種のみ任意) / `annotated_timestamp_ms` / `annotation_source` / `ai_model_version` / `ai_confidence` | 注釈本体（ショット単位の属性のみ）。AI 3列は Stage 2 用の先行定義（MVP は 'human' 固定） |
+| `shots` | `hit_player_id` / `shot_type`(16種 CHECK) / `hand` / `hit_x` `hit_y` / `annotated_timestamp_ms` / `annotation_source` / `ai_model_version` / `ai_confidence` | 注釈本体（ショット単位の属性のみ）。AI 3列は Stage 2 用の先行定義（MVP は 'human' 固定）。打点の高さ（z）は MVP 対象外（Stage 3 で自動導出） |
 | `rallies` | `end_reason`(7値 CHECK) / `land_x` `land_y`(決着の落下点) / `out_direction`(side/back/both) | 決着注釈。落下点は1ラリーに高々1点のラリー属性のため rallies 側。out_direction は落下点未入力時のフォールバック |
 
 ### 消費する既存データ（変更しない）
