@@ -188,6 +188,7 @@ ALTER TABLE shots ADD COLUMN
   shot_type          text,                          -- §6 の16種 (CHECK)
   hand               text CHECK (hand IN ('forehand', 'backhand')),  -- 任意入力
   hit_x  real, hit_y real,                          -- 打点 (正規化コート座標)
+  hit_height text CHECK (hit_height IN ('high', 'low')),  -- 打点の高さ (対象球種のみ任意入力。追補 2026-07-24)
   annotated_timestamp_ms integer,                   -- 人間が確定した打球時刻 (押下時刻は上書きせず保持 → ペアが Stage 2 の教師データ。追補 2026-07-19)
   annotation_source  text CHECK (annotation_source IN ('human', 'ai')),
   ai_model_version   text,
@@ -258,6 +259,11 @@ CREATE TABLE shot_corrections (
 - **フォア/バックは修飾キーの任意入力** (PC: Shift+種別キー = バック、スマホ: 長押し)。
   必須タップは増やさない。null は「未入力」であり「フォア」ではない (統計側で明確に区別)。
   将来 Stage 3 の姿勢推定で導出可能になったら手動分は検証データになる。
+- **打点の高さ (`hit_height`: high / low) も同じ任意入力の作法** (追補 2026-07-24)。
+  対象はオーバーヘッド系・プッシュ・サーブを除く球種のみ (高さが球種から自明なものには
+  UI を出さない)。ネット前でどれだけ高く取れたか・レシーブが沈められたか等、球種で
+  拾えない高さの残差を拾う。入力は矢印修飾 (種別キー → ↑/↓) とタップ + 縦フリック。
+  連続値の z は入力させず (人間は cm 単位で判定できない)、Stage 3 の姿勢推定で自動導出する。
 
 ### 7. end_reason は物理分類のみ (touched フラグは廃止)
 
