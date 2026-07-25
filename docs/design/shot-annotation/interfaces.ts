@@ -23,19 +23,19 @@ import type { Team, PlayerId } from '~/utils/rule-engine/types'
 // ========================================
 
 /** ショット種別 16種 🔵 ADR-017 §6 */
-export type ShotType =
-  | 'serve_short' | 'serve_long' | 'serve_drive'
-  | 'clear' | 'smash' | 'cut' | 'reverse_cut' | 'drop'
-  | 'hairpin' | 'lob' | 'push' | 'half'
-  | 'drive'
-  | 'receive_long' | 'receive_drive' | 'receive_short'
+export type ShotType
+  = | 'serve_short' | 'serve_long' | 'serve_drive'
+    | 'clear' | 'smash' | 'cut' | 'reverse_cut' | 'drop'
+    | 'hairpin' | 'lob' | 'push' | 'half'
+    | 'drive'
+    | 'receive_long' | 'receive_drive' | 'receive_short'
 
 /** UI 表示グループ（パレットの並びのみ。キー割当は固定） 🔵 ADR-017 §6 */
 export type ShotTypeGroup = 'serve' | 'rear' | 'front' | 'flat' | 'receive'
 
 /** ラリー決着 7値 🔵 ADR-017 §7 */
-export type EndReason =
-  | 'in' | 'out' | 'net' | 'not_over' | 'body' | 'service_fault' | 'unknown'
+export type EndReason
+  = | 'in' | 'out' | 'net' | 'not_over' | 'body' | 'service_fault' | 'unknown'
 
 /** out 細分（落下点未入力時のフォールバック保存値） 🔵 REQ-005 */
 export type OutDirection = 'side' | 'back' | 'both'
