@@ -59,6 +59,7 @@ export interface UsePositionPassReturn {
   awaitingHitter: Ref<boolean>
   isDone: ComputedRef<boolean>
   start: () => void
+  goToRally: (rallyId: string) => void
   /** フレーム確定 (ローカルのみ実書込)。校正中はサンプルにも追加 */
   confirmFrame: (frameMs: number) => Promise<void>
   setPosition: (point: CourtPoint) => Promise<void>
@@ -145,6 +146,15 @@ export function usePositionPass(deps: PositionPassDeps): UsePositionPassReturn {
     syncCursor()
   }
 
+  /** 任意のラリーの先頭ショットへ戻って上書き (REQ-108 の主手段) */
+  function goToRally(rallyId: string): void {
+    const i = entries.value.findIndex(e => e.rally.id === rallyId)
+    if (i === -1) return
+    index.value = i
+    awaitingHitter.value = false
+    syncCursor()
+  }
+
   function advance(): void {
     awaitingHitter.value = false
     if (index.value >= 0 && index.value < entries.value.length - 1) {
@@ -215,6 +225,7 @@ export function usePositionPass(deps: PositionPassDeps): UsePositionPassReturn {
     awaitingHitter,
     isDone,
     start,
+    goToRally,
     confirmFrame,
     setPosition,
     selectHitter,
