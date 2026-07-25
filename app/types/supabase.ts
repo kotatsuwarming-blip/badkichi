@@ -305,9 +305,13 @@ export type Database = {
           camera_near_team: string | null
           created_at: string
           deleted_at: string | null
+          end_reason: string | null
           id: string
           is_let: boolean
           is_point_confirmed: boolean
+          land_x: number | null
+          land_y: number | null
+          out_direction: string | null
           point_winner: string | null
           rally_number: number
           receiver_player_id: string
@@ -322,9 +326,13 @@ export type Database = {
           camera_near_team?: string | null
           created_at?: string
           deleted_at?: string | null
+          end_reason?: string | null
           id?: string
           is_let?: boolean
           is_point_confirmed?: boolean
+          land_x?: number | null
+          land_y?: number | null
+          out_direction?: string | null
           point_winner?: string | null
           rally_number: number
           receiver_player_id: string
@@ -339,9 +347,13 @@ export type Database = {
           camera_near_team?: string | null
           created_at?: string
           deleted_at?: string | null
+          end_reason?: string | null
           id?: string
           is_let?: boolean
           is_point_confirmed?: boolean
+          land_x?: number | null
+          land_y?: number | null
+          out_direction?: string | null
           point_winner?: string | null
           rally_number?: number
           receiver_player_id?: string
@@ -523,36 +535,70 @@ export type Database = {
       }
       shots: {
         Row: {
+          ai_confidence: number | null
+          ai_model_version: string | null
+          annotated_timestamp_ms: number | null
+          annotation_source: string | null
           created_at: string
           deleted_at: string | null
+          hand: string | null
+          hit_player_id: string | null
+          hit_x: number | null
+          hit_y: number | null
           id: string
           input_source: string
           rally_id: string
           shot_number: number
+          shot_type: string | null
           updated_at: string
           video_timestamp_ms: number | null
         }
         Insert: {
+          ai_confidence?: number | null
+          ai_model_version?: string | null
+          annotated_timestamp_ms?: number | null
+          annotation_source?: string | null
           created_at?: string
           deleted_at?: string | null
+          hand?: string | null
+          hit_player_id?: string | null
+          hit_x?: number | null
+          hit_y?: number | null
           id?: string
           input_source?: string
           rally_id: string
           shot_number: number
+          shot_type?: string | null
           updated_at?: string
           video_timestamp_ms?: number | null
         }
         Update: {
+          ai_confidence?: number | null
+          ai_model_version?: string | null
+          annotated_timestamp_ms?: number | null
+          annotation_source?: string | null
           created_at?: string
           deleted_at?: string | null
+          hand?: string | null
+          hit_player_id?: string | null
+          hit_x?: number | null
+          hit_y?: number | null
           id?: string
           input_source?: string
           rally_id?: string
           shot_number?: number
+          shot_type?: string | null
           updated_at?: string
           video_timestamp_ms?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "shots_hit_player_id_fkey"
+            columns: ["hit_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "shots_rally_id_fkey"
             columns: ["rally_id"]
@@ -625,9 +671,12 @@ export type Database = {
           match_id: string
           match_name: string
           point_winner: string
+          rally_duration_ms: number
           rally_id: string
           rally_number: number
           receiver_player_id: string
+          score_a: number
+          score_b: number
           server_player_id: string
           server_position: string
           serving_team: string
