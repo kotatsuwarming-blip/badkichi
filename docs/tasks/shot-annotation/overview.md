@@ -46,9 +46,9 @@
 
 ## Phase 2: データ層（18h）
 
-- [ ] TASK-0004: `useAnnotationSession`（一括読込・レット除外一元化 D5・cursor・undo 1段） - 8h (TDD) 🔵
-- [ ] TASK-0005: `useAnnotationSave`（列単位の楽観 UPDATE + 直列キュー + エラー処理 EDGE-007） - 6h (TDD) 🔵
-- [ ] TASK-0006: `useAnnotationProgress`（null 有無からモード別進捗・次の未注釈位置） - 4h (TDD) 🔵
+- [x] TASK-0004: `useAnnotationSession`（一括読込・レット除外一元化 D5・cursor・undo 1段） - 8h (TDD) 🔵
+- [x] TASK-0005: `useAnnotationSave`（列単位の楽観 UPDATE + 直列キュー + エラー処理 EDGE-007） - 6h (TDD) 🔵
+- [x] TASK-0006: `useAnnotationProgress`（null 有無からモード別進捗・次の未注釈位置） - 4h (TDD) 🔵
   *TC-013 系がテスト仕様*
 
 ## Phase 3: 3モード実装（37h）
