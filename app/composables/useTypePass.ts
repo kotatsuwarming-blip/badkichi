@@ -39,6 +39,7 @@ export interface UseTypePassReturn {
   overflowWarning: Ref<boolean>
   isDone: ComputedRef<boolean>
   start: () => void
+  goToRally: (rallyId: string) => void
   handleKey: (key: string, opts?: { backhand?: boolean }) => Promise<void>
   advanceRally: () => void
   redoRally: () => Promise<void>
@@ -97,6 +98,12 @@ export function useTypePass(deps: TypePassDeps): UseTypePassReturn {
       return
     }
     enterRally(firstMissing === -1 ? 0 : firstMissing)
+  }
+
+  /** 任意のラリーへ戻って上書き (REQ-108 の主手段) */
+  function goToRally(rallyId: string): void {
+    const i = deps.rallies.value.findIndex(r => r.id === rallyId)
+    if (i !== -1) enterRally(i)
   }
 
   /**
@@ -158,6 +165,7 @@ export function useTypePass(deps: TypePassDeps): UseTypePassReturn {
     overflowWarning,
     isDone,
     start,
+    goToRally,
     handleKey,
     advanceRally,
     redoRally

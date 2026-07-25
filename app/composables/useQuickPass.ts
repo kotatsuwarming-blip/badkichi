@@ -48,6 +48,7 @@ export interface UseQuickPassReturn {
   landingWarning: Ref<boolean>
   isDone: ComputedRef<boolean>
   start: () => void
+  goToRally: (rallyId: string) => void
   selectEndReason: (reason: EndReason) => Promise<void>
   setLanding: (point: CourtPoint) => Promise<void>
   skipLanding: () => void
@@ -120,6 +121,15 @@ export function useQuickPass(deps: QuickPassDeps): UseQuickPassReturn {
     } else {
       index.value = firstMissing === -1 ? 0 : firstMissing
     }
+    resetStepState()
+    syncCursor()
+  }
+
+  /** 任意のラリーへ戻って上書き (REQ-108 の主手段) */
+  function goToRally(rallyId: string): void {
+    const i = deps.rallies.value.findIndex(r => r.id === rallyId)
+    if (i === -1) return
+    index.value = i
     resetStepState()
     syncCursor()
   }
@@ -210,6 +220,7 @@ export function useQuickPass(deps: QuickPassDeps): UseQuickPassReturn {
     landingWarning,
     isDone,
     start,
+    goToRally,
     selectEndReason,
     setLanding,
     skipLanding,
