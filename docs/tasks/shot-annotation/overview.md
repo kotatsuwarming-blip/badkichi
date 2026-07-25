@@ -38,9 +38,9 @@
 
 - [x] TASK-0001: 注釈列 additive migration（shots 9列 + rallies 4列） - 2h (DIRECT) 🔵
   *database-schema.sql をそのまま適用。CI 経由 db:push（REQ-406）。新規 RLS 不要（D2）*
-- [ ] TASK-0002: 型定義 `app/types/shot-annotation.ts` - 4h (TDD) 🔵
+- [x] TASK-0002: 型定義 `app/types/shot-annotation.ts` - 4h (TDD) 🔵
   *interfaces.ts を実装。Database 生成型の再生成込み*
-- [ ] TASK-0003: 純ロジック `app/utils/annotation/`（taxonomy / courtCoords / derive /
+- [x] TASK-0003: 純ロジック `app/utils/annotation/`（taxonomy / courtCoords / derive /
   orderMatching / offset）+ 単体テスト - 10h (TDD) 🔵
   *acceptance-criteria.md の TC-005/006/007/010/014 系がテスト仕様。NFR-401 の主戦場*
 
