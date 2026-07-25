@@ -66,7 +66,7 @@
 
 ## Phase 4: 統合（14h）
 
-- [ ] TASK-0011: `annotate.vue` ページ統合（AnnotationModeBar / AnnotationRallyList /
+- [x] TASK-0011: `annotate.vue` ページ統合（AnnotationModeBar / AnnotationRallyList /
   video-playback 接続 / 試合詳細からの導線） - 8h (TDD) 🔵
 - [ ] TASK-0012: i18n（ja/en）+ 結合スモーク + D6 初期値の試用調整
   （キー割当・サムネ帯枚数、作者ドッグフーディングの初回フィードバック反映） - 6h (DIRECT) 🔵
