@@ -36,7 +36,7 @@
 
 ## Phase 1: 基盤構築（16h）
 
-- [ ] TASK-0001: 注釈列 additive migration（shots 9列 + rallies 4列） - 2h (DIRECT) 🔵
+- [x] TASK-0001: 注釈列 additive migration（shots 9列 + rallies 4列） - 2h (DIRECT) 🔵
   *database-schema.sql をそのまま適用。CI 経由 db:push（REQ-406）。新規 RLS 不要（D2）*
 - [ ] TASK-0002: 型定義 `app/types/shot-annotation.ts` - 4h (TDD) 🔵
   *interfaces.ts を実装。Database 生成型の再生成込み*
