@@ -16,6 +16,8 @@
 
 > 注: TASK-NNNN の詳細ファイルは各フェーズ着手時に作成する（overview 先行方式）。
 > 番号は本ユニット内で TASK-0001 から採番。
+> 再スライス (2026-07-26): 各モードのパネル UI (QuickPassPanel 等) は TASK-0011 のページ統合側へ移動。
+> Phase 3 の各タスクは composable + 部品コンポーネント + 単体テストを成果物とする。
 
 ## フェーズ構成
 
@@ -53,9 +55,9 @@
 
 ## Phase 3: 3モード実装（37h）
 
-- [ ] TASK-0007: クイックパス（`useQuickPass` + QuickPassPanel + `CourtDiagramInput`
+- [x] TASK-0007: クイックパス（`useQuickPass` + QuickPassPanel + `CourtDiagramInput`
   ライン外込み + 整合チェック警告） - 8h (TDD) 🔵
-- [ ] TASK-0008: 種別パス（`useTypePass` + TypePassPanel + キー捕捉・順番マッチング・
+- [x] TASK-0008: 種別パス（`useTypePass` + TypePassPanel + キー捕捉・順番マッチング・
   hand トグル・レシーブハイライト・ラリーやり直し） - 10h (TDD) 🔵
 - [ ] TASK-0009: 打点パス・ローカル（`usePositionPass` + OffsetCalibrator + ThumbStrip
   〔非表示 video + canvas + 先読み、D1〕+ 打者二択） - 14h (TDD) 🔵
