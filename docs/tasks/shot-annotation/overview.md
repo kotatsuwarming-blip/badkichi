@@ -59,9 +59,9 @@
   ライン外込み + 整合チェック警告） - 8h (TDD) 🔵
 - [x] TASK-0008: 種別パス（`useTypePass` + TypePassPanel + キー捕捉・順番マッチング・
   hand トグル・レシーブハイライト・ラリーやり直し） - 10h (TDD) 🔵
-- [ ] TASK-0009: 打点パス・ローカル（`usePositionPass` + OffsetCalibrator + ThumbStrip
+- [x] TASK-0009: 打点パス・ローカル（`usePositionPass` + OffsetCalibrator + ThumbStrip
   〔非表示 video + canvas + 先読み、D1〕+ 打者二択） - 14h (TDD) 🔵
-- [ ] TASK-0010: 打点パス・YouTube（スローループ窓 前1.2s/後0.3s・annotated_timestamp_ms
+- [x] TASK-0010: 打点パス・YouTube（スローループ窓 前1.2s/後0.3s・annotated_timestamp_ms
   非保存・モード自動切替 TC-101） - 5h (TDD) 🔵
 
 ## Phase 4: 統合（14h）
