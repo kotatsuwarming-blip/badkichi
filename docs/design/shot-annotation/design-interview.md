@@ -1,0 +1,55 @@
+# shot-annotation 設計ヒアリング記録
+
+**作成日**: 2026-07-25
+**前提**: 要件レベルの決定は [spec/interview-record.md](../../spec/shot-annotation/interview-record.md)
+の Q1〜Q12 で確定済み（入力タイミング / 2パス構造 / taxonomy 16種 / end_reason 7値 /
+座標系 / undo / hand トグル / hit_height 撤回 / YouTube 充足範囲）。
+本書は kairo-design 段階で確定した実装レベルの判断のみを記録する。
+
+## 設計判断
+
+### D1: サムネイル帯の描画実装方式 🟡→確定
+
+**課題**: spec 残課題「canvas / requestVideoFrameCallback のどちらで実装するか」
+
+**決定**: 非表示の抽出専用 `<video>`（同一オブジェクト URL）+ `seeked` イベント +
+`canvas.drawImage` を基本とし、`requestVideoFrameCallback` は対応ブラウザでの
+フレーム精緻化に漸進的に利用する。表示用プレーヤーと抽出用要素を分離することで、
+サムネ生成が再生位置を汚さない。次ショットのサムネ帯を背景で先読み生成し
+NFR-001（遷移 300ms）を満たす。
+
+**理由**: rVFC は Safari 系で挙動差があり、`seeked` + drawImage は全対応ブラウザで
+確実に動く最小構成。先読みで体感速度は吸収できるため、基盤は保守的な API に置く。
+
+### D2: 新規 RLS ポリシーは不要 🔵
+
+**課題**: 注釈書き込みに migration 追加ポリシーが要るか
+
+**決定**: 不要。注釈は shots / rallies 既存行の UPDATE のみで、UPDATE ポリシー
+（FK 経由 `is_member_of`）は data-foundation で定義済み。INSERT / DELETE を行わない
+（match-recording の undo 用 DELETE ポリシーとも無関係）。
+
+### D3: 保存は列単位の楽観 UPDATE + 直列キュー 🟡
+
+**決定**: 入力のたびに対象行へ部分 UPDATE（PATCH）を直列キューで送出。UI は即時反映、
+失敗時は useToast + ローカル状態保持（EDGE-007）。バッチ化（ラリー単位まとめ書き）は
+しない — 1件ずつの方が undo(1段) と last-write-wins（EDGE-001）の意味が単純になる。
+
+### D4: 入力用コート図は新規コンポーネント 🔵
+
+**決定**: record 用 `CourtDiagram`（GameState 表示専用）は再利用せず、
+`CourtDiagramInput` を新設。ライン外領域込みの描画・タップ→正規化座標（範囲外値許容）・
+マーカー表示という責務が表示用と異なるため。座標変換は `utils/annotation/courtCoords.ts`
+に置き、コンポーネントは薄く保つ。
+
+### D5: レット・巡回・進捗の分母は session 一元管理 🔵
+
+**決定**: レット除外（REQ-106）のフィルタは `useAnnotationSession` のデータ読込直後に
+一度だけ適用し、巡回リスト・進捗分母・一覧表示のすべてが同じフィルタ済み配列を参照する
+（モード側で個別に除外しない）。除外規則の二重実装によるズレを防ぐ。
+
+## 未解決（実装時に確定）
+
+- サムネ帯の枚数（5 or 7）と間隔の微調整（プロトタイプで体感確認）
+- end_reason のキー割当の並び順
+- スマホでのフレーム選択 UX の細部
