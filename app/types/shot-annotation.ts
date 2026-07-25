@@ -146,3 +146,50 @@ export interface LastContact {
   team: Team
   playerId: PlayerId | null
 }
+
+// ========================================
+// セッションが読み込むドメイン行（snake→camel 写像後）
+// ========================================
+
+export interface AnnotationMatchInfo {
+  id: string
+  videoSourceType: 'youtube' | 'local'
+  videoSourceUrl: string
+}
+
+export interface AnnotationRosterEntry {
+  playerId: PlayerId
+  name: string
+  team: Team
+}
+
+/** レット除外済みで保持するラリー行（D5: 除外は session 読込直後に一元適用） */
+export interface AnnotationRally {
+  id: string
+  setId: string
+  setNumber: number
+  rallyNumber: number
+  servingTeam: Team
+  serverPlayerId: PlayerId
+  receiverPlayerId: PlayerId
+  pointWinner: Team | null
+  isPointConfirmed: boolean
+  videoStartTimestampMs: number | null
+  endReason: EndReason | null
+  landX: number | null
+  landY: number | null
+  outDirection: OutDirection | null
+}
+
+export interface AnnotationShot {
+  id: string
+  rallyId: string
+  shotNumber: number
+  videoTimestampMs: number | null
+  annotatedTimestampMs: number | null
+  shotType: ShotType | null
+  hand: Hand | null
+  hitPlayerId: PlayerId | null
+  hitX: number | null
+  hitY: number | null
+}
