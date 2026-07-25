@@ -68,10 +68,14 @@
 
 - [x] TASK-0011: `annotate.vue` ページ統合（AnnotationModeBar / AnnotationRallyList /
   video-playback 接続 / 試合詳細からの導線） - 8h (TDD) 🔵
-- [ ] TASK-0012: i18n（ja/en）+ 結合スモーク + D6 初期値の試用調整
+- [x] TASK-0012: i18n（ja/en）+ 結合スモーク + D6 初期値の試用調整
   （キー割当・サムネ帯枚数、作者ドッグフーディングの初回フィードバック反映） - 6h (DIRECT) 🔵
 
 ## タスク番号管理
+
+> TASK-0012 メモ: i18n キー整合 CI ✓ / dev サーバー起動 + annotate ルート応答 (認証ガード 302) ✓。
+> 実データでの操作確認と D6 初期値 (キー順・候補フレーム間隔) の調整は作者ドッグフーディング (ADR-018 M4) で実施。
+> 残改善: ThumbStrip の canvas 静止画化 (v1 は候補時刻シーク方式)。
 
 **使用済みタスク番号**: TASK-0001 ~ TASK-0012
 **次回開始番号**: TASK-0013
