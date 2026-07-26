@@ -1,0 +1,83 @@
+# shot-stats コンテキストノート（セッション引き継ぎ用）
+
+**作成日**: 2026-07-26
+**位置づけ**: ADR-018 §3 先行実装スコープの後半 —「ショットレベル統計 2〜3枚
+（捨てる前提の安い探針）」。テスター限定代行（仮説A = 統計需要の検証）の**試料**そのもの。
+**状態**: 本ノートのみ（要件定義はこれから）。次セッションはここから
+`/kairo-requirements shot-stats` で着手する。
+
+## 1. 前提となる決定（すべて確定済み・再議論不要）
+
+- **ADR-017**: taxonomy 16種 / end_reason 7値 / 絶対正規化座標 / 決定打導出式。
+- **ADR-018**: 探針は2〜3枚・捨てる前提。反応を見て磨くか捨てる。本丸投資は第2ゲート後。
+- **shot-annotation 実装済み**（PR #50、feat/shot-annotation。全12タスク完了・テスト412件 green）。
+  注釈データの供給源はアノテーションスタジオ（`/annotate`）。
+- **ADR-013 REQ-301**（stats-dashboard 側）: ダッシュボードは将来「基本 / 詳細」で
+  課金ゲートを掛けられる構造にする。ショットレベル統計は**「詳細」側の第一候補**。
+
+## 2. 消費するデータ（スキーマ変更不要・読み取りのみ）
+
+| テーブル | 列 | 意味 |
+|---|---|---|
+| `shots` | `shot_type`(16種) / `hand` / `hit_player_id` / `hit_x` `hit_y` / `annotated_timestamp_ms` | 注釈本体。**全列 nullable = 部分注釈が正常** |
+| `rallies` | `end_reason`(7値) / `land_x` `land_y` / `out_direction` + 既存 denorm 列 (`serving_team` / `point_winner` 等) | 決着注釈 + ライブ記録の実測値 |
+
+- stats-dashboard の前例に従い、集計は**読み取り専用 RPC / View** の additive migration で
+  行ってよい（テーブル変更は不可）。
+
+## 3. 集計時に守る規則（要件に転記すべき確定事項）
+
+1. **座標は絶対系で保存されている**（x: 0-1 コート幅 / y: 0-1 全長、y=0 = チームA側
+   バックバウンダリー、ライン外は範囲外値）。**選手視点の分析には集計側でミラー**
+   （打者がチームBなら x→1−x, y→1−y）。REQ-014。
+2. **レットラリーは除外済みではない** — 注釈は付かないが行は存在する。集計でも
+   `is_let=false` フィルタを必ず掛ける。
+3. **hand の null は「未判定」**。フォアと解釈しない（トグル ON のパスのみ非 null）。
+4. **out の細分**は `land_x/y` から導出（side = x 範囲外 / back = y 範囲外 / both = 両方）。
+   座標が null のときのみ `out_direction` を使う。導出関数は
+   `app/utils/annotation/court-coords.ts` の `deriveOutDirection` と同一規則にする。
+5. **決定打** = 勝者チームの最後のショット（in/body: 最終、out/net/not_over: その1つ前、
+   service_fault/unknown: なし）。`app/utils/annotation/derive.ts` の `decisiveShotIndex` と同一規則。
+6. **母数併記**（stats-dashboard NFR-201 踏襲）: 部分注釈が正常状態なので、
+   「注釈済み n / 全体 N」の明示が特に重要。
+
+## 4. 探針の候補（ヒアリングで 2〜3 枚に絞る）
+
+| 候補 | 使う列 | 分析価値 |
+|---|---|---|
+| ① 配球ヒートマップ | hit_x/y (+選手・球種フィルタ) | どこから打っているか。ゾーン 3×3 表示（保存は座標のまま） |
+| ② 決着分析 | end_reason × 決定打 shot_type × land_x/y | どうやって点を取った/失ったか。クイックパスだけで埋まる = **最速で表示可能になる探針** |
+| ③ 球種構成比・球種別得点率 | shot_type × point_winner | 選手の配球傾向とその成否 |
+| ④ サーブ種別分析 | serve_short/long/drive × 直後の得点率 | サーブ選択の成否 |
+
+- ②はクイックパス（10〜15分/試合）だけでデータが揃うため、代行運用と相性が最良。
+- ①③は種別パス/打点パスの完了率に依存 → 母数併記が生命線。
+
+## 5. ヒアリングで決めること（kairo-requirements の論点リスト）
+
+1. 探針の最終選定（上の候補から 2〜3 枚。捨てる前提なので欲張らない）
+2. 表示場所: 既存 stats 画面（試合単位 / Group 横断）への追加タブか、別セクションか
+3. ゾーン粒度（3×3 か 2×3 か）とミラー基準（選手視点固定でよいか）
+4. フィルタ軸（選手 / 球種 / セット / hand）をどこまで v1 に入れるか
+5. 部分注釈の扱い: 注釈率が低い試合を一覧でどう見せるか（注釈率バッジ等）
+6. 基本 / 詳細グルーピング: 今回の探針を最初から「詳細」枠として実装するか
+   （MVP は全機能基本扱いだった — stats-dashboard REQ-301）
+
+## 6. 進め方（このブランチで）
+
+1. このブランチ `docs/spec-shot-stats` 上で `/kairo-requirements shot-stats`
+   （requirements / user-stories / acceptance-criteria / interview-record / note の5点セット。
+   shot-annotation の spec が体裁の前例）
+2. → `/kairo-design` → `/kairo-tasks` → 実装（実装ブランチは `feat/shot-stats` を main から。
+   **PR #50 マージ後に**切ること — 注釈列の生成型に依存するため）
+3. CLAUDE.md ワークフロー: ブランチ → dev マージ → localhost 検証 → main へ PR
+4. 未マージ PR の状態を最初に確認: #49 (tsumiki commands) / #50 (shot-annotation 本体)
+
+## 7. 関連ファイル
+
+- ADR: `docs/decisions/017-*.md` / `018-*.md`
+- shot-annotation: `docs/spec/shot-annotation/` / `docs/design/shot-annotation/` /
+  `docs/tasks/shot-annotation/overview.md`（全タスク完了状態）
+- 集計と同一規則にすべき純関数: `app/utils/annotation/{court-coords,derive}.ts`
+- stats-dashboard 前例: `docs/spec/stats-dashboard/` / `docs/design/stats-dashboard/`
+  （読み取り専用 RPC・View の migration 前例、vue-echarts、母数併記 NFR-201）
