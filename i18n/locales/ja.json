@@ -192,7 +192,8 @@
     "stats": "統計を見る",
     "groupStats": "グループ統計",
     "statusDone": "完了",
-    "statusRecording": "記録中"
+    "statusRecording": "記録中",
+    "annotate": "注釈"
   },
   "record": {
     "back": "戻る",

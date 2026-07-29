@@ -192,7 +192,8 @@
     "stats": "View stats",
     "groupStats": "Group stats",
     "statusDone": "Done",
-    "statusRecording": "Recording"
+    "statusRecording": "Recording",
+    "annotate": "Annotate"
   },
   "record": {
     "back": "Back",

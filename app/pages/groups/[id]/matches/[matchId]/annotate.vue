@@ -141,6 +141,12 @@ watch(session.saveError, (error) => {
   if (error) toast.add({ title: t('annotation.saveError'), color: 'error' })
 })
 
+/** ?mode= でパスへ直接入れる (試合一覧からの分岐導線用。既定はクイック) */
+function initialMode(): AnnotationMode {
+  const q = route.query.mode
+  return q === 'type' || q === 'position' || q === 'quick' ? q : 'quick'
+}
+
 onMounted(async () => {
   window.addEventListener('keydown', onKeydown)
   loopTimer = setInterval(tickLoop, 100)
@@ -149,7 +155,7 @@ onMounted(async () => {
   if (match?.videoSourceType === 'youtube') {
     initPlayer({ type: 'youtube', url: match.videoSourceUrl })
   }
-  startMode('quick')
+  startMode(initialMode())
 })
 
 onBeforeUnmount(() => {
