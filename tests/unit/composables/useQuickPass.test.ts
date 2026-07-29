@@ -1,10 +1,11 @@
 /**
- * useQuickPass 単体テスト (TASK-0007)
+ * useQuickPass 単体テスト (TASK-0007 / 2026-07-29 改訂)
  *
- * mock 戦略: QuickPassDeps を素の ref + 疑似 patch (session と同じく local 反映) で構成。
- * 検証: 開始位置 (最初の未注釈) / 非対称ループ窓 / end_reason ステップ進行 (in・out → 落下点) /
- *       整合チェック警告 (REQ-102) / EDGE-002 落下点矛盾 / out_direction フォールバック /
- *       決定打の特定と種別書込 / 1打ネットは決定打なしで自動前進 (TC-006-B01)。
+ * 改訂: クイックパスから決定打種別入力を削除 (ドッグフーディングの指摘 —
+ *       「決定打」の解釈が主観に揺れ、種別パスの入力と矛盾し得るため。
+ *       決定打は derive.decisiveShotIndex の機械的導出のみとし、種別ラベルは種別パスの責務)。
+ * 検証: 開始位置 / 非対称ループ窓 / end_reason → (in/out のみ落下点) → 次ラリーの進行 /
+ *       整合チェック警告 (REQ-102) / EDGE-002 落下点矛盾 / out_direction フォールバック。
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
@@ -14,8 +15,7 @@ import type {
   AnnotationCursor,
   AnnotationRally,
   AnnotationShot,
-  RallyEndPatch,
-  ShotAnnotationPatch
+  RallyEndPatch
 } from '~/types/shot-annotation'
 
 function rally(id: string, over: Partial<AnnotationRally> = {}): AnnotationRally {
@@ -65,12 +65,6 @@ function makeDeps(rallies: AnnotationRally[], shotsMap: Record<string, Annotatio
     if (patch.outDirection !== undefined) target.outDirection = patch.outDirection
     return true
   })
-  const patchShot = vi.fn(async (shotId: string, patch: ShotAnnotationPatch) => {
-    const target = Object.values(shotsMap).flat().find(s => s.id === shotId)
-    if (!target) return false
-    if (patch.shotType !== undefined) target.shotType = patch.shotType
-    return true
-  })
   const deps: QuickPassDeps = {
     rallies: ralliesRef,
     cursor,
@@ -78,10 +72,9 @@ function makeDeps(rallies: AnnotationRally[], shotsMap: Record<string, Annotatio
     goTo: (c: AnnotationCursor) => {
       cursor.value = c
     },
-    patchRally,
-    patchShot
+    patchRally
   }
-  return { deps, cursor, patchRally, patchShot }
+  return { deps, cursor, patchRally }
 }
 
 describe('useQuickPass', () => {
@@ -123,6 +116,16 @@ describe('useQuickPass', () => {
     })
   })
 
+  it('落下点が不要な決着 (net 等) は選択後すぐ次ラリーへ (決定打種別は聞かない)', async () => {
+    fixtures.deps.rallies.value[0]!.pointWinner = 'B' // net → 導出勝者 B と整合
+    const qp = useQuickPass(fixtures.deps)
+    qp.start()
+    await qp.selectEndReason('net')
+    expect(qp.consistencyWarning.value).toBe(false)
+    expect(qp.currentRally.value?.id).toBe('r2')
+    expect(qp.step.value).toBe('reason')
+  })
+
   it('TC-102-01: 導出勝者と point_winner の矛盾でソフト警告 (保存はされる)', async () => {
     fixtures.deps.rallies.value[0]!.pointWinner = 'B'
     const qp = useQuickPass(fixtures.deps)
@@ -132,10 +135,10 @@ describe('useQuickPass', () => {
     expect(fixtures.patchRally).toHaveBeenCalled()
   })
 
-  it('落下点入力: 座標保存 + 決定打ステップへ。out×コート内は警告 (EDGE-002)', async () => {
+  it('落下点入力: 座標保存 → 次ラリーへ。out×コート内は警告 (EDGE-002)', async () => {
+    fixtures.deps.rallies.value[0]!.pointWinner = 'B'
     const qp = useQuickPass(fixtures.deps)
     qp.start()
-    fixtures.deps.rallies.value[0]!.pointWinner = 'B' // out → 導出勝者 B と整合させる
     await qp.selectEndReason('out')
     await qp.setLanding({ x: 0.4, y: 0.5 }) // コート内 = 矛盾
     expect(qp.landingWarning.value).toBe(true)
@@ -144,12 +147,10 @@ describe('useQuickPass', () => {
       landY: 0.5,
       outDirection: null
     })
-    // out (敗者側が最終接触) → 決定打 = 最後から2番目が存在するので decisive へ
-    expect(qp.step.value).toBe('decisive')
-    expect(qp.decisiveShot.value?.id).toBe('sh2')
+    expect(qp.currentRally.value?.id).toBe('r2')
   })
 
-  it('落下点スキップ: out のときだけ out_direction サブ選択 (REQ-005 フォールバック)', async () => {
+  it('落下点スキップ: out のときだけ out_direction サブ選択 → 次ラリーへ (REQ-005)', async () => {
     fixtures.deps.rallies.value[0]!.pointWinner = 'B'
     const qp = useQuickPass(fixtures.deps)
     qp.start()
@@ -158,32 +159,17 @@ describe('useQuickPass', () => {
     expect(qp.step.value).toBe('outDirection')
     await qp.selectOutDirection('back')
     expect(fixtures.patchRally).toHaveBeenLastCalledWith('r1', { outDirection: 'back' })
-    expect(qp.step.value).toBe('decisive')
-  })
-
-  it('決定打種別の書込 → 次ラリーへ前進 (REQ-006)', async () => {
-    const qp = useQuickPass(fixtures.deps)
-    qp.start()
-    await qp.selectEndReason('in')
-    await qp.setLanding({ x: 0.3, y: 0.9 })
-    // in → 決定打 = 最終ショット sh3
-    expect(qp.decisiveShot.value?.id).toBe('sh3')
-    await qp.setDecisiveType('smash')
-    expect(fixtures.patchShot).toHaveBeenCalledWith('sh3', { shotType: 'smash' })
     expect(qp.currentRally.value?.id).toBe('r2')
-    expect(qp.step.value).toBe('reason')
   })
 
-  it('TC-006-B01: 1打ネット (サーブミス) は決定打なしで自動前進', async () => {
+  it('最終ラリーの注釈が終わると isDone', async () => {
     const qp = useQuickPass(fixtures.deps)
     qp.start()
     await qp.selectEndReason('in')
     await qp.setLanding({ x: 0.5, y: 0.5 })
-    await qp.setDecisiveType('smash') // r1 完了 → r2 へ
     // r2 (1打・point_winner B = サーブ側 A の失点で整合)
     await qp.selectEndReason('net')
     expect(qp.consistencyWarning.value).toBe(false)
-    // 決定打なし → decisive を挟まず完了 (最終ラリーなので isDone)
     expect(qp.isDone.value).toBe(true)
   })
 })

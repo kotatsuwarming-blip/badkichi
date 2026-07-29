@@ -421,7 +421,9 @@
       "redo": "Redo this rally",
       "nextRally": "Next rally",
       "overflow": "Extra inputs beyond the shot count were ignored",
-      "rallyDone": "Rally complete"
+      "rallyDone": "Rally complete",
+      "insertShot": "Insert shot",
+      "deleteShot": "Delete this shot"
     },
     "position": {
       "calibrating": "Calibrating: align the frame to the hit moment and confirm (first 3 shots)",
