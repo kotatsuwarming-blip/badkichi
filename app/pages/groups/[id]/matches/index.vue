@@ -204,6 +204,17 @@ watch(error, (e) => {
               :data-testid="`stats-${m.id}`"
             />
             <UButton
+              v-if="m.recordingStatus !== 'none'"
+              color="primary"
+              variant="ghost"
+              size="sm"
+              icon="i-lucide-tags"
+              :to="`/groups/${route.params.id}/matches/${m.id}/annotate`"
+              :aria-label="t('matches.annotate')"
+              :label="t('matches.annotate')"
+              :data-testid="`annotate-${m.id}`"
+            />
+            <UButton
               color="primary"
               variant="soft"
               size="sm"
