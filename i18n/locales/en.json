@@ -192,7 +192,8 @@
     "stats": "View stats",
     "groupStats": "Group stats",
     "statusDone": "Done",
-    "statusRecording": "Recording"
+    "statusRecording": "Recording",
+    "annotate": "Annotate"
   },
   "record": {
     "back": "Back",
@@ -372,5 +373,87 @@
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
     "backToHome": "Back to home"
+  },
+  "annotation": {
+    "title": "Annotation",
+    "open": "Annotate",
+    "loading": "Loading…",
+    "noRallies": "No rallies to annotate. Record the match first.",
+    "goRecord": "Go to recording",
+    "localReselect": "Re-select the video file to annotate",
+    "resume": "Resume",
+    "undo": "Undo",
+    "modeDone": "This pass is complete",
+    "saveError": "Failed to save. Your input is kept locally. Check your connection.",
+    "mode": {
+      "quick": "Quick",
+      "type": "Shot type",
+      "position": "Position"
+    },
+    "quick": {
+      "prompt": "How did the rally end?",
+      "reason": {
+        "in": "In (floor)",
+        "out": "Out",
+        "net": "Net",
+        "not_over": "Not over",
+        "body": "Body",
+        "service_fault": "Service fault",
+        "unknown": "Unknown"
+      },
+      "landingPrompt": "Tap the landing spot (out zone allowed)",
+      "skipLanding": "Skip landing",
+      "outDirectionPrompt": "Which way out?",
+      "outDirection": {
+        "side": "Side",
+        "back": "Back",
+        "both": "Corner (both)"
+      },
+      "decisivePrompt": "Decisive shot type?",
+      "skipDecisive": "Skip",
+      "consistencyWarning": "Derived winner contradicts the recorded point (possible input error)",
+      "landingWarning": "Marked out, but the landing spot is inside the court"
+    },
+    "type": {
+      "recordHand": "Record fore/backhand",
+      "handHint": "Shift+key = backhand",
+      "serveHint": "1st shot: S=short / L=long / D=drive",
+      "redo": "Redo this rally",
+      "nextRally": "Next rally",
+      "overflow": "Extra inputs beyond the shot count were ignored",
+      "rallyDone": "Rally complete"
+    },
+    "position": {
+      "calibrating": "Calibrating: align the frame to the hit moment and confirm (first 3 shots)",
+      "confirmFrame": "Confirm this frame",
+      "frameJump": "Candidate frames",
+      "tapPrompt": "Tap the hit position",
+      "hitterPrompt": "Who hit it?",
+      "skip": "Skip this shot",
+      "loopHint": "Slow loop — pause at the hit moment and tap the position"
+    },
+    "shotType": {
+      "serve_short": "Short serve",
+      "serve_long": "Long serve",
+      "serve_drive": "Drive serve",
+      "clear": "Clear",
+      "smash": "Smash",
+      "cut": "Cut",
+      "reverse_cut": "Reverse cut",
+      "drop": "Drop",
+      "hairpin": "Net shot",
+      "lob": "Lift",
+      "push": "Push",
+      "half": "Half",
+      "drive": "Drive",
+      "receive_long": "Long receive",
+      "receive_drive": "Drive receive",
+      "receive_short": "Short receive"
+    },
+    "rallyList": {
+      "title": "Rallies",
+      "rally": "Set {set} #{n}",
+      "shots": "{n} shots"
+    }
   }
 }

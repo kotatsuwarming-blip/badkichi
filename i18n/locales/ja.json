@@ -192,7 +192,8 @@
     "stats": "統計を見る",
     "groupStats": "グループ統計",
     "statusDone": "完了",
-    "statusRecording": "記録中"
+    "statusRecording": "記録中",
+    "annotate": "注釈"
   },
   "record": {
     "back": "戻る",
@@ -372,5 +373,87 @@
     "privacy": "プライバシーポリシー",
     "terms": "利用規約",
     "backToHome": "トップへ戻る"
+  },
+  "annotation": {
+    "title": "アノテーション",
+    "open": "注釈",
+    "loading": "読み込み中…",
+    "noRallies": "注釈対象のラリーがありません。先に記録画面で試合を記録してください。",
+    "goRecord": "記録画面へ",
+    "localReselect": "注釈には動画ファイルの再選択が必要です",
+    "resume": "続きから",
+    "undo": "取り消し",
+    "modeDone": "このモードの注釈は完了です",
+    "saveError": "保存に失敗しました。入力は保持されています。通信状態を確認してください",
+    "mode": {
+      "quick": "クイック",
+      "type": "種別",
+      "position": "打点"
+    },
+    "quick": {
+      "prompt": "決まり方は?",
+      "reason": {
+        "in": "イン (床)",
+        "out": "アウト",
+        "net": "ネット",
+        "not_over": "越えず",
+        "body": "身体",
+        "service_fault": "サーブフォルト",
+        "unknown": "不明"
+      },
+      "landingPrompt": "落下点をタップ (ライン外もタップ可)",
+      "skipLanding": "落下点をスキップ",
+      "outDirectionPrompt": "アウトの方向は?",
+      "outDirection": {
+        "side": "サイド",
+        "back": "バック",
+        "both": "コーナー (両方)"
+      },
+      "decisivePrompt": "決定打の種別は?",
+      "skipDecisive": "スキップ",
+      "consistencyWarning": "導出される勝者が記録済みの得点と矛盾しています (入力ミスの可能性)",
+      "landingWarning": "アウトなのに落下点がコート内です"
+    },
+    "type": {
+      "recordHand": "フォア/バックも記録する",
+      "handHint": "Shift+キー = バックハンド",
+      "serveHint": "1打目: S=ショート / L=ロング / D=ドライブ",
+      "redo": "このラリーをやり直す",
+      "nextRally": "次のラリーへ",
+      "overflow": "ショット数を超えた入力は無視されました",
+      "rallyDone": "このラリーの入力完了"
+    },
+    "position": {
+      "calibrating": "校正中: 打球の瞬間にフレームを合わせて「確定」を押してください (最初の3打)",
+      "confirmFrame": "このフレームで確定",
+      "frameJump": "候補フレーム",
+      "tapPrompt": "打点をタップ",
+      "hitterPrompt": "打ったのは?",
+      "skip": "このショットをスキップ",
+      "loopHint": "スローループ再生中 — 打球の瞬間で一時停止して打点をタップ"
+    },
+    "shotType": {
+      "serve_short": "ショートサーブ",
+      "serve_long": "ロングサーブ",
+      "serve_drive": "ドライブサーブ",
+      "clear": "クリア",
+      "smash": "スマッシュ",
+      "cut": "カット",
+      "reverse_cut": "リバースカット",
+      "drop": "ドロップ",
+      "hairpin": "ヘアピン",
+      "lob": "ロブ",
+      "push": "プッシュ",
+      "half": "ハーフ",
+      "drive": "ドライブ",
+      "receive_long": "ロングレシーブ",
+      "receive_drive": "ドライブレシーブ",
+      "receive_short": "ショートレシーブ"
+    },
+    "rallyList": {
+      "title": "ラリー一覧",
+      "rally": "第{set}セット #{n}",
+      "shots": "{n}打"
+    }
   }
 }
