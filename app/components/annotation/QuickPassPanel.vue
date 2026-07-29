@@ -10,6 +10,10 @@ const props = defineProps<{
   quick: UseQuickPassReturn
 }>()
 
+const emit = defineEmits<{
+  replay: []
+}>()
+
 const { t } = useI18n()
 const OUT_DIRECTIONS = ['side', 'back', 'both'] as const
 </script>
@@ -39,9 +43,19 @@ const OUT_DIRECTIONS = ['side', 'back', 'both'] as const
     </div>
 
     <template v-else-if="props.quick.step.value === 'reason'">
-      <p class="text-sm font-medium">
-        {{ t('annotation.quick.prompt') }}
-      </p>
+      <div class="flex items-center gap-2">
+        <p class="text-sm font-medium">
+          {{ t('annotation.quick.prompt') }}
+        </p>
+        <UButton
+          variant="ghost"
+          size="xs"
+          icon="i-lucide-rotate-cw"
+          @click="emit('replay')"
+        >
+          {{ t('annotation.quick.replay') }}
+        </UButton>
+      </div>
       <!-- PC は縦一列 + キー表示 (数字キーで直接入力可)、スマホは2列グリッド -->
       <div class="grid grid-cols-2 gap-2 lg:grid-cols-1 lg:max-w-xs">
         <UButton

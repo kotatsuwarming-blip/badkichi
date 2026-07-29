@@ -80,9 +80,24 @@ function tickLoop(): void {
   const p = player.value
   if (!window_ || !p) return
   const current = p.controls.getCurrentTimeMs()
-  if (current !== null && current > window_.toMs) {
+  if (current === null || current <= window_.toMs) return
+  if (session.mode.value === 'quick') {
+    // クイックパスは通し方式: 決着窓を1回再生したら停止して入力待ち
+    // (ループ再生より速い、ドッグフーディング 2026-07-29)。再視聴は「もう一度見る」
+    if (p.state.value.status === 'playing') p.controls.pause()
+  } else {
+    // 打点探索 (YouTube) は瞬間を探すためループ維持
     p.controls.seekToMs(window_.fromMs)
   }
+}
+
+/** 決着窓の再視聴 (クイックパス) */
+function replayWindow(): void {
+  const window_ = activeLoopWindow.value
+  const p = player.value
+  if (!window_ || !p) return
+  p.controls.seekToMs(window_.fromMs)
+  p.controls.play()
 }
 
 // 窓が変わったら窓頭から再生 (打点探索は 0.5x スロー、ui-design.md)
@@ -309,6 +324,7 @@ onBeforeUnmount(() => {
           <AnnotationQuickPassPanel
             v-if="session.mode.value === 'quick'"
             :quick="quick"
+            @replay="replayWindow"
           />
           <AnnotationTypePassPanel
             v-else-if="session.mode.value === 'type'"

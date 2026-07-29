@@ -412,7 +412,8 @@
       "decisivePrompt": "Decisive shot type?",
       "skipDecisive": "Skip",
       "consistencyWarning": "Derived winner contradicts the recorded point (possible input error)",
-      "landingWarning": "Marked out, but the landing spot is inside the court"
+      "landingWarning": "Marked out, but the landing spot is inside the court",
+      "replay": "Replay"
     },
     "type": {
       "recordHand": "Record fore/backhand",
