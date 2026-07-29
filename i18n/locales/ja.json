@@ -412,7 +412,8 @@
       "decisivePrompt": "決定打の種別は?",
       "skipDecisive": "スキップ",
       "consistencyWarning": "導出される勝者が記録済みの得点と矛盾しています (入力ミスの可能性)",
-      "landingWarning": "アウトなのに落下点がコート内です"
+      "landingWarning": "アウトなのに落下点がコート内です",
+      "replay": "もう一度見る"
     },
     "type": {
       "recordHand": "フォア/バックも記録する",
