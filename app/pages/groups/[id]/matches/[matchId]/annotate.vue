@@ -17,7 +17,7 @@ import type { AnnotationMode, AnnotationRally } from '~/types/shot-annotation'
 import { useVideoPlayer } from '~/composables/useVideoPlayer'
 import { useAnnotationSession } from '~/composables/useAnnotationSession'
 import { useAnnotationProgress } from '~/composables/useAnnotationProgress'
-import { useQuickPass } from '~/composables/useQuickPass'
+import { QUICK_REASON_KEYS, useQuickPass } from '~/composables/useQuickPass'
 import { useTypePass } from '~/composables/useTypePass'
 import { usePositionPass } from '~/composables/usePositionPass'
 
@@ -112,6 +112,48 @@ function seekAndPause(ms: number): void {
   p.controls.pause()
 }
 
+// 種別パス: ラリー頭へシーク + 通常速で再生、ラリー間を飛ばす (REQ-008)
+watch(
+  () => [session.mode.value, typePass.currentRally.value?.id] as const,
+  ([mode, rallyId]) => {
+    if (mode !== 'type' || rallyId === undefined) return
+    const p = player.value
+    const rally = typePass.currentRally.value
+    if (!p || !rally) return
+    const firstShot = session.shotsOf(rally.id)[0]
+    const startMs = rally.videoStartTimestampMs
+      ?? (firstShot?.videoTimestampMs != null ? Math.max(0, firstShot.videoTimestampMs - 1500) : null)
+    if (startMs === null) return
+    p.controls.seekToMs(startMs)
+    p.controls.setPlaybackRate(1)
+    p.controls.play()
+  }
+)
+
+// 種別パス: ラリー内の入力が揃ったら自動一時停止 (REQ-008 の境界停止)
+watch(() => typePass.rallyComplete.value, (complete) => {
+  if (complete && session.mode.value === 'type') player.value?.controls.pause()
+})
+
+// ---- ショット行の補正 (押し損ね/押しすぎ、ドッグフーディング 2026-07-29) ----
+async function onInsertShot(): Promise<void> {
+  const rally = typePass.currentRally.value
+  if (!rally) return
+  const shots = typePass.currentShots.value
+  const expected = typePass.expectedShot.value
+  const position = expected ? shots.findIndex(s => s.id === expected.id) : shots.length
+  const ok = await session.insertShotAt(rally.id, position)
+  if (ok) typePass.goToRally(rally.id)
+}
+
+async function onDeleteShot(): Promise<void> {
+  const rally = typePass.currentRally.value
+  const expected = typePass.expectedShot.value
+  if (!rally || !expected) return
+  const ok = await session.deleteShotAt(expected.id)
+  if (ok) typePass.goToRally(rally.id)
+}
+
 // ---- キーボード (REQ-007 / REQ-108)。e.code で数字段の Shift 記号化を回避 ----
 function codeToKey(code: string): string | null {
   const digit = /^Digit(\d)$/.exec(code)
@@ -129,11 +171,21 @@ function onKeydown(event: KeyboardEvent): void {
     session.undoLast()
     return
   }
-  if (session.mode.value !== 'type') return
   const key = codeToKey(event.code)
   if (key === null) return
-  event.preventDefault()
-  typePass.handleKey(key, { backhand: event.shiftKey })
+  if (session.mode.value === 'type') {
+    event.preventDefault()
+    typePass.handleKey(key, { backhand: event.shiftKey })
+    return
+  }
+  // クイックパス: 数字キーで end_reason を直接入力 (D6 初期値の割当)
+  if (session.mode.value === 'quick' && quick.step.value === 'reason') {
+    const reason = QUICK_REASON_KEYS.find(([k]) => k === key)?.[1]
+    if (reason) {
+      event.preventDefault()
+      quick.selectEndReason(reason)
+    }
+  }
 }
 
 // ---- 保存エラー通知 (EDGE-007: local は保持、通知のみ) ----
@@ -225,9 +277,10 @@ onBeforeUnmount(() => {
     </UAlert>
 
     <template v-else>
-      <div class="grid gap-4 lg:grid-cols-2">
+      <!-- min-w-0: 動画がカラム幅を突き破って右パネルを隠すのを防ぐ -->
+      <div class="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <!-- 動画ペイン -->
-        <div class="space-y-2">
+        <div class="min-w-0 space-y-2">
           <VideoPlayer
             v-if="player"
             :player="player"
@@ -252,7 +305,7 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- モード別入力パネル -->
-        <div>
+        <div class="min-w-0">
           <AnnotationQuickPassPanel
             v-if="session.mode.value === 'quick'"
             :quick="quick"
@@ -261,6 +314,8 @@ onBeforeUnmount(() => {
             v-else-if="session.mode.value === 'type'"
             :type-pass="typePass"
             @toggle-hand="value => (typePass.recordHand.value = value)"
+            @insert-shot="onInsertShot"
+            @delete-shot="onDeleteShot"
           />
           <AnnotationPositionPassPanel
             v-else

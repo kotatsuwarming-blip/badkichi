@@ -265,6 +265,49 @@ export function useAnnotationSession(matchId: string) {
     return res.error === null
   }
 
+  /**
+   * ショット挿入 (ライブ記録の押し損ね補正、ドッグフーディング 2026-07-29)。
+   * position (0-based) の位置に挿入し、以降を後ろから +1 renumber (UNIQUE 回避、直列キュー)。
+   * タイムスタンプは前後ショットの中点 (どちらか欠けたら null)。完了後に再読込で整合させる。
+   * 構造操作は直前1段 undo の対象外 (削除で戻せる)。
+   */
+  async function insertShotAt(rallyId: string, position: number): Promise<boolean> {
+    const shots = shotsOf(rallyId)
+    if (position < 0 || position > shots.length) return false
+    for (let i = shots.length - 1; i >= position; i--) {
+      const target = shots[i]
+      if (target) await save.updateShotNumber(target.id, target.shotNumber + 1)
+    }
+    const prev = shots[position - 1]
+    const next = shots[position]
+    const timestamp = prev?.videoTimestampMs != null && next?.videoTimestampMs != null
+      ? Math.round((prev.videoTimestampMs + next.videoTimestampMs) / 2)
+      : null
+    const res = await save.insertShotRow(rallyId, position + 1, timestamp)
+    if (res.error) return false
+    lastUndo.value = null
+    await load()
+    return true
+  }
+
+  /**
+   * ショット削除 (押しすぎ補正)。物理削除し、以降を前から -1 renumber (歯抜けを作らない —
+   * shot_number=1 のサーブ自動確定などの前提を保つ)。完了後に再読込。
+   */
+  async function deleteShotAt(shotId: string): Promise<boolean> {
+    const shot = findShot(shotId)
+    if (!shot) return false
+    const rest = shotsOf(shot.rallyId).filter(s => s.shotNumber > shot.shotNumber)
+    const res = await save.deleteShotRow(shotId)
+    if (res.error) return false
+    for (const s of rest) {
+      await save.updateShotNumber(s.id, s.shotNumber - 1)
+    }
+    lastUndo.value = null
+    await load()
+    return true
+  }
+
   /** 直前1段の取り消し (REQ-108): 旧値を逆適用し、カーソルを入力時点へ戻す */
   async function undoLast(): Promise<boolean> {
     const entry = lastUndo.value
@@ -300,6 +343,8 @@ export function useAnnotationSession(matchId: string) {
     setMode,
     patchShot,
     patchRally,
+    insertShotAt,
+    deleteShotAt,
     undoLast
   }
 }

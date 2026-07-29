@@ -18,13 +18,11 @@ import type {
   EndReason,
   LoopWindow,
   OutDirection,
-  RallyEndPatch,
-  ShotAnnotationPatch,
-  ShotType
+  RallyEndPatch
 } from '~/types/shot-annotation'
 import { loopWindowFor } from '~/utils/annotation/offset'
 import { deriveOutDirection } from '~/utils/annotation/court-coords'
-import { checkConsistency, decisiveShotIndex } from '~/utils/annotation/derive'
+import { checkConsistency } from '~/utils/annotation/derive'
 
 /** session のうちクイックパスが必要とする面 (構造的部分型) */
 export interface QuickPassDeps {
@@ -33,16 +31,25 @@ export interface QuickPassDeps {
   shotsOf: (rallyId: string) => AnnotationShot[]
   goTo: (cursor: AnnotationCursor) => void
   patchRally: (rallyId: string, patch: RallyEndPatch, opts?: { recordUndo?: boolean }) => Promise<boolean>
-  patchShot: (shotId: string, patch: ShotAnnotationPatch, opts?: { recordUndo?: boolean }) => Promise<boolean>
 }
 
-export type QuickPassStep = 'reason' | 'landing' | 'outDirection' | 'decisive'
+export type QuickPassStep = 'reason' | 'landing' | 'outDirection'
+
+/** end_reason のキー割当 (D6 初期値: 頻度順。試用後に調整) */
+export const QUICK_REASON_KEYS: Array<[string, EndReason]> = [
+  ['1', 'in'],
+  ['2', 'out'],
+  ['3', 'net'],
+  ['4', 'not_over'],
+  ['5', 'unknown'],
+  ['6', 'body'],
+  ['7', 'service_fault']
+]
 
 export interface UseQuickPassReturn {
   step: Ref<QuickPassStep>
   currentRally: ComputedRef<AnnotationRally | null>
   loopWindow: ComputedRef<LoopWindow | null>
-  decisiveShot: ComputedRef<AnnotationShot | null>
   lastHitterTeam: ComputedRef<Team | null>
   consistencyWarning: Ref<boolean>
   landingWarning: Ref<boolean>
@@ -53,8 +60,6 @@ export interface UseQuickPassReturn {
   setLanding: (point: CourtPoint) => Promise<void>
   skipLanding: () => void
   selectOutDirection: (direction: OutDirection) => Promise<void>
-  setDecisiveType: (type: ShotType) => Promise<void>
-  skipDecisive: () => void
 }
 
 export function useQuickPass(deps: QuickPassDeps): UseQuickPassReturn {
@@ -90,15 +95,6 @@ export function useQuickPass(deps: QuickPassDeps): UseQuickPassReturn {
     return loopWindowFor('rallyEnd', anchor)
   })
 
-  /** 決定打 = 勝者チームの最後のショット (REQ-006)。存在しない場合 null */
-  const decisiveShot = computed<AnnotationShot | null>(() => {
-    const rally = currentRally.value
-    if (!rally || rally.endReason === null) return null
-    const idx = decisiveShotIndex(currentShots.value.length, rally.endReason)
-    if (idx === null) return null
-    return currentShots.value[idx] ?? null
-  })
-
   const isDone = computed(() => index.value === -1)
 
   function syncCursor(): void {
@@ -106,10 +102,12 @@ export function useQuickPass(deps: QuickPassDeps): UseQuickPassReturn {
     if (rally) deps.goTo({ setId: rally.setId, rallyId: rally.id, shotId: null })
   }
 
-  function resetStepState(): void {
+  /**
+   * ステップだけ戻す。警告は消さない — 決着入力直後に次ラリーへ自動前進するため、
+   * ここで消すと直前の矛盾警告が一瞬も見えない。警告は次の入力時にクリアする。
+   */
+  function resetStep(): void {
     step.value = 'reason'
-    consistencyWarning.value = false
-    landingWarning.value = false
   }
 
   /** 最初の未注釈ラリーから開始 (全て注釈済みなら先頭から見直し) */
@@ -121,7 +119,9 @@ export function useQuickPass(deps: QuickPassDeps): UseQuickPassReturn {
     } else {
       index.value = firstMissing === -1 ? 0 : firstMissing
     }
-    resetStepState()
+    resetStep()
+    consistencyWarning.value = false
+    landingWarning.value = false
     syncCursor()
   }
 
@@ -130,7 +130,9 @@ export function useQuickPass(deps: QuickPassDeps): UseQuickPassReturn {
     const i = deps.rallies.value.findIndex(r => r.id === rallyId)
     if (i === -1) return
     index.value = i
-    resetStepState()
+    resetStep()
+    consistencyWarning.value = false
+    landingWarning.value = false
     syncCursor()
   }
 
@@ -142,21 +144,23 @@ export function useQuickPass(deps: QuickPassDeps): UseQuickPassReturn {
     } else {
       index.value = -1
     }
-    resetStepState()
+    resetStep()
   }
 
-  /** 落下点フェーズの後: 決定打があれば種別入力へ、なければ次ラリーへ */
+  /**
+   * 落下点フェーズの後は次ラリーへ。決定打の「種別」はここでは聞かない —
+   * 決定打は機械的導出 (derive.decisiveShotIndex)、種別ラベルは種別パスの責務
+   * (クイックと種別の分離。ドッグフーディング 2026-07-29 の決定)。
+   */
   function afterLanding(): void {
-    if (decisiveShot.value) {
-      step.value = 'decisive'
-    } else {
-      advance()
-    }
+    advance()
   }
 
   async function selectEndReason(reason: EndReason): Promise<void> {
     const rally = currentRally.value
     if (!rally) return
+    // 新しい入力が始まったので前ラリーの警告をクリア
+    landingWarning.value = false
     // REQ-102: 導出勝者 vs 記録済み point_winner の矛盾はソフト警告 (保存は拒否しない)
     consistencyWarning.value = lastHitterTeam.value !== null
       && !checkConsistency(lastHitterTeam.value, reason, rally.pointWinner, rally.isPointConfirmed)
@@ -200,21 +204,10 @@ export function useQuickPass(deps: QuickPassDeps): UseQuickPassReturn {
     afterLanding()
   }
 
-  async function setDecisiveType(type: ShotType): Promise<void> {
-    const shot = decisiveShot.value
-    if (shot) await deps.patchShot(shot.id, { shotType: type })
-    advance()
-  }
-
-  function skipDecisive(): void {
-    advance()
-  }
-
   return {
     step,
     currentRally,
     loopWindow,
-    decisiveShot,
     lastHitterTeam,
     consistencyWarning,
     landingWarning,
@@ -224,8 +217,6 @@ export function useQuickPass(deps: QuickPassDeps): UseQuickPassReturn {
     selectEndReason,
     setLanding,
     skipLanding,
-    selectOutDirection,
-    setDecisiveType,
-    skipDecisive
+    selectOutDirection
   }
 }

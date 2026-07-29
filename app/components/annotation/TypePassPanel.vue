@@ -11,9 +11,11 @@ const props = defineProps<{
   typePass: UseTypePassReturn
 }>()
 
-/** hand トグル (REQ-104) は prop を直接変異させず親へ委譲 (vue/no-mutating-props) */
+/** hand トグルと構造操作は prop を直接変異させず親へ委譲 (vue/no-mutating-props) */
 const emit = defineEmits<{
   'toggle-hand': [value: boolean]
+  'insert-shot': []
+  'delete-shot': []
 }>()
 
 const { t } = useI18n()
@@ -86,23 +88,26 @@ function isReceiveKey(type: ShotType): boolean {
         <p class="text-xs text-neutral-500">
           {{ t('annotation.type.serveHint') }}
         </p>
-        <div class="flex gap-2">
+        <div class="flex flex-col gap-2 lg:max-w-xs">
           <UButton
             v-for="[key, type] in SERVE_KEYS"
             :key="key"
             variant="soft"
             color="primary"
+            class="justify-start"
             @click="props.typePass.handleKey(key)"
           >
-            {{ key }} {{ t(`annotation.shotType.${type}`) }}
+            <UKbd>{{ key }}</UKbd>
+            {{ t(`annotation.shotType.${type}`) }}
           </UButton>
         </div>
       </div>
 
-      <!-- 通常パレット (固定キー。レシーブ文脈では QWE をハイライト、REQ-103) -->
+      <!-- 通常パレット (固定キー。レシーブ文脈では QWE をハイライト、REQ-103)。
+           PC は縦一列でキー対応を明示、スマホは3列グリッド -->
       <div
         v-else
-        class="grid grid-cols-3 gap-1.5 sm:grid-cols-5"
+        class="grid grid-cols-3 gap-1.5 lg:grid-cols-1 lg:max-w-xs"
       >
         <UButton
           v-for="[key, type] in NORMAL_KEYS"
@@ -110,18 +115,22 @@ function isReceiveKey(type: ShotType): boolean {
           :variant="props.typePass.receiveHighlight.value && isReceiveKey(type) ? 'solid' : 'soft'"
           :color="props.typePass.receiveHighlight.value && isReceiveKey(type) ? 'primary' : 'neutral'"
           size="xs"
+          class="lg:justify-start"
           block
           @click="props.typePass.handleKey(key)"
         >
-          <span class="font-mono">{{ key }}</span>
+          <UKbd size="sm">
+            {{ key }}
+          </UKbd>
           {{ t(`annotation.shotType.${type}`) }}
         </UButton>
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- 未入力が残っていても次へ進める (押し損ね/押しすぎの現実に合わせる) -->
         <UButton
-          v-if="props.typePass.rallyComplete.value"
-          color="primary"
+          :color="props.typePass.rallyComplete.value ? 'primary' : 'neutral'"
+          :variant="props.typePass.rallyComplete.value ? 'solid' : 'soft'"
           size="sm"
           icon="i-lucide-chevron-right"
           @click="props.typePass.advanceRally()"
@@ -141,6 +150,26 @@ function isReceiveKey(type: ShotType): boolean {
           @click="props.typePass.redoRally()"
         >
           {{ t('annotation.type.redo') }}
+        </UButton>
+        <!-- ショット行の補正 (ライブ記録の押し損ね/押しすぎ) -->
+        <UButton
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          icon="i-lucide-plus"
+          @click="emit('insert-shot')"
+        >
+          {{ t('annotation.type.insertShot') }}
+        </UButton>
+        <UButton
+          v-if="props.typePass.expectedShot.value"
+          variant="ghost"
+          color="error"
+          size="sm"
+          icon="i-lucide-minus"
+          @click="emit('delete-shot')"
+        >
+          {{ t('annotation.type.deleteShot') }}
         </UButton>
       </div>
     </template>
