@@ -3,8 +3,8 @@
  * 【機能概要】: クイックパスの入力パネル。end_reason → 落下点 → 決定打種別のステップ UI。
  * TASK-0011 / REQ-004 / REQ-005 / REQ-006 / REQ-102 / ui-design.md モード1
  */
+import { QUICK_REASON_KEYS } from '~/composables/useQuickPass'
 import type { UseQuickPassReturn } from '~/composables/useQuickPass'
-import { END_REASONS, SHOT_TYPES } from '~/types/shot-annotation'
 
 const props = defineProps<{
   quick: UseQuickPassReturn
@@ -42,15 +42,19 @@ const OUT_DIRECTIONS = ['side', 'back', 'both'] as const
       <p class="text-sm font-medium">
         {{ t('annotation.quick.prompt') }}
       </p>
-      <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <!-- PC は縦一列 + キー表示 (数字キーで直接入力可)、スマホは2列グリッド -->
+      <div class="grid grid-cols-2 gap-2 lg:grid-cols-1 lg:max-w-xs">
         <UButton
-          v-for="reason in END_REASONS"
+          v-for="[key, reason] in QUICK_REASON_KEYS"
           :key="reason"
           variant="soft"
           color="neutral"
-          block
+          class="justify-start"
           @click="props.quick.selectEndReason(reason)"
         >
+          <UKbd class="hidden lg:inline-flex">
+            {{ key }}
+          </UKbd>
           {{ t(`annotation.quick.reason.${reason}`) }}
         </UButton>
       </div>
@@ -90,32 +94,6 @@ const OUT_DIRECTIONS = ['side', 'back', 'both'] as const
           {{ t(`annotation.quick.outDirection.${direction}`) }}
         </UButton>
       </div>
-    </template>
-
-    <template v-else-if="props.quick.step.value === 'decisive'">
-      <p class="text-sm font-medium">
-        {{ t('annotation.quick.decisivePrompt') }}
-      </p>
-      <div class="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-        <UButton
-          v-for="type in SHOT_TYPES"
-          :key="type"
-          variant="soft"
-          color="neutral"
-          size="xs"
-          block
-          @click="props.quick.setDecisiveType(type)"
-        >
-          {{ t(`annotation.shotType.${type}`) }}
-        </UButton>
-      </div>
-      <UButton
-        variant="ghost"
-        size="sm"
-        @click="props.quick.skipDecisive()"
-      >
-        {{ t('annotation.quick.skipDecisive') }}
-      </UButton>
     </template>
   </div>
 </template>

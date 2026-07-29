@@ -18,6 +18,10 @@ type RallyUpdate = Database['public']['Tables']['rallies']['Update']
 export interface UseAnnotationSaveReturn {
   saveShotPatch: (shotId: string, patch: ShotAnnotationPatch) => Promise<ActionResult<true>>
   saveRallyPatch: (rallyId: string, patch: RallyEndPatch) => Promise<ActionResult<true>>
+  /** ショット行の構造操作 (押し損ね/押しすぎの補正、ドッグフーディング 2026-07-29) */
+  updateShotNumber: (shotId: string, shotNumber: number) => Promise<ActionResult<true>>
+  insertShotRow: (rallyId: string, shotNumber: number, videoTimestampMs: number | null) => Promise<ActionResult<string>>
+  deleteShotRow: (shotId: string) => Promise<ActionResult<true>>
   pending: Ref<boolean>
   lastError: Ref<unknown>
 }
@@ -51,7 +55,7 @@ export function useAnnotationSave(): UseAnnotationSaveReturn {
     return row
   }
 
-  function enqueue(run: () => Promise<ActionResult<true>>): Promise<ActionResult<true>> {
+  function enqueue<T>(run: () => Promise<ActionResult<T>>): Promise<ActionResult<T>> {
     inFlight += 1
     pending.value = true
     const result = queue.then(run)
@@ -83,9 +87,34 @@ export function useAnnotationSave(): UseAnnotationSaveReturn {
     return toResult(error)
   }
 
+  async function insertShot(
+    rallyId: string,
+    shotNumber: number,
+    videoTimestampMs: number | null
+  ): Promise<ActionResult<string>> {
+    const { data, error } = await client
+      .from('shots')
+      .insert({ rally_id: rallyId, shot_number: shotNumber, video_timestamp_ms: videoTimestampMs })
+      .select('id')
+      .single()
+    if (error) {
+      lastError.value = error
+      return { data: null, error }
+    }
+    return { data: data.id, error: null }
+  }
+
+  async function deleteShot(shotId: string): Promise<ActionResult<true>> {
+    const { error } = await client.from('shots').delete().eq('id', shotId)
+    return toResult(error)
+  }
+
   return {
     saveShotPatch: (shotId, patch) => enqueue(() => updateShot(shotId, toShotRow(patch))),
     saveRallyPatch: (rallyId, patch) => enqueue(() => updateRally(rallyId, toRallyRow(patch))),
+    updateShotNumber: (shotId, shotNumber) => enqueue(() => updateShot(shotId, { shot_number: shotNumber })),
+    insertShotRow: (rallyId, shotNumber, videoTimestampMs) => enqueue(() => insertShot(rallyId, shotNumber, videoTimestampMs)),
+    deleteShotRow: shotId => enqueue(() => deleteShot(shotId)),
     pending,
     lastError
   }
