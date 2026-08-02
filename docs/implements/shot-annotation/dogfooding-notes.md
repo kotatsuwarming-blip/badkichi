@@ -6,7 +6,7 @@
 ## 現在の状態
 
 - ブランチ: `feat/shot-annotation`（PR #50 オープン、mainは未取込。PR #49 tsumikiコマンドもオープン）
-- テスト: 421件 green / lint / typecheck clean
+- テスト: 422件 green / lint / typecheck clean
 - ドッグフーディング: YouTube動画「地区センター練習」でクイック→種別→打点を実施中。
   再アノテーション用の複製は `scripts/duplicate-match-for-annotation.sql`（Supabase Dashboard で実行）
 
@@ -28,17 +28,25 @@
 - ショット挿入/削除は種別・打点両パスにあり。undo(Backspace/↩)は位置復元つき(undoAndReposition)
 - ラリー一覧ジャンプはwatcher任せにせず動画を明示駆動(jumpToRally)
 
-## 未解決バグ（次セッションの最優先）
+## 未解決バグ
 
-1. **打点パスで、注釈済みのラリーへラリー一覧から戻れない**（2026-08-03報告、fc19043適用後も再現）。
-   - 期待挙動: 戻ると打点マーカーが表示された状態になり、再クリックで上書きできる（以前は動いていた）
-   - 調査手順: ユーザーに再現してもらいブラウザコンソール(F12)のエラーを確認。
-     関連コード: annotate.vue jumpToRally/seekPositionAnchor、usePositionPass.goToRally/entries
-   - 仮説候補: entriesの再構築タイミング / goToRallyのindexは動くがUI別要因 / 例外の握り潰し
+（なし。バグ1は解決済み → 下記）
+
+## 解決済みバグ
+
+1. **打点パスで、注釈済みのラリーへラリー一覧から戻れない** → **f432a4a で修正済み（2026-08-03）**。
+   - 根本原因: ラリージャンプの状態遷移ではなく動画層。**cued（未再生）状態の YouTube
+     プレーヤーに seekTo() すると黒画面のまま固まり、以後 playVideo() が一切効かなくなる**
+     （IFrame API の癖。Chrome 実機で再現・確認済み）。ページ読込直後（動画を一度も
+     再生する前）にラリー一覧からジャンプすると発生し、以後何をクリックしても動かない。
+     goToRally/index/マーカー表示は正常に動いていた。
+   - 修正: youtube-adapter の seekToMs が status==='unstarted' のときは seekTo ではなく
+     loadVideoById({videoId, startSeconds}) で実ロードする。後続の play() が成立する。
+   - 検証: localhost でリロード→打点モード→未再生のままラリー#2ジャンプ →
+     スローループ再生(0.5x)・種別バッジ・打点マーカー表示を確認。
 
 ## 改善バックログ（優先度順）
 
-- 上記バグ修正
 - ThumbStrip の canvas 静止画化（ローカル動画時。v1は候補時刻シーク方式）
 - スマホの「打った+位置同時タップ」記録モード（保留中。REQ-407改訂が前提）
 - D6初期値の継続調整（キー順・窓幅など。ローカル動画での打点パスは未検証）
