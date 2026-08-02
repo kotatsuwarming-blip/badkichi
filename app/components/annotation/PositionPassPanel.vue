@@ -158,7 +158,7 @@ function confirmCurrentFrame() {
             :marker="props.positionPass.currentShot.value && props.positionPass.currentShot.value.hitX !== null
               ? { x: props.positionPass.currentShot.value.hitX, y: props.positionPass.currentShot.value.hitY ?? 0 }
               : null"
-            @select="props.positionPass.setPosition($event)"
+            @select="props.positionPass.setPosition($event, { playerTimeMs: props.currentTimeMs() })"
           />
         </div>
       </template>

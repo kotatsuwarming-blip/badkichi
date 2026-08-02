@@ -41,6 +41,7 @@ export function useAnnotationSave(): UseAnnotationSaveReturn {
     if (patch.hitX !== undefined) row.hit_x = patch.hitX
     if (patch.hitY !== undefined) row.hit_y = patch.hitY
     if (patch.annotatedTimestampMs !== undefined) row.annotated_timestamp_ms = patch.annotatedTimestampMs
+    if (patch.annotatedTimestampPrecision !== undefined) row.annotated_timestamp_precision = patch.annotatedTimestampPrecision
     // 人手注釈の書込であることを併記 (REQ-301。AI 下書き導入時は 'ai' 側が書く)
     if (Object.keys(row).length > 0) row.annotation_source = 'human'
     return row
