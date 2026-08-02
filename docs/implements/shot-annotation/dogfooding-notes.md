@@ -28,6 +28,12 @@
 - **スタジオのショット削除は論理削除**（2026-08-03 FB。誤削除で押下時刻を失わない。
   UNIQUE は live 行のみの部分インデックス、migration 20260803120000 適用済み。
   復元は SQL で deleted_at を NULL に戻す。record 画面の直後 undo は従来通り物理削除）
+- **REQ-101 改訂（2026-08-03）: YouTube でも打点タップ時のプレーヤー時刻を
+  annotated_timestamp_ms に保存**する（展開速度分析用の概算値）。精度区分は
+  shots.annotated_timestamp_precision（frame=ローカル確定 / approx=YouTube目視、
+  migration 20260803130000）。spec 本文への反映は未実施（バックログ）
+- **hand（フォア/バック）トグルは既定 ON**（種別・全ショット両パス、2026-08-03 FB）
+- モード名: クイック→「決まり方」/ 打点→「全ショット」（2026-08-03 FB）
 
 - クイックパス: 通し方式（決着窓[前1s/後2.5s]を1回再生→自動停止→入力→次へ）。決定打種別入力なし
 - end_reason 6値: floor/net/not_over/body/service_fault/unknown。in/outは最終接触者+point_winnerから導出(deriveInOut)

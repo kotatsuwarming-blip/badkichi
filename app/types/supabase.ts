@@ -538,6 +538,7 @@ export type Database = {
           ai_confidence: number | null
           ai_model_version: string | null
           annotated_timestamp_ms: number | null
+          annotated_timestamp_precision: string | null
           annotation_source: string | null
           created_at: string
           deleted_at: string | null
@@ -557,6 +558,7 @@ export type Database = {
           ai_confidence?: number | null
           ai_model_version?: string | null
           annotated_timestamp_ms?: number | null
+          annotated_timestamp_precision?: string | null
           annotation_source?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -576,6 +578,7 @@ export type Database = {
           ai_confidence?: number | null
           ai_model_version?: string | null
           annotated_timestamp_ms?: number | null
+          annotated_timestamp_precision?: string | null
           annotation_source?: string | null
           created_at?: string
           deleted_at?: string | null

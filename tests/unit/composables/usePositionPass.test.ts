@@ -43,6 +43,7 @@ function shot(id: string, rallyId: string, shotNumber: number, ts: number): Anno
     shotNumber,
     videoTimestampMs: ts,
     annotatedTimestampMs: null,
+    annotatedTimestampPrecision: null,
     shotType: null,
     hand: null,
     hitPlayerId: null,
@@ -169,6 +170,23 @@ describe('usePositionPass (ローカル動画)', () => {
     expect(pp.hitterCandidates.value.map(p => p.playerId)).toEqual(['B1', 'B2'])
   })
 
+  it('confirmFrame は精度区分 frame を併記する (2026-08-03)', async () => {
+    const pp = usePositionPass(fixtures.deps)
+    pp.start()
+    await pp.confirmFrame(4600)
+    expect(fixtures.patchShot).toHaveBeenCalledWith('sh1', {
+      annotatedTimestampMs: 4600,
+      annotatedTimestampPrecision: 'frame'
+    })
+  })
+
+  it('ローカルの打点タップでは playerTimeMs を保存しない (打刻はフレーム確定が担う)', async () => {
+    const pp = usePositionPass(fixtures.deps)
+    pp.start()
+    await pp.setPosition({ x: 0.1, y: 0.1 }, { playerTimeMs: 4444 })
+    expect(fixtures.patchShot).not.toHaveBeenCalledWith('sh1', expect.objectContaining({ annotatedTimestampMs: 4444 }))
+  })
+
   it('3打目以降は打者入力済みの再訪でも二択を出す (上書き可能に、2026-08-03)', async () => {
     shotsMap.r1![2]!.hitPlayerId = 'A1' // 前回の注釈で打者確定済み
     const pp = usePositionPass(fixtures.deps)
@@ -256,6 +274,21 @@ describe('usePositionPass (YouTube モード、TASK-0010)', () => {
     // 打点座標は保存される (hit_x/y はソース非依存)
     await pp.setPosition({ x: 0.4, y: 0.2 })
     expect(shotsMap.r1![0]!.hitX).toBe(0.4)
+  })
+
+  it('REQ-101改訂: 打点タップ時のプレーヤー時刻を approx として保存し、再訪アンカーにも使う (2026-08-03)', async () => {
+    const shotsMap = { r1: [shot('sh1', 'r1', 1, 5000), shot('sh2', 'r1', 2, 6000)] }
+    const { deps, patchShot } = makeDeps(shotsMap, true)
+    const pp = usePositionPass(deps)
+    pp.start()
+    await pp.setPosition({ x: 0.4, y: 0.2 }, { playerTimeMs: 4321.6 })
+    expect(patchShot).toHaveBeenCalledWith('sh1', expect.objectContaining({
+      annotatedTimestampMs: 4322,
+      annotatedTimestampPrecision: 'approx'
+    }))
+    // 再訪時はタップ時刻 (押下時刻より正確) を中心にループ窓を張る
+    pp.goToShot('sh1')
+    expect(pp.anchorMs.value).toBe(4322)
   })
 })
 
