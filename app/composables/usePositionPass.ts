@@ -256,10 +256,11 @@ export function usePositionPass(deps: PositionPassDeps): UsePositionPassReturn {
       patch.hitPlayerId = entry.rally.receiverPlayerId
     }
     await deps.patchShot(entry.shot.id, patch)
-    if (entry.shot.shotNumber <= 2 || entry.shot.hitPlayerId !== null) {
+    if (entry.shot.shotNumber <= 2) {
       advance()
     } else {
-      // 3打目以降: チームは偶奇で確定済み。ペア2人の二択のみ人に聞く (REQ-012)
+      // 3打目以降: チームは偶奇で確定済み。ペア2人の二択のみ人に聞く (REQ-012)。
+      // 打者入力済みでも再訪時に上書きできるよう常に聞く (ドッグフーディング 2026-08-03)
       awaitingHitter.value = true
     }
   }

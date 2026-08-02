@@ -1,9 +1,11 @@
 <script setup lang="ts">
 /**
- * 【機能概要】: 打点パスの入力パネル。ローカル: 候補フレームへのジャンプ + フレーム確定 (校正) +
- *             コート図タップ。YouTube: スローループ案内 + コート図タップ (REQ-009〜012 / REQ-101)。
- * 【実装方針】: フレーム抽出の canvas 化 (ThumbStrip) は D6 の試用後改善項目。v1 は
- *             候補時刻ボタンでプレーヤーをシークし、表示フレームを目視確認して確定する。
+ * 【機能概要】: 全ショットパス (打点+種別+打者) の入力パネル。ローカル: 候補フレームへの
+ *             ジャンプ + フレーム確定 (校正) + コート図タップ。YouTube: スローループ +
+ *             コート図タップ (REQ-009〜012 / REQ-101)。
+ * 【実装方針】: コート図をスクロールなしで届く位置に置くため、種別パレットは図の下・
+ *             ループ説明は最下部の注釈に配置 (ドッグフーディング 2026-08-03 レイアウト再構成)。
+ *             フレーム抽出の canvas 化 (ThumbStrip) は D6 の試用後改善項目。
  * TASK-0011 / ui-design.md モード3
  */
 import type { UsePositionPassReturn } from '~/composables/usePositionPass'
@@ -58,8 +60,9 @@ function confirmCurrentFrame() {
         </span>
       </div>
 
-      <!-- ラリー内のショットチップ (何打目を入力中か + 押下でそのショットへ、2026-08-03) -->
-      <div class="flex flex-wrap gap-1">
+      <!-- ラリー内のショットチップ (何打目を入力中か + 押下でそのショットへ、2026-08-03)。
+           現在ショットの記録済み hand (フォア/バック) も併記 -->
+      <div class="flex flex-wrap items-center gap-1">
         <UButton
           v-for="shotItem in props.positionPass.currentShots.value"
           :key="shotItem.id"
@@ -74,6 +77,14 @@ function confirmCurrentFrame() {
         >
           #{{ shotItem.shotNumber }}{{ shotItem.shotType ? ` ${t(`annotation.shotType.${shotItem.shotType}`)}` : '' }}
         </UButton>
+        <UBadge
+          v-if="props.positionPass.currentShot.value?.hand"
+          color="info"
+          variant="subtle"
+          size="sm"
+        >
+          {{ t(`annotation.hand.${props.positionPass.currentShot.value.hand}`) }}
+        </UBadge>
       </div>
 
       <UAlert
@@ -82,13 +93,6 @@ function confirmCurrentFrame() {
         variant="subtle"
         icon="i-lucide-crosshair"
         :title="t('annotation.position.calibrating')"
-      />
-      <UAlert
-        v-if="props.positionPass.loopWindow.value"
-        color="neutral"
-        variant="subtle"
-        icon="i-lucide-repeat"
-        :title="t('annotation.position.loopHint')"
       />
 
       <!-- ローカル: 候補フレーム (±0.5s の5点) へジャンプ → 確定 (REQ-010/011) -->
@@ -121,27 +125,44 @@ function confirmCurrentFrame() {
         </div>
       </div>
 
+      <!-- 打者の二択 (3打目以降、REQ-012)。入力済みの再訪は現値をハイライト -->
+      <div
+        v-if="props.positionPass.awaitingHitter.value"
+        class="space-y-1"
+      >
+        <p class="text-sm font-medium">
+          {{ t('annotation.position.hitterPrompt') }}
+        </p>
+        <div class="flex gap-2">
+          <UButton
+            v-for="candidate in props.positionPass.hitterCandidates.value"
+            :key="candidate.playerId"
+            :variant="candidate.playerId === props.positionPass.currentShot.value?.hitPlayerId ? 'solid' : 'soft'"
+            color="primary"
+            @click="props.positionPass.selectHitter(candidate.playerId)"
+          >
+            {{ candidate.name }}
+          </UButton>
+        </div>
+      </div>
+
+      <!-- 打点タップ (REQ-009/014)。スクロールなしで届くようパネル上部に配置 (2026-08-03) -->
+      <template v-else>
+        <p class="text-sm font-medium">
+          {{ t('annotation.position.tapPrompt') }}
+        </p>
+        <AnnotationCourtDiagramInput
+          :marker="props.positionPass.currentShot.value && props.positionPass.currentShot.value.hitX !== null
+            ? { x: props.positionPass.currentShot.value.hitX, y: props.positionPass.currentShot.value.hitY ?? 0 }
+            : null"
+          @select="props.positionPass.setPosition($event)"
+        />
+      </template>
+
       <!-- 種別の同時入力 (ステップ&ループ方式なら成立。特に YouTube 向け、2026-08-02) -->
       <div class="space-y-1">
-        <p class="flex items-center gap-2 text-xs text-neutral-500">
+        <p class="text-xs text-neutral-500">
           {{ t('annotation.position.typeHint') }}
-          <UBadge
-            v-if="props.positionPass.currentShot.value?.shotType"
-            color="success"
-            variant="subtle"
-            size="sm"
-          >
-            {{ t(`annotation.shotType.${props.positionPass.currentShot.value.shotType}`) }}
-          </UBadge>
-          <!-- 記録済みの hand (フォア/バック) を提示 (2026-08-03) -->
-          <UBadge
-            v-if="props.positionPass.currentShot.value?.hand"
-            color="info"
-            variant="subtle"
-            size="sm"
-          >
-            {{ t(`annotation.hand.${props.positionPass.currentShot.value.hand}`) }}
-          </UBadge>
         </p>
         <div
           v-if="props.positionPass.currentShot.value?.shotNumber === 1"
@@ -182,40 +203,6 @@ function confirmCurrentFrame() {
         </div>
       </div>
 
-      <!-- 打者の二択 (3打目以降のみ、REQ-012) -->
-      <div
-        v-if="props.positionPass.awaitingHitter.value"
-        class="space-y-1"
-      >
-        <p class="text-sm font-medium">
-          {{ t('annotation.position.hitterPrompt') }}
-        </p>
-        <div class="flex gap-2">
-          <UButton
-            v-for="candidate in props.positionPass.hitterCandidates.value"
-            :key="candidate.playerId"
-            variant="soft"
-            color="primary"
-            @click="props.positionPass.selectHitter(candidate.playerId)"
-          >
-            {{ candidate.name }}
-          </UButton>
-        </div>
-      </div>
-
-      <!-- 打点タップ (REQ-009/014) -->
-      <template v-else>
-        <p class="text-sm font-medium">
-          {{ t('annotation.position.tapPrompt') }}
-        </p>
-        <AnnotationCourtDiagramInput
-          :marker="props.positionPass.currentShot.value && props.positionPass.currentShot.value.hitX !== null
-            ? { x: props.positionPass.currentShot.value.hitX, y: props.positionPass.currentShot.value.hitY ?? 0 }
-            : null"
-          @select="props.positionPass.setPosition($event)"
-        />
-      </template>
-
       <div class="flex flex-wrap items-center gap-2">
         <UButton
           variant="ghost"
@@ -245,6 +232,14 @@ function confirmCurrentFrame() {
           {{ t('annotation.type.deleteShot') }}
         </UButton>
       </div>
+
+      <!-- ループ再生の説明は最下部の注釈に (上部の Alert はコート図を押し下げて邪魔、2026-08-03) -->
+      <p
+        v-if="props.positionPass.loopWindow.value"
+        class="text-xs text-neutral-500"
+      >
+        {{ t('annotation.position.loopHint') }}
+      </p>
     </template>
   </div>
 </template>
