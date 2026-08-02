@@ -57,11 +57,41 @@ function startMode(mode: AnnotationMode): void {
   else positionPass.start()
 }
 
+/** 打点パスの現在位置へ動画を合わせる (local = 静止 / YouTube = スローループ頭) */
+function seekPositionAnchor(): void {
+  const p = player.value
+  if (!p) return
+  if (session.isYoutube.value) {
+    const window_ = positionPass.loopWindow.value
+    if (!window_) return
+    p.controls.seekToMs(window_.fromMs)
+    p.controls.setPlaybackRate(0.5)
+    p.controls.play()
+  } else {
+    const anchor = positionPass.anchorMs.value
+    if (anchor === null) return
+    p.controls.seekToMs(anchor)
+    p.controls.pause()
+  }
+}
+
+/**
+ * ラリー一覧からのジャンプ。watcher 任せにせず動画も明示的に駆動する —
+ * 現在いるラリーを再選択した場合は computed が変化せず watcher が発火しないため
+ * (ドッグフーディング 2026-08-03「押しても遷移できない」)。
+ */
 function jumpToRally(rally: AnnotationRally): void {
   const mode = session.mode.value
-  if (mode === 'quick') quick.goToRally(rally.id)
-  else if (mode === 'type') typePass.goToRally(rally.id)
-  else positionPass.goToRally(rally.id)
+  if (mode === 'quick') {
+    quick.goToRally(rally.id)
+    replayWindow()
+  } else if (mode === 'type') {
+    typePass.goToRally(rally.id)
+    seekTypeRallyStart()
+  } else {
+    positionPass.goToRally(rally.id)
+    seekPositionAnchor()
+  }
 }
 
 const activeRallyId = computed(() => session.cursor.value?.rallyId ?? null)
@@ -217,7 +247,7 @@ function onKeydown(event: KeyboardEvent): void {
   if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return
   if (event.key === 'Backspace') {
     event.preventDefault()
-    session.undoLast()
+    undoAndReposition()
     return
   }
   const key = codeToKey(event.code)
@@ -227,10 +257,10 @@ function onKeydown(event: KeyboardEvent): void {
     typePass.handleKey(key, { backhand: event.shiftKey })
     return
   }
-  // 打点パス: 種別の同時入力 (前進はタップ側。2026-08-02)
+  // 打点パス: 種別の同時入力 (前進はタップ側。2026-08-02。Shift = バックハンド)
   if (session.mode.value === 'position') {
     event.preventDefault()
-    positionPass.setType(key)
+    positionPass.setType(key, { backhand: event.shiftKey })
     return
   }
   // クイックパス: 数字キーで end_reason を直接入力 (D6 初期値の割当)
@@ -240,6 +270,28 @@ function onKeydown(event: KeyboardEvent): void {
       event.preventDefault()
       quick.selectEndReason(reason)
     }
+  }
+}
+
+/**
+ * 取り消し + 位置復元 (2026-08-03): session.undoLast はデータとカーソルを戻すが、
+ * 各パスの内部位置は戻らず「歯抜けのまま次のショット入力」になっていた。
+ * undo 成功後にカーソルへパスの位置を合わせ、動画も追従させる。
+ */
+async function undoAndReposition(): Promise<void> {
+  const ok = await session.undoLast()
+  if (!ok) return
+  const cursor = session.cursor.value
+  if (!cursor) return
+  const mode = session.mode.value
+  if (mode === 'position' && cursor.shotId) {
+    positionPass.goToShot(cursor.shotId)
+    seekPositionAnchor()
+  } else if (mode === 'type') {
+    typePass.goToRally(cursor.rallyId)
+  } else if (mode === 'quick') {
+    quick.goToRally(cursor.rallyId)
+    replayWindow()
   }
 }
 
@@ -291,7 +343,7 @@ onBeforeUnmount(() => {
           variant="ghost"
           size="sm"
           icon="i-lucide-undo-2"
-          @click="session.undoLast()"
+          @click="undoAndReposition()"
         >
           {{ t('annotation.undo') }}
         </UButton>
@@ -381,6 +433,7 @@ onBeforeUnmount(() => {
             :current-time-ms="() => player?.controls.getCurrentTimeMs() ?? null"
             @insert-shot="onInsertShotPosition"
             @delete-shot="onDeleteShotPosition"
+            @toggle-hand="value => (positionPass.recordHand.value = value)"
           />
         </div>
       </div>

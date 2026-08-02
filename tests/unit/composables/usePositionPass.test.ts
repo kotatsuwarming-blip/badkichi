@@ -68,6 +68,7 @@ function makeDeps(shotsMap: Record<string, AnnotationShot[]>, youtube = false) {
     if (patch.hitPlayerId !== undefined) target.hitPlayerId = patch.hitPlayerId
     if (patch.annotatedTimestampMs !== undefined) target.annotatedTimestampMs = patch.annotatedTimestampMs
     if (patch.shotType !== undefined) target.shotType = patch.shotType
+    if (patch.hand !== undefined) target.hand = patch.hand
     return true
   })
   const deps: PositionPassDeps = {
@@ -177,6 +178,29 @@ describe('usePositionPass (ローカル動画)', () => {
     await pp.setPosition({ x: 0.1, y: 0.1 }) // 前進はタップ側
     await pp.setType('2')
     expect(shotsMap.r1![1]!.shotType).toBe('smash')
+  })
+
+  it('setType: hand トグル ON なら無印 = forehand / backhand 指定を明示保存 (2026-08-03)', async () => {
+    const pp = usePositionPass(fixtures.deps)
+    pp.start()
+    pp.recordHand.value = true
+    await pp.setType('s')
+    expect(shotsMap.r1![0]!.hand).toBe('forehand')
+    await pp.setPosition({ x: 0.1, y: 0.1 })
+    await pp.setType('q', { backhand: true })
+    expect(shotsMap.r1![1]!.hand).toBe('backhand')
+    // OFF なら書かない
+    pp.recordHand.value = false
+    await pp.setType('2')
+    expect(shotsMap.r1![1]!.hand).toBe('backhand') // 上書きされない (hand は patch に含まれない)
+  })
+
+  it('goToShot: 特定ショットへ移動 (undo 後の位置復元、2026-08-03)', () => {
+    const pp = usePositionPass(fixtures.deps)
+    pp.start()
+    pp.goToShot('sh3')
+    expect(pp.currentShot.value?.id).toBe('sh3')
+    expect(fixtures.cursor.value?.shotId).toBe('sh3')
   })
 
   it('再開 (REQ-013): hit_x が入っていない最初のショットから', () => {
