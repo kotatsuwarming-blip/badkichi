@@ -70,6 +70,15 @@ describe('useAnnotationSave', () => {
     expect(r).toEqual({ data: true, error: null })
   })
 
+  it('deleteShotRow は物理削除ではなく deleted_at を立てる論理削除 (誤削除で押下時刻を失わない、2026-08-03)', async () => {
+    const { deleteShotRow } = useAnnotationSave()
+    const r = await deleteShotRow('sh1')
+    expect(fromMock).toHaveBeenCalledWith('shots')
+    expect(updateMock).toHaveBeenCalledWith({ deleted_at: expect.any(String) })
+    expect(eqMock).toHaveBeenCalledWith('id', 'sh1')
+    expect(r).toEqual({ data: true, error: null })
+  })
+
   it('直列キュー: 先行 UPDATE の解決を待ってから次を送出する (last-write-wins の順序保証)', async () => {
     let resolveFirst!: (v: { error: null }) => void
     eqMock
