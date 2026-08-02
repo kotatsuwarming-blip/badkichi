@@ -17,10 +17,11 @@ const props = defineProps<{
   currentTimeMs: () => number | null
 }>()
 
-/** ショット行の構造操作は親へ委譲 (種別パスと同じ補正、2026-08-02) */
+/** ショット行の構造操作・hand トグルは親へ委譲 (vue/no-mutating-props) */
 const emit = defineEmits<{
   'insert-shot': []
   'delete-shot': []
+  'toggle-hand': [value: boolean]
 }>()
 
 const { t } = useI18n()
@@ -41,6 +42,21 @@ function confirmCurrentFrame() {
     </div>
 
     <template v-else>
+      <!-- hand トグル (種別同時入力に付随、2026-08-03。Shift+キー = バックハンド) -->
+      <div class="flex items-center justify-between gap-2">
+        <USwitch
+          :model-value="props.positionPass.recordHand.value"
+          :label="t('annotation.type.recordHand')"
+          @update:model-value="emit('toggle-hand', $event === true)"
+        />
+        <span
+          v-if="props.positionPass.recordHand.value"
+          class="text-xs text-neutral-500"
+        >
+          {{ t('annotation.type.handHint') }}
+        </span>
+      </div>
+
       <UAlert
         v-if="props.positionPass.isCalibrating.value"
         color="info"

@@ -59,10 +59,13 @@ export interface UsePositionPassReturn {
   hitterCandidates: ComputedRef<AnnotationRosterEntry[]>
   awaitingHitter: Ref<boolean>
   isDone: ComputedRef<boolean>
+  recordHand: Ref<boolean>
   start: () => void
   goToRally: (rallyId: string) => void
+  /** 特定ショットへ移動 (undo 後の位置復元など、2026-08-03) */
+  goToShot: (shotId: string) => void
   /** 現在ショットの種別入力 (打点との同時入力。特に YouTube 向け、2026-08-02)。前進しない */
-  setType: (key: string) => Promise<void>
+  setType: (key: string, opts?: { backhand?: boolean }) => Promise<void>
   /** フレーム確定 (ローカルのみ実書込)。校正中はサンプルにも追加 */
   confirmFrame: (frameMs: number) => Promise<void>
   setPosition: (point: CourtPoint) => Promise<void>
@@ -75,6 +78,8 @@ export function usePositionPass(deps: PositionPassDeps): UsePositionPassReturn {
   const offsetMs = ref(0)
   const samples = ref<number[]>([])
   const awaitingHitter = ref(false)
+  /** hand トグル (REQ-104 と同じ作法。ON なら無印 = forehand を明示保存)、2026-08-03 */
+  const recordHand = ref(false)
 
   const entries = computed<PassEntry[]>(() =>
     deps.rallies.value.flatMap(rally =>
@@ -158,6 +163,15 @@ export function usePositionPass(deps: PositionPassDeps): UsePositionPassReturn {
     syncCursor()
   }
 
+  /** 特定ショットへ移動 (undo 後の位置復元、2026-08-03) */
+  function goToShot(shotId: string): void {
+    const i = entries.value.findIndex(e => e.shot.id === shotId)
+    if (i === -1) return
+    index.value = i
+    awaitingHitter.value = false
+    syncCursor()
+  }
+
   function advance(): void {
     awaitingHitter.value = false
     if (index.value >= 0 && index.value < entries.value.length - 1) {
@@ -190,12 +204,17 @@ export function usePositionPass(deps: PositionPassDeps): UsePositionPassReturn {
    * ステップ&ループ方式では動画が待ってくれるため、種別 + 打点の同時入力が成立する。
    * 前進は打点タップ側が担う。
    */
-  async function setType(key: string): Promise<void> {
+  async function setType(key: string, opts: { backhand?: boolean } = {}): Promise<void> {
     const shot = currentShot.value
     if (!shot) return
     const type = keyToShotType(key, shot.shotNumber)
     if (type === null) return
-    await deps.patchShot(shot.id, { shotType: type })
+    const patch: ShotAnnotationPatch = { shotType: type }
+    if (recordHand.value) {
+      // トグル ON: 無印 = forehand を明示保存 (null の曖昧性排除、REQ-104 と同じ作法)
+      patch.hand = opts.backhand ? 'backhand' : 'forehand'
+    }
+    await deps.patchShot(shot.id, patch)
   }
 
   /** 打点タップ (REQ-009/014)。打者はプレフィルで確定できれば同時書込、二択なら保留 */
@@ -240,8 +259,10 @@ export function usePositionPass(deps: PositionPassDeps): UsePositionPassReturn {
     hitterCandidates,
     awaitingHitter,
     isDone,
+    recordHand,
     start,
     goToRally,
+    goToShot,
     setType,
     confirmFrame,
     setPosition,
