@@ -169,6 +169,16 @@ describe('usePositionPass (ローカル動画)', () => {
     expect(pp.hitterCandidates.value.map(p => p.playerId)).toEqual(['B1', 'B2'])
   })
 
+  it('3打目以降は打者入力済みの再訪でも二択を出す (上書き可能に、2026-08-03)', async () => {
+    shotsMap.r1![2]!.hitPlayerId = 'A1' // 前回の注釈で打者確定済み
+    const pp = usePositionPass(fixtures.deps)
+    pp.goToShot('sh3')
+    await pp.setPosition({ x: 0.5, y: 0.5 })
+    expect(pp.awaitingHitter.value).toBe(true)
+    await pp.selectHitter('A2')
+    expect(shotsMap.r1![2]!.hitPlayerId).toBe('A2')
+  })
+
   it('setType: 現在ショットの種別を書き込む (前進はしない。2026-08-02 同時入力)', async () => {
     const pp = usePositionPass(fixtures.deps)
     pp.start()
