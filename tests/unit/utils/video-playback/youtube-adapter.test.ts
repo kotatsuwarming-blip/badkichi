@@ -51,6 +51,7 @@ describe('createYouTubeAdapter', () => {
     playVideo: ReturnType<typeof vi.fn>
     pauseVideo: ReturnType<typeof vi.fn>
     seekTo: ReturnType<typeof vi.fn>
+    loadVideoById: ReturnType<typeof vi.fn>
     setPlaybackRate: ReturnType<typeof vi.fn>
     getCurrentTime: ReturnType<typeof vi.fn>
     getDuration: ReturnType<typeof vi.fn>
@@ -75,6 +76,7 @@ describe('createYouTubeAdapter', () => {
       playVideo: vi.fn(),
       pauseVideo: vi.fn(),
       seekTo: vi.fn(),
+      loadVideoById: vi.fn(),
       setPlaybackRate: vi.fn(),
       getCurrentTime: vi.fn(() => 0),
       getDuration: vi.fn(() => 0),
@@ -235,7 +237,7 @@ describe('createYouTubeAdapter', () => {
   // ----------------------------------------------------------------
   // ケース5: seekToMs が clampMs 適用後に seekTo(sec, true) を呼ぶ
   // ----------------------------------------------------------------
-  it('seekToMs が clampMs を適用して seekTo(sec, true) を呼ぶ（負値→0 / 超過→duration）', async () => {
+  it('再生開始後の seekToMs が clampMs を適用して seekTo(sec, true) を呼ぶ（負値→0 / 超過→duration）', async () => {
     fakePlayerInstance.getDuration.mockReturnValue(10) // durationMs = 10000
     fakePlayerInstance.getPlayerState.mockReturnValue(-1)
 
@@ -247,6 +249,9 @@ describe('createYouTubeAdapter', () => {
 
     expect(adapter.getDurationMs()).toBe(10000)
 
+    // 再生開始済み (PLAYING) にする — 未再生は loadVideoById 経路 (ケース5b)
+    fakePlayerInstance._events.onStateChange?.({ data: 1 })
+
     // 負値 → 0秒
     adapter.seekToMs(-500)
     expect(fakePlayerInstance.seekTo).toHaveBeenLastCalledWith(0, true)
@@ -254,6 +259,35 @@ describe('createYouTubeAdapter', () => {
     // 超過 → 10秒（durationMs / 1000）
     adapter.seekToMs(99999)
     expect(fakePlayerInstance.seekTo).toHaveBeenLastCalledWith(10, true)
+  })
+
+  // ----------------------------------------------------------------
+  // ケース5b: 未再生 (cued) 中の seekToMs は loadVideoById に切り替える
+  // （cued への seekTo は黒画面で固まり playVideo が無効になる IFrame API の癖、
+  //   ドッグフーディング 2026-08-03「打点パスで注釈済みラリーへ戻れない」）
+  // ----------------------------------------------------------------
+  it('未再生 (unstarted) 中の seekToMs は seekTo ではなく loadVideoById(videoId, startSeconds) を呼ぶ', async () => {
+    fakePlayerInstance.getDuration.mockReturnValue(10) // durationMs = 10000
+    fakePlayerInstance.getPlayerState.mockReturnValue(-1) // UNSTARTED のまま
+
+    const mountPromise = adapter.mount(fakeEl)
+    await Promise.resolve()
+    await Promise.resolve()
+    fakePlayerInstance._events.onReady?.({ target: fakePlayerInstance })
+    await mountPromise
+
+    adapter.seekToMs(5000)
+    expect(fakePlayerInstance.seekTo).not.toHaveBeenCalled()
+    expect(fakePlayerInstance.loadVideoById).toHaveBeenLastCalledWith({ videoId: 'dQw4w9WgXcQ', startSeconds: 5 })
+
+    // clamp も適用される（超過 → duration）
+    adapter.seekToMs(99999)
+    expect(fakePlayerInstance.loadVideoById).toHaveBeenLastCalledWith({ videoId: 'dQw4w9WgXcQ', startSeconds: 10 })
+
+    // 再生が始まったら通常の seekTo に戻る
+    fakePlayerInstance._events.onStateChange?.({ data: 1 })
+    adapter.seekToMs(3000)
+    expect(fakePlayerInstance.seekTo).toHaveBeenLastCalledWith(3, true)
   })
 
   // ----------------------------------------------------------------

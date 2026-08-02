@@ -56,6 +56,7 @@ interface FakeYtPlayer {
   playVideo: ReturnType<typeof vi.fn>
   pauseVideo: ReturnType<typeof vi.fn>
   seekTo: ReturnType<typeof vi.fn>
+  loadVideoById: ReturnType<typeof vi.fn>
   setPlaybackRate: ReturnType<typeof vi.fn>
   getCurrentTime: ReturnType<typeof vi.fn>
   getDuration: ReturnType<typeof vi.fn>
@@ -69,6 +70,7 @@ function stubYouTube(): FakeYtPlayer {
     playVideo: vi.fn(),
     pauseVideo: vi.fn(),
     seekTo: vi.fn(),
+    loadVideoById: vi.fn(),
     setPlaybackRate: vi.fn(),
     getCurrentTime: vi.fn(() => 0),
     getDuration: vi.fn(() => 60), // 秒
@@ -159,6 +161,9 @@ describe('統合: YouTube フロー', () => {
     await Promise.resolve()
     yt._events.onReady?.() // durationMs = 60000
     await attachP
+
+    // 未再生中のシークは loadVideoById 経路のため、再生開始後の挙動を検証する
+    yt._events.onStateChange?.({ data: 1 }) // PLAYING
 
     player.controls.seekToMs(30000)
     player.controls.seekToMs(0)
