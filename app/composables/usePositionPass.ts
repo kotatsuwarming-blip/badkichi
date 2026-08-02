@@ -98,13 +98,34 @@ export function usePositionPass(deps: PositionPassDeps): UsePositionPassReturn {
     !isYoutube.value && samples.value.length < CALIBRATION_SAMPLES && currentShot.value !== null
   )
 
+  /**
+   * アンカーの元時刻: ショット自身の押下時刻 → 後続/直前の近傍ショット → ラリー開始押下。
+   * 挿入されたショット行は video_timestamp_ms が null のことがある (先頭挿入・空ラリーへの
+   * 連続挿入)。null のままだとループ窓が作れず「ラリーへ遷移できない」ため近傍へ倒す
+   * (ドッグフーディング 2026-08-03)。
+   */
+  function baseTimestampMs(entry: PassEntry): number | null {
+    if (entry.shot.videoTimestampMs !== null) return entry.shot.videoTimestampMs
+    const shots = deps.shotsOf(entry.rally.id)
+    const i = shots.findIndex(s => s.id === entry.shot.id)
+    const next = shots.slice(i + 1).find(s => s.videoTimestampMs !== null)
+    if (next) return next.videoTimestampMs
+    const prev = shots.slice(0, Math.max(0, i)).reverse().find(s => s.videoTimestampMs !== null)
+    if (prev) return prev.videoTimestampMs
+    return entry.rally.videoStartTimestampMs
+  }
+
   const anchorMs = computed<number | null>(() => {
-    const shot = currentShot.value
-    if (!shot || shot.videoTimestampMs === null) return null
-    if (isYoutube.value) return shot.videoTimestampMs
-    // 確定済みならそれを最優先 (再訪時)。未確定は押下時刻 + 校正オフセット
-    const base = shot.annotatedTimestampMs ?? shot.videoTimestampMs + offsetMs.value
-    return Math.max(0, base) // EDGE-004
+    const entry = currentEntry.value
+    if (!entry) return null
+    // 確定済みならそれを最優先 (再訪時。ローカルのみ保存される)
+    if (!isYoutube.value && entry.shot.annotatedTimestampMs !== null) {
+      return Math.max(0, entry.shot.annotatedTimestampMs) // EDGE-004
+    }
+    const base = baseTimestampMs(entry)
+    if (base === null) return null
+    if (isYoutube.value) return base
+    return Math.max(0, base + offsetMs.value) // 押下時刻 + 校正オフセット (EDGE-004)
   })
 
   const stripTimesMs = computed<number[] | null>(() => {
