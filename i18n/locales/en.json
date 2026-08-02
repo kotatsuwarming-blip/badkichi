@@ -393,13 +393,12 @@
     "quick": {
       "prompt": "How did the rally end?",
       "reason": {
-        "in": "In (floor)",
-        "out": "Out",
         "net": "Net",
         "not_over": "Not over",
         "body": "Body",
         "service_fault": "Service fault",
-        "unknown": "Unknown"
+        "unknown": "Unknown",
+        "floor": "Over the net to floor (in/out auto)"
       },
       "landingPrompt": "Tap the landing spot (out zone allowed)",
       "skipLanding": "Skip landing",
@@ -413,7 +412,11 @@
       "skipDecisive": "Skip",
       "consistencyWarning": "Derived winner contradicts the recorded point (possible input error)",
       "landingWarning": "Marked out, but the landing spot is inside the court",
-      "replay": "Replay"
+      "replay": "Replay",
+      "derived": {
+        "in": "In (derived)",
+        "out": "Out (derived)"
+      }
     },
     "type": {
       "recordHand": "Record fore/backhand",

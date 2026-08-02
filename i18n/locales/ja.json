@@ -393,13 +393,12 @@
     "quick": {
       "prompt": "決まり方は?",
       "reason": {
-        "in": "イン (床)",
-        "out": "アウト",
         "net": "ネット",
         "not_over": "越えず",
         "body": "身体",
         "service_fault": "サーブフォルト",
-        "unknown": "不明"
+        "unknown": "不明",
+        "floor": "越えて床へ (イン/アウトは自動判定)"
       },
       "landingPrompt": "落下点をタップ (ライン外もタップ可)",
       "skipLanding": "落下点をスキップ",
@@ -413,7 +412,11 @@
       "skipDecisive": "スキップ",
       "consistencyWarning": "導出される勝者が記録済みの得点と矛盾しています (入力ミスの可能性)",
       "landingWarning": "アウトなのに落下点がコート内です",
-      "replay": "もう一度見る"
+      "replay": "もう一度見る",
+      "derived": {
+        "in": "イン (自動判定)",
+        "out": "アウト (自動判定)"
+      }
     },
     "type": {
       "recordHand": "フォア/バックも記録する",

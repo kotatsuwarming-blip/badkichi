@@ -1,11 +1,11 @@
 /**
- * useQuickPass 単体テスト (TASK-0007 / 2026-07-29 改訂)
+ * useQuickPass 単体テスト (TASK-0007 / 2026-08-02 改訂: in/out → floor 統合)
  *
- * 改訂: クイックパスから決定打種別入力を削除 (ドッグフーディングの指摘 —
- *       「決定打」の解釈が主観に揺れ、種別パスの入力と矛盾し得るため。
- *       決定打は derive.decisiveShotIndex の機械的導出のみとし、種別ラベルは種別パスの責務)。
- * 検証: 開始位置 / 非対称ループ窓 / end_reason → (in/out のみ落下点) → 次ラリーの進行 /
- *       整合チェック警告 (REQ-102) / EDGE-002 落下点矛盾 / out_direction フォールバック。
+ * 改訂: in/out は動画から判定できないため入力させず、「floor (越えて床へ)」だけを記録し、
+ *       in/out は最終接触者 + point_winner から導出する (ドッグフーディングの決定)。
+ * 検証: 開始位置 / 非対称ループ窓 / floor → 落下点 → 次ラリーの進行 / in/out 導出 /
+ *       整合チェック警告 (net 等の導出可能な決着のみ、REQ-102) / EDGE-002 座標×導出の矛盾 /
+ *       out_direction フォールバック。
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
@@ -92,7 +92,7 @@ describe('useQuickPass', () => {
   })
 
   it('start: 最初の未注釈ラリーへ移動しカーソル同期・決着ループは後ろ長め (REQ-004)', () => {
-    fixtures.deps.rallies.value[0]!.endReason = 'in' // r1 は注釈済み
+    fixtures.deps.rallies.value[0]!.endReason = 'floor' // r1 は注釈済み
     const qp = useQuickPass(fixtures.deps)
     qp.start()
     expect(qp.currentRally.value?.id).toBe('r2')
@@ -101,22 +101,30 @@ describe('useQuickPass', () => {
     expect(qp.loopWindow.value).toEqual({ fromMs: 19000, toMs: 22500 })
   })
 
-  it('in を選択 → 落下点ステップへ。整合していれば警告なし', async () => {
+  it('floor を選択 → 落下点ステップへ。in/out は導出される (最終接触者 A = 勝者 A → in)', async () => {
     const qp = useQuickPass(fixtures.deps)
     qp.start()
-    // r1: 3打 → 最終接触者 A。in → 導出勝者 A = point_winner A で整合
-    await qp.selectEndReason('in')
-    expect(qp.consistencyWarning.value).toBe(false)
+    await qp.selectEndReason('floor')
+    expect(qp.consistencyWarning.value).toBe(false) // floor は整合チェック対象外
     expect(qp.step.value).toBe('landing')
+    expect(qp.derivedInOut.value).toBe('in')
     expect(fixtures.patchRally).toHaveBeenCalledWith('r1', {
-      endReason: 'in',
+      endReason: 'floor',
       landX: null,
       landY: null,
       outDirection: null
     })
   })
 
-  it('落下点が不要な決着 (net 等) は選択後すぐ次ラリーへ (決定打種別は聞かない)', async () => {
+  it('floor で最終接触者 = 敗者なら out と導出される', async () => {
+    fixtures.deps.rallies.value[0]!.pointWinner = 'B' // 最終接触 A ≠ 勝者 B
+    const qp = useQuickPass(fixtures.deps)
+    qp.start()
+    await qp.selectEndReason('floor')
+    expect(qp.derivedInOut.value).toBe('out')
+  })
+
+  it('落下点が不要な決着 (net 等) は選択後すぐ次ラリーへ', async () => {
     fixtures.deps.rallies.value[0]!.pointWinner = 'B' // net → 導出勝者 B と整合
     const qp = useQuickPass(fixtures.deps)
     qp.start()
@@ -126,20 +134,20 @@ describe('useQuickPass', () => {
     expect(qp.step.value).toBe('reason')
   })
 
-  it('TC-102-01: 導出勝者と point_winner の矛盾でソフト警告 (保存はされる)', async () => {
-    fixtures.deps.rallies.value[0]!.pointWinner = 'B'
+  it('TC-102-01: 導出可能な決着 (net) で point_winner と矛盾 → ソフト警告 (保存はされる)', async () => {
+    // 最終接触 A・net → 導出勝者 B。だが記録は A → 矛盾
     const qp = useQuickPass(fixtures.deps)
     qp.start()
-    await qp.selectEndReason('in') // 導出勝者 A ≠ 記録 B
+    await qp.selectEndReason('net')
     expect(qp.consistencyWarning.value).toBe(true)
     expect(fixtures.patchRally).toHaveBeenCalled()
   })
 
-  it('落下点入力: 座標保存 → 次ラリーへ。out×コート内は警告 (EDGE-002)', async () => {
-    fixtures.deps.rallies.value[0]!.pointWinner = 'B'
+  it('EDGE-002: 導出 out なのにコート内座標 → 警告。座標は保存され次ラリーへ', async () => {
+    fixtures.deps.rallies.value[0]!.pointWinner = 'B' // derived out
     const qp = useQuickPass(fixtures.deps)
     qp.start()
-    await qp.selectEndReason('out')
+    await qp.selectEndReason('floor')
     await qp.setLanding({ x: 0.4, y: 0.5 }) // コート内 = 矛盾
     expect(qp.landingWarning.value).toBe(true)
     expect(fixtures.patchRally).toHaveBeenLastCalledWith('r1', {
@@ -150,11 +158,19 @@ describe('useQuickPass', () => {
     expect(qp.currentRally.value?.id).toBe('r2')
   })
 
-  it('落下点スキップ: out のときだけ out_direction サブ選択 → 次ラリーへ (REQ-005)', async () => {
-    fixtures.deps.rallies.value[0]!.pointWinner = 'B'
+  it('導出 in なのにライン外座標 → 警告 (EDGE-002 の逆向き)', async () => {
     const qp = useQuickPass(fixtures.deps)
     qp.start()
-    await qp.selectEndReason('out')
+    await qp.selectEndReason('floor') // derived in
+    await qp.setLanding({ x: 1.2, y: 0.5 })
+    expect(qp.landingWarning.value).toBe(true)
+  })
+
+  it('落下点スキップ: 導出 out のときだけ out_direction サブ選択 → 次ラリーへ (REQ-005)', async () => {
+    fixtures.deps.rallies.value[0]!.pointWinner = 'B' // derived out
+    const qp = useQuickPass(fixtures.deps)
+    qp.start()
+    await qp.selectEndReason('floor')
     qp.skipLanding()
     expect(qp.step.value).toBe('outDirection')
     await qp.selectOutDirection('back')
@@ -162,10 +178,18 @@ describe('useQuickPass', () => {
     expect(qp.currentRally.value?.id).toBe('r2')
   })
 
+  it('落下点スキップ: 導出 in ならサブ選択なしで次ラリーへ', async () => {
+    const qp = useQuickPass(fixtures.deps)
+    qp.start()
+    await qp.selectEndReason('floor') // derived in
+    qp.skipLanding()
+    expect(qp.currentRally.value?.id).toBe('r2')
+  })
+
   it('最終ラリーの注釈が終わると isDone', async () => {
     const qp = useQuickPass(fixtures.deps)
     qp.start()
-    await qp.selectEndReason('in')
+    await qp.selectEndReason('floor')
     await qp.setLanding({ x: 0.5, y: 0.5 })
     // r2 (1打・point_winner B = サーブ側 A の失点で整合)
     await qp.selectEndReason('net')
