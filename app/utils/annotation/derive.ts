@@ -1,10 +1,10 @@
 /**
- * derive — 決着注釈からの導出（勝者・決定打・整合チェック）の純関数。
+ * derive — 決着注釈からの導出（in/out・勝者・決定打・整合チェック）の純関数。
  *
- * 関連: TASK-0003 / REQ-006 / REQ-102 / EDGE-005 / ADR-017 §7
+ * 関連: TASK-0003 / REQ-005 / REQ-006 / REQ-102 / EDGE-005 / ADR-017 §7 (2026-08-02 改訂)
  * 方針: 全ラケット接触がショット行として記録される前提（ADR-017 §7 運用ルール）のため、
- *       「最終接触者 + end_reason」だけで勝敗の向きが決まる。point_winner はライブ記録の
- *       実測値なので上書きせず、矛盾検出（ソフト警告）にのみ使う。
+ *       最終接触者は打順の偶奇で決まる。in/out は動画から判定できないため入力させず、
+ *       「floor（越えて床へ）+ 最終接触者 + point_winner（ライブ記録の実測値）」から導出する。
  */
 import type { Team } from '~/utils/rule-engine/types'
 import type { EndReason } from '~/types/shot-annotation'
@@ -14,20 +14,30 @@ function opponentOf(team: Team): Team {
 }
 
 /**
- * (最終接触者のチーム, end_reason) → 勝者チーム（ADR-017 §7 の表）。
- * in / body = 打者の得点、out / net / not_over = 打者の失点、
- * service_fault = サーバー（最終接触者）の失点、unknown = 導出不能 (null)。
+ * floor（ネットを越えて床に落ちた）の in/out を導出する（2026-08-02 の中核導出）。
+ * 最終接触者 = 勝者 → in（決めた）/ 最終接触者 = 敗者 → out（外した）。
+ * point_winner 未確定は導出不能 (null)。
+ */
+export function deriveInOut(lastHitterTeam: Team, pointWinner: Team | null): 'in' | 'out' | null {
+  if (pointWinner === null) return null
+  return lastHitterTeam === pointWinner ? 'in' : 'out'
+}
+
+/**
+ * (最終接触者のチーム, end_reason) → 勝者チーム。
+ * body = 打者の得点、net / not_over = 打者の失点、service_fault = サーバーの失点。
+ * floor は in/out どちらもあり得るため end_reason からは導出不能 (null) —
+ * 逆に point_winner から in/out を導出する側になる（deriveInOut）。
  */
 export function deriveWinner(lastHitterTeam: Team, endReason: EndReason): Team | null {
   switch (endReason) {
-    case 'in':
     case 'body':
       return lastHitterTeam
-    case 'out':
     case 'net':
     case 'not_over':
     case 'service_fault':
       return opponentOf(lastHitterTeam)
+    case 'floor':
     case 'unknown':
       return null
   }
@@ -35,19 +45,26 @@ export function deriveWinner(lastHitterTeam: Team, endReason: EndReason): Team |
 
 /**
  * 決定打 = 勝者チームの最後のショット（REQ-006）。0-based index を返す。
- * in / body: 最終ショット。out / net / not_over: その1つ前（相手のミスを強いたショット）。
- * 1打で終わったミス・service_fault・unknown は決定打なし (null)。
+ * floor は勝敗で分岐するため winnerHitLast（最終接触者 = 勝者か）が必要。
+ * 1打で終わったミス・service_fault・unknown・導出不能は決定打なし (null)。
  */
-export function decisiveShotIndex(shotCount: number, endReason: EndReason): number | null {
+export function decisiveShotIndex(
+  shotCount: number,
+  endReason: EndReason,
+  winnerHitLast: boolean | null = null
+): number | null {
   if (shotCount <= 0) return null
   switch (endReason) {
-    case 'in':
     case 'body':
       return shotCount - 1
-    case 'out':
     case 'net':
     case 'not_over': {
       const idx = shotCount - 2
+      return idx >= 0 ? idx : null
+    }
+    case 'floor': {
+      if (winnerHitLast === null) return null
+      const idx = winnerHitLast ? shotCount - 1 : shotCount - 2
       return idx >= 0 ? idx : null
     }
     case 'service_fault':
@@ -59,7 +76,7 @@ export function decisiveShotIndex(shotCount: number, endReason: EndReason): numb
 /**
  * 導出勝者と記録済み point_winner の整合チェック（REQ-102）。
  * false = 矛盾（入力ミスの可能性をソフト警告。保存は拒否しない）。
- * 未確定ラリー（EDGE-005）・point_winner なし・導出不能は true（チェックスキップ）。
+ * 未確定ラリー（EDGE-005）・point_winner なし・導出不能（floor / unknown）は true（スキップ）。
  */
 export function checkConsistency(
   lastHitterTeam: Team,

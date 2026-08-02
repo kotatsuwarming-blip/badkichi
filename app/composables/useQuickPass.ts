@@ -22,7 +22,7 @@ import type {
 } from '~/types/shot-annotation'
 import { loopWindowFor } from '~/utils/annotation/offset'
 import { deriveOutDirection } from '~/utils/annotation/court-coords'
-import { checkConsistency } from '~/utils/annotation/derive'
+import { checkConsistency, deriveInOut } from '~/utils/annotation/derive'
 
 /** session のうちクイックパスが必要とする面 (構造的部分型) */
 export interface QuickPassDeps {
@@ -35,15 +35,14 @@ export interface QuickPassDeps {
 
 export type QuickPassStep = 'reason' | 'landing' | 'outDirection'
 
-/** end_reason のキー割当 (D6 初期値: 頻度順。試用後に調整) */
+/** end_reason のキー割当 (D6 初期値: 頻度順。2026-08-02 の 6値化に追従) */
 export const QUICK_REASON_KEYS: Array<[string, EndReason]> = [
-  ['1', 'in'],
-  ['2', 'out'],
-  ['3', 'net'],
-  ['4', 'not_over'],
-  ['5', 'unknown'],
-  ['6', 'body'],
-  ['7', 'service_fault']
+  ['1', 'floor'],
+  ['2', 'net'],
+  ['3', 'not_over'],
+  ['4', 'body'],
+  ['5', 'service_fault'],
+  ['6', 'unknown']
 ]
 
 export interface UseQuickPassReturn {
@@ -54,6 +53,8 @@ export interface UseQuickPassReturn {
   consistencyWarning: Ref<boolean>
   landingWarning: Ref<boolean>
   isDone: ComputedRef<boolean>
+  /** floor の in/out 導出結果 (最終接触者 + point_winner。未確定は null)、2026-08-02 */
+  derivedInOut: ComputedRef<'in' | 'out' | null>
   start: () => void
   goToRally: (rallyId: string) => void
   selectEndReason: (reason: EndReason) => Promise<void>
@@ -96,6 +97,17 @@ export function useQuickPass(deps: QuickPassDeps): UseQuickPassReturn {
   })
 
   const isDone = computed(() => index.value === -1)
+
+  /**
+   * floor の in/out 導出 (2026-08-02): 最終接触者 = 勝者 → in / 敗者 → out。
+   * in/out は動画から判定できないため入力させず、実測の point_winner から導く。
+   */
+  const derivedInOut = computed<'in' | 'out' | null>(() => {
+    const rally = currentRally.value
+    if (!rally || rally.endReason !== 'floor') return null
+    if (!rally.isPointConfirmed || lastHitterTeam.value === null) return null
+    return deriveInOut(lastHitterTeam.value, rally.pointWinner)
+  })
 
   function syncCursor(): void {
     const rally = currentRally.value
@@ -171,26 +183,29 @@ export function useQuickPass(deps: QuickPassDeps): UseQuickPassReturn {
       landY: null,
       outDirection: null
     })
-    if (reason === 'in' || reason === 'out') {
+    if (reason === 'floor') {
       step.value = 'landing'
     } else {
       afterLanding()
     }
   }
 
-  /** 落下点入力 (in/out のみ、REQ-005)。out の細分は座標から導出するため保存しない */
+  /** 落下点入力 (floor のみ、REQ-005)。out の細分は座標から導出するため保存しない */
   async function setLanding(point: CourtPoint): Promise<void> {
     const rally = currentRally.value
     if (!rally) return
-    // EDGE-002: out なのにコート内座標 → 矛盾のソフト警告 (保存は行う)
-    landingWarning.value = rally.endReason === 'out' && deriveOutDirection(point) === null
+    // EDGE-002: 導出された in/out と座標の内外が矛盾 → ソフト警告 (保存は行う)
+    const derived = derivedInOut.value
+    const direction = deriveOutDirection(point)
+    landingWarning.value = (derived === 'out' && direction === null)
+      || (derived === 'in' && direction !== null)
     await deps.patchRally(rally.id, { landX: point.x, landY: point.y, outDirection: null })
     afterLanding()
   }
 
-  /** 落下点スキップ: out のときだけ細分のサブ選択へ (REQ-005 フォールバック) */
+  /** 落下点スキップ: 導出が out のときだけ細分のサブ選択へ (REQ-005 フォールバック) */
   function skipLanding(): void {
-    if (currentRally.value?.endReason === 'out') {
+    if (derivedInOut.value === 'out') {
       step.value = 'outDirection'
     } else {
       afterLanding()
@@ -212,6 +227,7 @@ export function useQuickPass(deps: QuickPassDeps): UseQuickPassReturn {
     consistencyWarning,
     landingWarning,
     isDone,
+    derivedInOut,
     start,
     goToRally,
     selectEndReason,
