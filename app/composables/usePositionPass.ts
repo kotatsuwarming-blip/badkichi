@@ -20,6 +20,7 @@ import type {
   ShotAnnotationPatch
 } from '~/types/shot-annotation'
 import { averageOffset, loopWindowFor } from '~/utils/annotation/offset'
+import { keyToShotType } from '~/utils/annotation/taxonomy'
 
 /** session のうち打点パスが必要とする面 (構造的部分型) */
 export interface PositionPassDeps {
@@ -60,6 +61,8 @@ export interface UsePositionPassReturn {
   isDone: ComputedRef<boolean>
   start: () => void
   goToRally: (rallyId: string) => void
+  /** 現在ショットの種別入力 (打点との同時入力。特に YouTube 向け、2026-08-02)。前進しない */
+  setType: (key: string) => Promise<void>
   /** フレーム確定 (ローカルのみ実書込)。校正中はサンプルにも追加 */
   confirmFrame: (frameMs: number) => Promise<void>
   setPosition: (point: CourtPoint) => Promise<void>
@@ -182,6 +185,19 @@ export function usePositionPass(deps: PositionPassDeps): UsePositionPassReturn {
     await deps.patchShot(shot.id, { annotatedTimestampMs: frameMs })
   }
 
+  /**
+   * 種別の同時入力 (2026-08-02、YouTube の種別パスが実質スロー視聴になる問題への対応)。
+   * ステップ&ループ方式では動画が待ってくれるため、種別 + 打点の同時入力が成立する。
+   * 前進は打点タップ側が担う。
+   */
+  async function setType(key: string): Promise<void> {
+    const shot = currentShot.value
+    if (!shot) return
+    const type = keyToShotType(key, shot.shotNumber)
+    if (type === null) return
+    await deps.patchShot(shot.id, { shotType: type })
+  }
+
   /** 打点タップ (REQ-009/014)。打者はプレフィルで確定できれば同時書込、二択なら保留 */
   async function setPosition(point: CourtPoint): Promise<void> {
     const entry = currentEntry.value
@@ -226,6 +242,7 @@ export function usePositionPass(deps: PositionPassDeps): UsePositionPassReturn {
     isDone,
     start,
     goToRally,
+    setType,
     confirmFrame,
     setPosition,
     selectHitter,

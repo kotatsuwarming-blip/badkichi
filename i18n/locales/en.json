@@ -436,7 +436,8 @@
       "tapPrompt": "Tap the hit position",
       "hitterPrompt": "Who hit it?",
       "skip": "Skip this shot",
-      "loopHint": "Slow loop — pause at the hit moment and tap the position"
+      "loopHint": "Slow loop — pause at the hit moment and tap the position",
+      "typeHint": "Shot type can be entered too (key or tap; position tap advances)"
     },
     "shotType": {
       "serve_short": "Short serve",
