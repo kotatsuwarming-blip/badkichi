@@ -8,10 +8,14 @@
  */
 import type { LoopPurpose, LoopWindow } from '~/types/shot-annotation'
 
-/** 用途別の非対称窓 (ms)。初期値は design-interview D6（試用後に調整） */
+/**
+ * 用途別の非対称窓 (ms)。初期値は design-interview D6（試用後に調整）。
+ * hitSearch の after はドッグフーディング 2026-08-03 で 300→1200 に拡大
+ * （打点パスで種別も同時入力するため、打った後の行き先が見える長さが必要）。
+ */
 const WINDOWS: Record<LoopPurpose, { before: number, after: number }> = {
   rallyEnd: { before: 1000, after: 2500 },
-  hitSearch: { before: 1200, after: 300 }
+  hitSearch: { before: 1200, after: 1200 }
 }
 
 /**

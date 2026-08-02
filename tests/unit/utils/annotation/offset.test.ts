@@ -25,7 +25,7 @@ describe('loopWindowFor', () => {
   })
 
   it('TC-101-04: 打点探索ループは前長め (前1.2s / 後0.3s) — 向きが逆', () => {
-    expect(loopWindowFor('hitSearch', 5000)).toEqual({ fromMs: 3800, toMs: 5300 })
+    expect(loopWindowFor('hitSearch', 5000)).toEqual({ fromMs: 3800, toMs: 6200 })
   })
 
   it('TC-010-B01 / EDGE-004: 動画開始前になる場合は 0 に clamp', () => {
