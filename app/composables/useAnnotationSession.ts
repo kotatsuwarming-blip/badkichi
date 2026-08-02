@@ -291,8 +291,10 @@ export function useAnnotationSession(matchId: string) {
   }
 
   /**
-   * ショット削除 (押しすぎ補正)。物理削除し、以降を前から -1 renumber (歯抜けを作らない —
-   * shot_number=1 のサーブ自動確定などの前提を保つ)。完了後に再読込。
+   * ショット削除 (押しすぎ補正)。論理削除 (deleted_at) し、以降を前から -1 renumber
+   * (歯抜けを作らない — shot_number=1 のサーブ自動確定などの前提を保つ)。完了後に再読込。
+   * 論理削除行が旧番号を保持したまま残るため、UNIQUE は live 行だけの部分インデックス
+   * (migration 20260803120000)。
    */
   async function deleteShotAt(shotId: string): Promise<boolean> {
     const shot = findShot(shotId)
