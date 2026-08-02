@@ -9,6 +9,9 @@
 - テスト: 422件 green / lint / typecheck clean
 - ドッグフーディング: YouTube動画「地区センター練習」でクイック→種別→打点を実施中。
   再アノテーション用の複製は `scripts/duplicate-match-for-annotation.sql`（Supabase Dashboard で実行）
+- オリジナル (0433d0f5) のライブ記録は無傷 (37ラリー222ショット全て時刻あり)。誤削除の被害は
+  複製 (1c2e84dd) 側のみ。アノテーション前バックアップの複製 SQL をユーザーが Dashboard で
+  実行予定 (2026-08-03 依頼。suffix「(アノテーション前バックアップ)」)
 
 ## 実行環境（重要・ハマりどころ）
 
@@ -21,6 +24,10 @@
 - DB: dev環境（migrate-dev CIがdevブランチpushで適用）。end_reasonは6値(floor統合)適用済み
 
 ## 確定済みの仕様（再議論不要）
+
+- **スタジオのショット削除は論理削除**（2026-08-03 FB。誤削除で押下時刻を失わない。
+  UNIQUE は live 行のみの部分インデックス、migration 20260803120000 適用済み。
+  復元は SQL で deleted_at を NULL に戻す。record 画面の直後 undo は従来通り物理削除）
 
 - クイックパス: 通し方式（決着窓[前1s/後2.5s]を1回再生→自動停止→入力→次へ）。決定打種別入力なし
 - end_reason 6値: floor/net/not_over/body/service_fault/unknown。in/outは最終接触者+point_winnerから導出(deriveInOut)
