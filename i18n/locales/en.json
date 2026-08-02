@@ -386,9 +386,9 @@
     "modeDone": "This pass is complete",
     "saveError": "Failed to save. Your input is kept locally. Check your connection.",
     "mode": {
-      "quick": "Quick",
+      "quick": "Outcome",
       "type": "Shot type",
-      "position": "Position"
+      "position": "All shots"
     },
     "quick": {
       "prompt": "How did the rally end?",
