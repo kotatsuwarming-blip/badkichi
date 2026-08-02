@@ -6,29 +6,21 @@
  */
 import type { UseTypePassReturn } from '~/composables/useTypePass'
 import type { ShotType } from '~/types/shot-annotation'
+import { SERVE_KEY_BINDINGS, TYPE_KEY_BINDINGS } from '~/utils/annotation/taxonomy'
 
 const props = defineProps<{
   typePass: UseTypePassReturn
 }>()
 
-/** hand トグルと構造操作は prop を直接変異させず親へ委譲 (vue/no-mutating-props) */
+/** hand トグル・構造操作・やり直し (動画巻き戻しを伴う) は親へ委譲 */
 const emit = defineEmits<{
   'toggle-hand': [value: boolean]
   'insert-shot': []
   'delete-shot': []
+  'redo': []
 }>()
 
 const { t } = useI18n()
-
-/** 固定キー割当 (ui-design.md。ハイライトしても割当は変えない) */
-const NORMAL_KEYS: Array<[string, ShotType]> = [
-  ['1', 'clear'], ['2', 'smash'], ['3', 'cut'], ['4', 'reverse_cut'], ['5', 'drop'],
-  ['6', 'drive'], ['7', 'push'], ['8', 'half'], ['9', 'hairpin'], ['0', 'lob'],
-  ['Q', 'receive_long'], ['W', 'receive_drive'], ['E', 'receive_short']
-]
-const SERVE_KEYS: Array<[string, ShotType]> = [
-  ['S', 'serve_short'], ['L', 'serve_long'], ['D', 'serve_drive']
-]
 
 function isReceiveKey(type: ShotType): boolean {
   return type.startsWith('receive_')
@@ -90,7 +82,7 @@ function isReceiveKey(type: ShotType): boolean {
         </p>
         <div class="flex flex-col gap-2 lg:max-w-xs">
           <UButton
-            v-for="[key, type] in SERVE_KEYS"
+            v-for="[key, type] in SERVE_KEY_BINDINGS"
             :key="key"
             variant="soft"
             color="primary"
@@ -110,7 +102,7 @@ function isReceiveKey(type: ShotType): boolean {
         class="grid grid-cols-3 gap-1.5 lg:grid-cols-1 lg:max-w-xs"
       >
         <UButton
-          v-for="[key, type] in NORMAL_KEYS"
+          v-for="[key, type] in TYPE_KEY_BINDINGS"
           :key="key"
           :variant="props.typePass.receiveHighlight.value && isReceiveKey(type) ? 'solid' : 'soft'"
           :color="props.typePass.receiveHighlight.value && isReceiveKey(type) ? 'primary' : 'neutral'"
@@ -147,7 +139,7 @@ function isReceiveKey(type: ShotType): boolean {
           variant="ghost"
           size="sm"
           icon="i-lucide-rotate-ccw"
-          @click="props.typePass.redoRally()"
+          @click="emit('redo')"
         >
           {{ t('annotation.type.redo') }}
         </UButton>

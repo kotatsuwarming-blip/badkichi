@@ -7,6 +7,7 @@
  * TASK-0011 / ui-design.md モード3
  */
 import type { UsePositionPassReturn } from '~/composables/usePositionPass'
+import { SERVE_KEY_BINDINGS, TYPE_KEY_BINDINGS } from '~/utils/annotation/taxonomy'
 
 const props = defineProps<{
   positionPass: UsePositionPassReturn
@@ -14,6 +15,12 @@ const props = defineProps<{
   seekTo: (ms: number) => void
   /** 現在のプレーヤー時刻 (フレーム確定用)。未ロードは null */
   currentTimeMs: () => number | null
+}>()
+
+/** ショット行の構造操作は親へ委譲 (種別パスと同じ補正、2026-08-02) */
+const emit = defineEmits<{
+  'insert-shot': []
+  'delete-shot': []
 }>()
 
 const { t } = useI18n()
@@ -79,6 +86,58 @@ function confirmCurrentFrame() {
         </div>
       </div>
 
+      <!-- 種別の同時入力 (ステップ&ループ方式なら成立。特に YouTube 向け、2026-08-02) -->
+      <div class="space-y-1">
+        <p class="flex items-center gap-2 text-xs text-neutral-500">
+          {{ t('annotation.position.typeHint') }}
+          <UBadge
+            v-if="props.positionPass.currentShot.value?.shotType"
+            color="success"
+            variant="subtle"
+            size="sm"
+          >
+            {{ t(`annotation.shotType.${props.positionPass.currentShot.value.shotType}`) }}
+          </UBadge>
+        </p>
+        <div
+          v-if="props.positionPass.currentShot.value?.shotNumber === 1"
+          class="flex flex-wrap gap-1.5"
+        >
+          <UButton
+            v-for="[key, type] in SERVE_KEY_BINDINGS"
+            :key="key"
+            variant="soft"
+            color="primary"
+            size="xs"
+            @click="props.positionPass.setType(key)"
+          >
+            <UKbd size="sm">
+              {{ key }}
+            </UKbd>
+            {{ t(`annotation.shotType.${type}`) }}
+          </UButton>
+        </div>
+        <div
+          v-else
+          class="grid grid-cols-3 gap-1"
+        >
+          <UButton
+            v-for="[key, type] in TYPE_KEY_BINDINGS"
+            :key="key"
+            variant="soft"
+            color="neutral"
+            size="xs"
+            block
+            @click="props.positionPass.setType(key)"
+          >
+            <UKbd size="sm">
+              {{ key }}
+            </UKbd>
+            {{ t(`annotation.shotType.${type}`) }}
+          </UButton>
+        </div>
+      </div>
+
       <!-- 打者の二択 (3打目以降のみ、REQ-012) -->
       <div
         v-if="props.positionPass.awaitingHitter.value"
@@ -113,13 +172,35 @@ function confirmCurrentFrame() {
         />
       </template>
 
-      <UButton
-        variant="ghost"
-        size="sm"
-        @click="props.positionPass.skipShot()"
-      >
-        {{ t('annotation.position.skip') }}
-      </UButton>
+      <div class="flex flex-wrap items-center gap-2">
+        <UButton
+          variant="ghost"
+          size="sm"
+          @click="props.positionPass.skipShot()"
+        >
+          {{ t('annotation.position.skip') }}
+        </UButton>
+        <!-- ショット行の補正 (種別パスと同じ、押し損ね/押しすぎ) -->
+        <UButton
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          icon="i-lucide-plus"
+          @click="emit('insert-shot')"
+        >
+          {{ t('annotation.type.insertShot') }}
+        </UButton>
+        <UButton
+          v-if="props.positionPass.currentShot.value"
+          variant="ghost"
+          color="error"
+          size="sm"
+          icon="i-lucide-minus"
+          @click="emit('delete-shot')"
+        >
+          {{ t('annotation.type.deleteShot') }}
+        </UButton>
+      </div>
     </template>
   </div>
 </template>
