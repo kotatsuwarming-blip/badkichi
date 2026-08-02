@@ -195,6 +195,12 @@ describe('usePositionPass (ローカル動画)', () => {
     expect(shotsMap.r1![1]!.hand).toBe('backhand') // 上書きされない (hand は patch に含まれない)
   })
 
+  it('currentShots: 現在ラリーのショット一覧を返す (チップ表示・ショットジャンプ用)', () => {
+    const pp = usePositionPass(fixtures.deps)
+    pp.start()
+    expect(pp.currentShots.value.map(s => s.id)).toEqual(['sh1', 'sh2', 'sh3', 'sh4'])
+  })
+
   it('goToShot: 特定ショットへ移動 (undo 後の位置復元、2026-08-03)', () => {
     const pp = usePositionPass(fixtures.deps)
     pp.start()

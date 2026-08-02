@@ -439,6 +439,10 @@
       "loopHint": "スローループ再生中 — 打球の瞬間で一時停止して打点をタップ",
       "typeHint": "種別も入力できます (キーまたはタップ。打点タップで次へ)"
     },
+    "hand": {
+      "forehand": "フォア",
+      "backhand": "バック"
+    },
     "shotType": {
       "serve_short": "ショートサーブ",
       "serve_long": "ロングサーブ",
