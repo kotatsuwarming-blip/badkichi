@@ -123,7 +123,7 @@ export function useAnnotationSession(matchId: string) {
         ? { data: [], error: null }
         : await client
             .from('shots')
-            .select('id, rally_id, shot_number, video_timestamp_ms, annotated_timestamp_ms, shot_type, hand, hit_player_id, hit_x, hit_y')
+            .select('id, rally_id, shot_number, video_timestamp_ms, annotated_timestamp_ms, annotated_timestamp_precision, shot_type, hand, hit_player_id, hit_x, hit_y')
             .in('rally_id', rallyIds)
             .is('deleted_at', null)
       if (shotError) throw shotError
@@ -136,6 +136,7 @@ export function useAnnotationSession(matchId: string) {
           shotNumber: s.shot_number,
           videoTimestampMs: s.video_timestamp_ms,
           annotatedTimestampMs: s.annotated_timestamp_ms,
+          annotatedTimestampPrecision: s.annotated_timestamp_precision as AnnotationShot['annotatedTimestampPrecision'],
           shotType: s.shot_type as AnnotationShot['shotType'],
           hand: s.hand as AnnotationShot['hand'],
           hitPlayerId: s.hit_player_id,
@@ -193,6 +194,7 @@ export function useAnnotationSession(matchId: string) {
     if (patch.hitX !== undefined) old.hitX = shot.hitX
     if (patch.hitY !== undefined) old.hitY = shot.hitY
     if (patch.annotatedTimestampMs !== undefined) old.annotatedTimestampMs = shot.annotatedTimestampMs
+    if (patch.annotatedTimestampPrecision !== undefined) old.annotatedTimestampPrecision = shot.annotatedTimestampPrecision
     return old
   }
 
@@ -212,6 +214,7 @@ export function useAnnotationSession(matchId: string) {
     if (patch.hitX !== undefined) shot.hitX = patch.hitX
     if (patch.hitY !== undefined) shot.hitY = patch.hitY
     if (patch.annotatedTimestampMs !== undefined) shot.annotatedTimestampMs = patch.annotatedTimestampMs
+    if (patch.annotatedTimestampPrecision !== undefined) shot.annotatedTimestampPrecision = patch.annotatedTimestampPrecision
   }
 
   function applyRallyLocal(rally: AnnotationRally, patch: RallyEndPatch): void {

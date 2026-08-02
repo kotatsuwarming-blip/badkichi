@@ -50,7 +50,8 @@ export function useTypePass(deps: TypePassDeps): UseTypePassReturn {
   const index = ref(-1)
   /** ラリー内で消費したキー入力数 (= 次に対応するショットの 0-based index) */
   const inputCount = ref(0)
-  const recordHand = ref(false)
+  // 既定 ON (ドッグフーディング 2026-08-03「フォア/バックの記録はデフォルトでオンに」)
+  const recordHand = ref(true)
   const overflowWarning = ref(false)
 
   const currentRally = computed(() => deps.rallies.value[index.value] ?? null)

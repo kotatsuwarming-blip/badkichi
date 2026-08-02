@@ -43,6 +43,7 @@ function shot(id: string, rallyId: string, shotNumber: number): AnnotationShot {
     shotNumber,
     videoTimestampMs: shotNumber * 1000,
     annotatedTimestampMs: null,
+    annotatedTimestampPrecision: null,
     shotType: null,
     hand: null,
     hitPlayerId: null,
@@ -114,6 +115,7 @@ describe('useTypePass', () => {
 
   it('TC-104-02: hand トグル OFF → hand は書かない (null = 未判定のまま)', async () => {
     const tp = useTypePass(fixtures.deps)
+    tp.recordHand.value = false // 既定 ON (2026-08-03) のため明示的に OFF
     tp.start()
     await tp.handleKey('s')
     expect(fixtures.patchShot).toHaveBeenCalledWith('sh1', { shotType: 'serve_short' })

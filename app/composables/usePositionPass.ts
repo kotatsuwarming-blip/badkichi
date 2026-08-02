@@ -70,7 +70,8 @@ export interface UsePositionPassReturn {
   setType: (key: string, opts?: { backhand?: boolean }) => Promise<void>
   /** フレーム確定 (ローカルのみ実書込)。校正中はサンプルにも追加 */
   confirmFrame: (frameMs: number) => Promise<void>
-  setPosition: (point: CourtPoint) => Promise<void>
+  /** 打点タップ。YouTube は playerTimeMs (タップ時点のプレーヤー時刻) を概算打刻として保存 */
+  setPosition: (point: CourtPoint, opts?: { playerTimeMs?: number | null }) => Promise<void>
   selectHitter: (playerId: string) => Promise<void>
   skipShot: () => void
 }
@@ -80,8 +81,9 @@ export function usePositionPass(deps: PositionPassDeps): UsePositionPassReturn {
   const offsetMs = ref(0)
   const samples = ref<number[]>([])
   const awaitingHitter = ref(false)
-  /** hand トグル (REQ-104 と同じ作法。ON なら無印 = forehand を明示保存)、2026-08-03 */
-  const recordHand = ref(false)
+  /** hand トグル (REQ-104 と同じ作法。ON なら無印 = forehand を明示保存)。
+      既定 ON (ドッグフーディング 2026-08-03「デフォルトでオンに」) */
+  const recordHand = ref(true)
 
   const entries = computed<PassEntry[]>(() =>
     deps.rallies.value.flatMap(rally =>
@@ -124,8 +126,8 @@ export function usePositionPass(deps: PositionPassDeps): UsePositionPassReturn {
   const anchorMs = computed<number | null>(() => {
     const entry = currentEntry.value
     if (!entry) return null
-    // 確定済みならそれを最優先 (再訪時。ローカルのみ保存される)
-    if (!isYoutube.value && entry.shot.annotatedTimestampMs !== null) {
+    // 注釈済みの打球時刻を最優先 (再訪時。frame=ローカル / approx=YouTube目視タップ)
+    if (entry.shot.annotatedTimestampMs !== null) {
       return Math.max(0, entry.shot.annotatedTimestampMs) // EDGE-004
     }
     const base = baseTimestampMs(entry)
@@ -223,7 +225,7 @@ export function usePositionPass(deps: PositionPassDeps): UsePositionPassReturn {
         offsetMs.value = averageOffset(samples.value)
       }
     }
-    await deps.patchShot(shot.id, { annotatedTimestampMs: frameMs })
+    await deps.patchShot(shot.id, { annotatedTimestampMs: frameMs, annotatedTimestampPrecision: 'frame' })
   }
 
   /**
@@ -244,11 +246,19 @@ export function usePositionPass(deps: PositionPassDeps): UsePositionPassReturn {
     await deps.patchShot(shot.id, patch)
   }
 
-  /** 打点タップ (REQ-009/014)。打者はプレフィルで確定できれば同時書込、二択なら保留 */
-  async function setPosition(point: CourtPoint): Promise<void> {
+  /**
+   * 打点タップ (REQ-009/014)。打者はプレフィルで確定できれば同時書込、二択なら保留。
+   * YouTube はタップ時点のプレーヤー時刻を概算の打球時刻として保存する
+   * (REQ-101 改訂 2026-08-03: 展開速度分析に使えるため。精度区分 approx を併記)。
+   */
+  async function setPosition(point: CourtPoint, opts: { playerTimeMs?: number | null } = {}): Promise<void> {
     const entry = currentEntry.value
     if (!entry) return
     const patch: ShotAnnotationPatch = { hitX: point.x, hitY: point.y }
+    if (isYoutube.value && opts.playerTimeMs != null) {
+      patch.annotatedTimestampMs = Math.round(opts.playerTimeMs)
+      patch.annotatedTimestampPrecision = 'approx'
+    }
     // プレフィル: 1打目 = サーバー / 2打目 = レシーバー (REQ-012、入力不要)
     if (entry.shot.shotNumber === 1) {
       patch.hitPlayerId = entry.rally.serverPlayerId

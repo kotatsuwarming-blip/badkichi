@@ -78,9 +78,14 @@ export interface ShotAnnotationPatch {
   hitPlayerId?: PlayerId | null
   hitX?: number | null
   hitY?: number | null
-  /** ローカル動画のみ（REQ-010）。押下時刻 videoTimestampMs は不変 */
+  /** 注釈で確定した打球時刻。押下時刻 videoTimestampMs は不変 (REQ-010) */
   annotatedTimestampMs?: number | null
+  /** annotatedTimestampMs の精度区分 (frame=ローカル確定 / approx=YouTube目視、2026-08-03) */
+  annotatedTimestampPrecision?: TimestampPrecision | null
 }
+
+/** annotated_timestamp_ms の精度区分 (2026-08-03。展開速度分析には approx も使える) */
+export type TimestampPrecision = 'frame' | 'approx'
 
 /** rallies への決着更新（REQ-002 / REQ-005） */
 export interface RallyEndPatch {
@@ -191,6 +196,7 @@ export interface AnnotationShot {
   shotNumber: number
   videoTimestampMs: number | null
   annotatedTimestampMs: number | null
+  annotatedTimestampPrecision: TimestampPrecision | null
   shotType: ShotType | null
   hand: Hand | null
   hitPlayerId: PlayerId | null
