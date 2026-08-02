@@ -17,11 +17,12 @@ const props = defineProps<{
   currentTimeMs: () => number | null
 }>()
 
-/** ショット行の構造操作・hand トグルは親へ委譲 (vue/no-mutating-props) */
+/** ショット行の構造操作・hand トグル・ショットジャンプ (動画駆動を伴う) は親へ委譲 */
 const emit = defineEmits<{
   'insert-shot': []
   'delete-shot': []
   'toggle-hand': [value: boolean]
+  'jump-shot': [shotId: string]
 }>()
 
 const { t } = useI18n()
@@ -55,6 +56,24 @@ function confirmCurrentFrame() {
         >
           {{ t('annotation.type.handHint') }}
         </span>
+      </div>
+
+      <!-- ラリー内のショットチップ (何打目を入力中か + 押下でそのショットへ、2026-08-03) -->
+      <div class="flex flex-wrap gap-1">
+        <UButton
+          v-for="shotItem in props.positionPass.currentShots.value"
+          :key="shotItem.id"
+          :color="shotItem.id === props.positionPass.currentShot.value?.id
+            ? 'primary'
+            : (shotItem.hitX !== null ? 'success' : 'neutral')"
+          :variant="shotItem.id === props.positionPass.currentShot.value?.id
+            ? 'solid'
+            : (shotItem.hitX !== null ? 'subtle' : 'outline')"
+          size="xs"
+          @click="emit('jump-shot', shotItem.id)"
+        >
+          #{{ shotItem.shotNumber }}{{ shotItem.shotType ? ` ${t(`annotation.shotType.${shotItem.shotType}`)}` : '' }}
+        </UButton>
       </div>
 
       <UAlert
@@ -113,6 +132,15 @@ function confirmCurrentFrame() {
             size="sm"
           >
             {{ t(`annotation.shotType.${props.positionPass.currentShot.value.shotType}`) }}
+          </UBadge>
+          <!-- 記録済みの hand (フォア/バック) を提示 (2026-08-03) -->
+          <UBadge
+            v-if="props.positionPass.currentShot.value?.hand"
+            color="info"
+            variant="subtle"
+            size="sm"
+          >
+            {{ t(`annotation.hand.${props.positionPass.currentShot.value.hand}`) }}
           </UBadge>
         </p>
         <div
