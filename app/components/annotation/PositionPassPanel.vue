@@ -151,14 +151,16 @@ function confirmCurrentFrame() {
         <p class="text-sm font-medium">
           {{ t('annotation.position.tapPrompt') }}
         </p>
-        <!-- max-w-60: 動画横のパネルでスクロールなしに全面が収まるサイズ (2026-08-03) -->
-        <AnnotationCourtDiagramInput
-          class="max-w-60"
-          :marker="props.positionPass.currentShot.value && props.positionPass.currentShot.value.hitX !== null
-            ? { x: props.positionPass.currentShot.value.hitX, y: props.positionPass.currentShot.value.hitY ?? 0 }
-            : null"
-          @select="props.positionPass.setPosition($event)"
-        />
+        <!-- max-w-60 のラッパーで縮小: 動画横のパネルでスクロールなしに全面が収まるサイズ
+             (コンポーネント内の max-w-xs とのクラス競合を避けるため親で絞る、2026-08-03) -->
+        <div class="max-w-60">
+          <AnnotationCourtDiagramInput
+            :marker="props.positionPass.currentShot.value && props.positionPass.currentShot.value.hitX !== null
+              ? { x: props.positionPass.currentShot.value.hitX, y: props.positionPass.currentShot.value.hitY ?? 0 }
+              : null"
+            @select="props.positionPass.setPosition($event)"
+          />
+        </div>
       </template>
 
       <!-- 種別の同時入力 (ステップ&ループ方式なら成立。特に YouTube 向け、2026-08-02) -->
