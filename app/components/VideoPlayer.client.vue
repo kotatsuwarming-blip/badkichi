@@ -94,8 +94,10 @@ function formatMs(ms: number | null): string {
   return `${mm}:${ss}`
 }
 
-// 10 秒スキップ/戻し (YouTube と同じ J=-10s / L=+10s)
+// 10 秒スキップ/戻し (YouTube と同じ J=-10s / L=+10s)。
+// skipKeys=false で無効化 (注釈の種別/打点モードは L がサーブ入力キー、2026-08-03)
 function onKeydown(e: KeyboardEvent): void {
+  if (props.skipKeys === false) return
   const target = e.target as HTMLElement | null
   if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
   if (e.code !== 'KeyL' && e.code !== 'KeyJ') return

@@ -388,9 +388,11 @@ onBeforeUnmount(() => {
       <div class="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <!-- 動画ペイン -->
         <div class="min-w-0 space-y-2">
+          <!-- J/L スキップはクイックのみ (種別/打点は L がサーブ入力キー、2026-08-03) -->
           <VideoPlayer
             v-if="player"
             :player="player"
+            :skip-keys="session.mode.value === 'quick'"
             @reselect-file="file => initPlayer({ type: 'local', file })"
           />
           <UAlert
