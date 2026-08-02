@@ -12,9 +12,12 @@
 -- 既存データ: in/out の注釈は floor へ変換 (導出で再現可能なため情報損失なし)。
 --             落下点座標 (land_x/y) はそのまま有効。
 
+-- 順序が重要: 旧 CHECK (in/out あり・floor なし) が生きたまま UPDATE すると違反するため、
+-- 先に制約を外してから変換し、新 CHECK を張る。
+ALTER TABLE rallies DROP CONSTRAINT rallies_end_reason_check;
+
 UPDATE rallies SET end_reason = 'floor' WHERE end_reason IN ('in', 'out');
 
-ALTER TABLE rallies DROP CONSTRAINT rallies_end_reason_check;
 ALTER TABLE rallies ADD CONSTRAINT rallies_end_reason_check CHECK (end_reason IN (
   'floor', 'net', 'not_over', 'body', 'service_fault', 'unknown'
 ));
