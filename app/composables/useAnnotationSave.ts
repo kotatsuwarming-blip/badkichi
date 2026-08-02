@@ -104,8 +104,16 @@ export function useAnnotationSave(): UseAnnotationSaveReturn {
     return { data: data.id, error: null }
   }
 
+  /**
+   * ショット削除は論理削除 (2026-08-03)。誤削除でライブ記録の押下時刻
+   * (video_timestamp_ms) を失わないため。復元は SQL で deleted_at を NULL に戻す。
+   * record 画面の直後 undo (useDeleteShot) は従来通り物理削除。
+   */
   async function deleteShot(shotId: string): Promise<ActionResult<true>> {
-    const { error } = await client.from('shots').delete().eq('id', shotId)
+    const { error } = await client
+      .from('shots')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', shotId)
     return toResult(error)
   }
 
