@@ -58,7 +58,7 @@ const ROSTER: AnnotationRosterEntry[] = [
   { playerId: 'B2', name: '高橋', team: 'B' }
 ]
 
-function makeDeps(shotsMap: Record<string, AnnotationShot[]>, youtube = false) {
+function makeDeps(shotsMap: Record<string, AnnotationShot[]>, youtube = false, rallies?: AnnotationRally[]) {
   const cursor = ref<AnnotationCursor | null>(null)
   const patchShot = vi.fn(async (shotId: string, patch: ShotAnnotationPatch) => {
     const target = Object.values(shotsMap).flat().find(s => s.id === shotId)
@@ -72,7 +72,7 @@ function makeDeps(shotsMap: Record<string, AnnotationShot[]>, youtube = false) {
     return true
   })
   const deps: PositionPassDeps = {
-    rallies: ref([rally('r1', 1)]),
+    rallies: ref(rallies ?? [rally('r1', 1)]),
     roster: ref(ROSTER),
     cursor,
     isYoutube: computed(() => youtube),
@@ -240,5 +240,61 @@ describe('usePositionPass (YouTube モード、TASK-0010)', () => {
     // 打点座標は保存される (hit_x/y はソース非依存)
     await pp.setPosition({ x: 0.4, y: 0.2 })
     expect(shotsMap.r1![0]!.hitX).toBe(0.4)
+  })
+})
+
+describe('usePositionPass アンカーのフォールバック (挿入ショットの timestamp null、2026-08-03)', () => {
+  /** 先頭挿入 (ts=null) → 後続ショットの押下時刻へ倒す */
+  it('ショットの押下時刻が null なら後続ショットの押下時刻をアンカーにする (YouTube)', () => {
+    const nullTs = shot('sh1', 'r1', 1, 0)
+    nullTs.videoTimestampMs = null
+    const shotsMap = { r1: [nullTs, shot('sh2', 'r1', 2, 58251)] }
+    const { deps } = makeDeps(shotsMap, true)
+    const pp = usePositionPass(deps)
+    pp.start()
+
+    expect(pp.currentShot.value?.id).toBe('sh1')
+    expect(pp.anchorMs.value).toBe(58251)
+    expect(pp.loopWindow.value).toEqual({ fromMs: 58251 - 1200, toMs: 58251 + 300 })
+  })
+
+  /** 全ショット ts=null (空ラリーへの連続挿入) → ラリー開始押下へ倒す */
+  it('ラリー内の全ショットが null ならラリー開始押下時刻をアンカーにする', () => {
+    const r = rally('r1', 1)
+    r.videoStartTimestampMs = 78044
+    const s1 = shot('sh1', 'r1', 1, 0)
+    const s2 = shot('sh2', 'r1', 2, 0)
+    s1.videoTimestampMs = null
+    s2.videoTimestampMs = null
+    const { deps } = makeDeps({ r1: [s1, s2] }, true, [r])
+    const pp = usePositionPass(deps)
+    pp.start()
+
+    expect(pp.anchorMs.value).toBe(78044)
+  })
+
+  /** 末尾側で後続がない場合は直前ショットへ倒す */
+  it('後続に押下時刻がなければ直前ショットの押下時刻へ倒す', () => {
+    const tail = shot('sh3', 'r1', 3, 0)
+    tail.videoTimestampMs = null
+    const shotsMap = { r1: [shot('sh1', 'r1', 1, 5000), shot('sh2', 'r1', 2, 6000), tail] }
+    const { deps } = makeDeps(shotsMap, true)
+    const pp = usePositionPass(deps)
+    pp.goToShot('sh3')
+
+    expect(pp.anchorMs.value).toBe(6000)
+  })
+
+  /** ローカルでも同じフォールバック + 校正オフセットが乗る */
+  it('ローカル動画ではフォールバック時刻に校正オフセットを適用する', () => {
+    const nullTs = shot('sh1', 'r1', 1, 0)
+    nullTs.videoTimestampMs = null
+    const shotsMap = { r1: [nullTs, shot('sh2', 'r1', 2, 10000)] }
+    const { deps } = makeDeps(shotsMap)
+    const pp = usePositionPass(deps)
+    pp.start()
+
+    pp.offsetMs.value = -300
+    expect(pp.anchorMs.value).toBe(9700)
   })
 })
