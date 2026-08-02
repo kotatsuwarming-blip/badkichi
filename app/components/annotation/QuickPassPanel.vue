@@ -75,8 +75,17 @@ const OUT_DIRECTIONS = ['side', 'back', 'both'] as const
     </template>
 
     <template v-else-if="props.quick.step.value === 'landing'">
-      <p class="text-sm font-medium">
+      <p class="flex items-center gap-2 text-sm font-medium">
         {{ t('annotation.quick.landingPrompt') }}
+        <!-- in/out は入力せず導出 (最終接触者 + point_winner、2026-08-02) -->
+        <UBadge
+          v-if="props.quick.derivedInOut.value"
+          :color="props.quick.derivedInOut.value === 'in' ? 'success' : 'warning'"
+          variant="subtle"
+          size="sm"
+        >
+          {{ t(`annotation.quick.derived.${props.quick.derivedInOut.value}`) }}
+        </UBadge>
       </p>
       <AnnotationCourtDiagramInput
         :marker="props.quick.currentRally.value && props.quick.currentRally.value.landX !== null

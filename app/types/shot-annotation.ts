@@ -26,9 +26,13 @@ export type ShotType = typeof SHOT_TYPES[number]
 /** UI 表示グループ（パレットの並びのみ。キー割当は固定） */
 export type ShotTypeGroup = 'serve' | 'rear' | 'front' | 'flat' | 'receive'
 
-/** ラリー決着 7値 (ADR-017 §7) */
+/**
+ * ラリー決着 6値 (ADR-017 §7、2026-08-02 改訂)。
+ * floor = ネットを越えて床に落ちた。in/out は動画から判定できないため入力させず、
+ * 最終接触者 + point_winner から集計時に導出する (derive.deriveInOut)。
+ */
 export const END_REASONS = [
-  'in', 'out', 'net', 'not_over', 'body', 'service_fault', 'unknown'
+  'floor', 'net', 'not_over', 'body', 'service_fault', 'unknown'
 ] as const
 
 export type EndReason = typeof END_REASONS[number]
