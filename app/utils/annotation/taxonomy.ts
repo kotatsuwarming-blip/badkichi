@@ -7,29 +7,25 @@
  */
 import type { ShotType, ShotTypeGroup } from '~/types/shot-annotation'
 
-/** 通常ショットの固定キー割当（数字段 + QWE、ui-design.md） */
-const KEY_TO_SHOT_TYPE: Record<string, ShotType> = {
-  1: 'clear',
-  2: 'smash',
-  3: 'cut',
-  4: 'reverse_cut',
-  5: 'drop',
-  6: 'drive',
-  7: 'push',
-  8: 'half',
-  9: 'hairpin',
-  0: 'lob',
-  q: 'receive_long',
-  w: 'receive_drive',
-  e: 'receive_short'
-}
+/** 通常ショットの固定キー割当（数字段 + QWE、ui-design.md）。パネル表示にも共用 */
+export const TYPE_KEY_BINDINGS: ReadonlyArray<[string, ShotType]> = [
+  ['1', 'clear'], ['2', 'smash'], ['3', 'cut'], ['4', 'reverse_cut'], ['5', 'drop'],
+  ['6', 'drive'], ['7', 'push'], ['8', 'half'], ['9', 'hairpin'], ['0', 'lob'],
+  ['Q', 'receive_long'], ['W', 'receive_drive'], ['E', 'receive_short']
+]
 
-/** 1打目（サーブ）の三択キー（REQ-109） */
-const SERVE_KEY_TO_SHOT_TYPE: Record<string, ShotType> = {
-  s: 'serve_short',
-  l: 'serve_long',
-  d: 'serve_drive'
-}
+/** 1打目（サーブ）の三択キー（REQ-109）。パネル表示にも共用 */
+export const SERVE_KEY_BINDINGS: ReadonlyArray<[string, ShotType]> = [
+  ['S', 'serve_short'], ['L', 'serve_long'], ['D', 'serve_drive']
+]
+
+const KEY_TO_SHOT_TYPE: Record<string, ShotType> = Object.fromEntries(
+  TYPE_KEY_BINDINGS.map(([key, type]) => [key.toLowerCase(), type])
+)
+
+const SERVE_KEY_TO_SHOT_TYPE: Record<string, ShotType> = Object.fromEntries(
+  SERVE_KEY_BINDINGS.map(([key, type]) => [key.toLowerCase(), type])
+)
 
 /** レシーブハイライトを発火させる直前種別（REQ-103） */
 const RECEIVE_TRIGGERS: ReadonlySet<ShotType> = new Set(['smash', 'push', 'drive'])

@@ -127,23 +127,39 @@ function seekAndPause(ms: number): void {
   p.controls.pause()
 }
 
+/**
+ * 種別パスのラリー頭シーク。アンカーは1打目の押下時刻 −2秒を優先する —
+ * rallies.video_start_timestamp_ms はライブ記録の「ラリー開始押下」でサーブ後のことがあり、
+ * そこから再生するとサーブが見えない (ドッグフーディング 2026-08-02)。
+ */
+function seekTypeRallyStart(): void {
+  const p = player.value
+  const rally = typePass.currentRally.value
+  if (!p || !rally) return
+  const firstShot = session.shotsOf(rally.id)[0]
+  const startMs = firstShot?.videoTimestampMs != null
+    ? Math.max(0, firstShot.videoTimestampMs - 2000)
+    : rally.videoStartTimestampMs
+  if (startMs === null) return
+  p.controls.seekToMs(startMs)
+  p.controls.setPlaybackRate(1)
+  p.controls.play()
+}
+
 // 種別パス: ラリー頭へシーク + 通常速で再生、ラリー間を飛ばす (REQ-008)
 watch(
   () => [session.mode.value, typePass.currentRally.value?.id] as const,
   ([mode, rallyId]) => {
     if (mode !== 'type' || rallyId === undefined) return
-    const p = player.value
-    const rally = typePass.currentRally.value
-    if (!p || !rally) return
-    const firstShot = session.shotsOf(rally.id)[0]
-    const startMs = rally.videoStartTimestampMs
-      ?? (firstShot?.videoTimestampMs != null ? Math.max(0, firstShot.videoTimestampMs - 1500) : null)
-    if (startMs === null) return
-    p.controls.seekToMs(startMs)
-    p.controls.setPlaybackRate(1)
-    p.controls.play()
+    seekTypeRallyStart()
   }
 )
+
+/** やり直し: 種別クリアに加えて動画もラリー頭へ巻き戻す (ドッグフーディング 2026-08-02) */
+async function onRedoRally(): Promise<void> {
+  await typePass.redoRally()
+  seekTypeRallyStart()
+}
 
 // 種別パス: ラリー内の入力が揃ったら自動一時停止 (REQ-008 の境界停止)
 watch(() => typePass.rallyComplete.value, (complete) => {
@@ -169,6 +185,24 @@ async function onDeleteShot(): Promise<void> {
   if (ok) typePass.goToRally(rally.id)
 }
 
+// 打点パス側のショット行補正 (2026-08-02。挿入位置 = 現在のショット)
+async function onInsertShotPosition(): Promise<void> {
+  const rally = positionPass.currentRally.value
+  if (!rally) return
+  const shots = session.shotsOf(rally.id)
+  const current = positionPass.currentShot.value
+  const position = current ? shots.findIndex(s => s.id === current.id) : shots.length
+  const ok = await session.insertShotAt(rally.id, position)
+  if (ok) positionPass.start() // 再読込後、最初の未注釈 (= 挿入行) から再開
+}
+
+async function onDeleteShotPosition(): Promise<void> {
+  const current = positionPass.currentShot.value
+  if (!current) return
+  const ok = await session.deleteShotAt(current.id)
+  if (ok) positionPass.start()
+}
+
 // ---- キーボード (REQ-007 / REQ-108)。e.code で数字段の Shift 記号化を回避 ----
 function codeToKey(code: string): string | null {
   const digit = /^Digit(\d)$/.exec(code)
@@ -191,6 +225,12 @@ function onKeydown(event: KeyboardEvent): void {
   if (session.mode.value === 'type') {
     event.preventDefault()
     typePass.handleKey(key, { backhand: event.shiftKey })
+    return
+  }
+  // 打点パス: 種別の同時入力 (前進はタップ側。2026-08-02)
+  if (session.mode.value === 'position') {
+    event.preventDefault()
+    positionPass.setType(key)
     return
   }
   // クイックパス: 数字キーで end_reason を直接入力 (D6 初期値の割当)
@@ -332,12 +372,15 @@ onBeforeUnmount(() => {
             @toggle-hand="value => (typePass.recordHand.value = value)"
             @insert-shot="onInsertShot"
             @delete-shot="onDeleteShot"
+            @redo="onRedoRally"
           />
           <AnnotationPositionPassPanel
             v-else
             :position-pass="positionPass"
             :seek-to="seekAndPause"
             :current-time-ms="() => player?.controls.getCurrentTimeMs() ?? null"
+            @insert-shot="onInsertShotPosition"
+            @delete-shot="onDeleteShotPosition"
           />
         </div>
       </div>

@@ -67,6 +67,7 @@ function makeDeps(shotsMap: Record<string, AnnotationShot[]>, youtube = false) {
     if (patch.hitY !== undefined) target.hitY = patch.hitY
     if (patch.hitPlayerId !== undefined) target.hitPlayerId = patch.hitPlayerId
     if (patch.annotatedTimestampMs !== undefined) target.annotatedTimestampMs = patch.annotatedTimestampMs
+    if (patch.shotType !== undefined) target.shotType = patch.shotType
     return true
   })
   const deps: PositionPassDeps = {
@@ -165,6 +166,17 @@ describe('usePositionPass (ローカル動画)', () => {
     expect(shotsMap.r1![2]!.hitPlayerId).toBe('A2')
     // sh4 (偶数打 = レシーブ側 B)
     expect(pp.hitterCandidates.value.map(p => p.playerId)).toEqual(['B1', 'B2'])
+  })
+
+  it('setType: 現在ショットの種別を書き込む (前進はしない。2026-08-02 同時入力)', async () => {
+    const pp = usePositionPass(fixtures.deps)
+    pp.start()
+    await pp.setType('s') // 1打目はサーブ三択 (REQ-109 と同じ制限)
+    expect(shotsMap.r1![0]!.shotType).toBe('serve_short')
+    expect(pp.currentShot.value?.id).toBe('sh1') // 前進しない
+    await pp.setPosition({ x: 0.1, y: 0.1 }) // 前進はタップ側
+    await pp.setType('2')
+    expect(shotsMap.r1![1]!.shotType).toBe('smash')
   })
 
   it('再開 (REQ-013): hit_x が入っていない最初のショットから', () => {
