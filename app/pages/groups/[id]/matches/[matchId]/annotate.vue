@@ -215,6 +215,12 @@ async function onDeleteShot(): Promise<void> {
   if (ok) typePass.goToRally(rally.id)
 }
 
+/** 打点パスのショットチップからのジャンプ (2026-08-03)。動画も現在位置へ追従させる */
+function onJumpShot(shotId: string): void {
+  positionPass.goToShot(shotId)
+  seekPositionAnchor()
+}
+
 // 打点パス側のショット行補正 (2026-08-02。挿入位置 = 現在のショット)
 async function onInsertShotPosition(): Promise<void> {
   const rally = positionPass.currentRally.value
@@ -436,6 +442,7 @@ onBeforeUnmount(() => {
             @insert-shot="onInsertShotPosition"
             @delete-shot="onDeleteShotPosition"
             @toggle-hand="value => (positionPass.recordHand.value = value)"
+            @jump-shot="onJumpShot"
           />
         </div>
       </div>

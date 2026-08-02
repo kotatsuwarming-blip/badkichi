@@ -46,6 +46,8 @@ const STRIP_OFFSETS_MS = [-400, -200, 0, 200, 400]
 export interface UsePositionPassReturn {
   currentShot: ComputedRef<AnnotationShot | null>
   currentRally: ComputedRef<AnnotationRally | null>
+  /** 現在ラリーのショット一覧 (パネルのチップ表示・ショットジャンプ用、2026-08-03) */
+  currentShots: ComputedRef<AnnotationShot[]>
   /** 表示アンカー時刻 (ローカル: 押下時刻 + 校正オフセット / YouTube: 生の押下時刻) */
   anchorMs: ComputedRef<number | null>
   /** サムネ帯の抽出時刻列 (ローカルのみ。YouTube は null、REQ-101) */
@@ -90,6 +92,10 @@ export function usePositionPass(deps: PositionPassDeps): UsePositionPassReturn {
   const currentEntry = computed(() => entries.value[index.value] ?? null)
   const currentShot = computed(() => currentEntry.value?.shot ?? null)
   const currentRally = computed(() => currentEntry.value?.rally ?? null)
+  const currentShots = computed<AnnotationShot[]>(() => {
+    const rally = currentRally.value
+    return rally ? deps.shotsOf(rally.id) : []
+  })
   const isDone = computed(() => index.value === -1)
   const isYoutube = computed(() => deps.isYoutube.value)
 
@@ -272,6 +278,7 @@ export function usePositionPass(deps: PositionPassDeps): UsePositionPassReturn {
   return {
     currentShot,
     currentRally,
+    currentShots,
     anchorMs,
     stripTimesMs,
     loopWindow,

@@ -439,6 +439,10 @@
       "loopHint": "Slow loop — pause at the hit moment and tap the position",
       "typeHint": "Shot type can be entered too (key or tap; position tap advances)"
     },
+    "hand": {
+      "forehand": "Forehand",
+      "backhand": "Backhand"
+    },
     "shotType": {
       "serve_short": "Short serve",
       "serve_long": "Long serve",
