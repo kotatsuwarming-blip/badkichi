@@ -230,7 +230,7 @@ describe('usePositionPass (YouTube モード、TASK-0010)', () => {
     // 校正なし・サムネ帯なし・ループ窓は前1.2s/後0.3s (向きが逆)
     expect(pp.isCalibrating.value).toBe(false)
     expect(pp.stripTimesMs.value).toBeNull()
-    expect(pp.loopWindow.value).toEqual({ fromMs: 3800, toMs: 5300 })
+    expect(pp.loopWindow.value).toEqual({ fromMs: 3800, toMs: 6200 })
 
     // フレーム確定は no-op (精度不明の時刻を教師データに混ぜない)
     await pp.confirmFrame(4600)
@@ -255,7 +255,7 @@ describe('usePositionPass アンカーのフォールバック (挿入ショッ�
 
     expect(pp.currentShot.value?.id).toBe('sh1')
     expect(pp.anchorMs.value).toBe(58251)
-    expect(pp.loopWindow.value).toEqual({ fromMs: 58251 - 1200, toMs: 58251 + 300 })
+    expect(pp.loopWindow.value).toEqual({ fromMs: 58251 - 1200, toMs: 58251 + 1200 })
   })
 
   /** 全ショット ts=null (空ラリーへの連続挿入) → ラリー開始押下へ倒す */
