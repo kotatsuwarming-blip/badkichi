@@ -271,8 +271,9 @@ export function useAnnotationSession(matchId: string) {
   /**
    * ショット挿入 (ライブ記録の押し損ね補正、ドッグフーディング 2026-07-29)。
    * position (0-based) の位置に挿入し、以降を後ろから +1 renumber (UNIQUE 回避、直列キュー)。
-   * タイムスタンプは前後ショットの中点 (どちらか欠けたら null)。完了後に再読込で整合させる。
-   * 構造操作は直前1段 undo の対象外 (削除で戻せる)。
+   * タイムスタンプ: 先頭挿入はラリー開始押下 (サーブの押し損ね補正。開始押下はサーブ直前の
+   * 実務、2026-08-03)、中間挿入は前後ショットの中点 (どちらか欠けたら null)。
+   * 完了後に再読込で整合させる。構造操作は直前1段 undo の対象外 (削除で戻せる)。
    */
   async function insertShotAt(rallyId: string, position: number): Promise<boolean> {
     const shots = shotsOf(rallyId)
@@ -283,9 +284,11 @@ export function useAnnotationSession(matchId: string) {
     }
     const prev = shots[position - 1]
     const next = shots[position]
-    const timestamp = prev?.videoTimestampMs != null && next?.videoTimestampMs != null
-      ? Math.round((prev.videoTimestampMs + next.videoTimestampMs) / 2)
-      : null
+    const timestamp = position === 0
+      ? findRally(rallyId)?.videoStartTimestampMs ?? null
+      : (prev?.videoTimestampMs != null && next?.videoTimestampMs != null
+          ? Math.round((prev.videoTimestampMs + next.videoTimestampMs) / 2)
+          : null)
     const res = await save.insertShotRow(rallyId, position + 1, timestamp)
     if (res.error) return false
     lastUndo.value = null
