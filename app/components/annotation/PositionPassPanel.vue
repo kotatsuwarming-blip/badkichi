@@ -125,7 +125,8 @@ function confirmCurrentFrame() {
         </div>
       </div>
 
-      <!-- 打者の二択 (3打目以降、REQ-012)。入力済みの再訪は現値をハイライト -->
+      <!-- 打者の二択 (3打目以降、REQ-012)。入力済みの再訪は現値をハイライト。
+           1/2 キーでも選択可 (カーソルをコートから動かさない、2026-08-03) -->
       <div
         v-if="props.positionPass.awaitingHitter.value"
         class="space-y-1"
@@ -135,77 +136,79 @@ function confirmCurrentFrame() {
         </p>
         <div class="flex gap-2">
           <UButton
-            v-for="candidate in props.positionPass.hitterCandidates.value"
+            v-for="(candidate, i) in props.positionPass.hitterCandidates.value"
             :key="candidate.playerId"
             :variant="candidate.playerId === props.positionPass.currentShot.value?.hitPlayerId ? 'solid' : 'soft'"
             color="primary"
             @click="props.positionPass.selectHitter(candidate.playerId)"
           >
+            <UKbd>{{ i + 1 }}</UKbd>
             {{ candidate.name }}
           </UButton>
         </div>
       </div>
 
-      <!-- 打点タップ (REQ-009/014)。スクロールなしで届くようパネル上部に配置 (2026-08-03) -->
+      <!-- 打点タップ (REQ-009/014) + 種別パレットを横並びに (コート図の横に種別、2026-08-03) -->
       <template v-else>
         <p class="text-sm font-medium">
           {{ t('annotation.position.tapPrompt') }}
         </p>
-        <!-- max-w-60 のラッパーで縮小: 動画横のパネルでスクロールなしに全面が収まるサイズ
-             (コンポーネント内の max-w-xs とのクラス競合を避けるため親で絞る、2026-08-03) -->
-        <div class="max-w-60">
-          <AnnotationCourtDiagramInput
-            :marker="props.positionPass.currentShot.value && props.positionPass.currentShot.value.hitX !== null
-              ? { x: props.positionPass.currentShot.value.hitX, y: props.positionPass.currentShot.value.hitY ?? 0 }
-              : null"
-            @select="props.positionPass.setPosition($event, { playerTimeMs: props.currentTimeMs() })"
-          />
+        <div class="flex flex-wrap gap-3">
+          <!-- w-60 固定: 動画横のパネルでスクロールなしに全面が収まるサイズ (2026-08-03) -->
+          <div class="w-60 shrink-0">
+            <AnnotationCourtDiagramInput
+              :marker="props.positionPass.currentShot.value && props.positionPass.currentShot.value.hitX !== null
+                ? { x: props.positionPass.currentShot.value.hitX, y: props.positionPass.currentShot.value.hitY ?? 0 }
+                : null"
+              @select="props.positionPass.setPosition($event, { playerTimeMs: props.currentTimeMs() })"
+            />
+          </div>
+          <!-- 種別の同時入力 (前進はタップ側。特に YouTube 向け、2026-08-02) -->
+          <div class="min-w-40 flex-1 space-y-1">
+            <p class="text-xs text-neutral-500">
+              {{ t('annotation.position.typeHint') }}
+            </p>
+            <div
+              v-if="props.positionPass.currentShot.value?.shotNumber === 1"
+              class="flex flex-col gap-1"
+            >
+              <UButton
+                v-for="[key, type] in SERVE_KEY_BINDINGS"
+                :key="key"
+                variant="soft"
+                color="primary"
+                size="xs"
+                class="justify-start"
+                @click="props.positionPass.setType(key)"
+              >
+                <UKbd size="sm">
+                  {{ key }}
+                </UKbd>
+                {{ t(`annotation.shotType.${type}`) }}
+              </UButton>
+            </div>
+            <div
+              v-else
+              class="flex flex-col gap-1"
+            >
+              <UButton
+                v-for="[key, type] in TYPE_KEY_BINDINGS"
+                :key="key"
+                variant="soft"
+                color="neutral"
+                size="xs"
+                class="justify-start"
+                @click="props.positionPass.setType(key)"
+              >
+                <UKbd size="sm">
+                  {{ key }}
+                </UKbd>
+                {{ t(`annotation.shotType.${type}`) }}
+              </UButton>
+            </div>
+          </div>
         </div>
       </template>
-
-      <!-- 種別の同時入力 (ステップ&ループ方式なら成立。特に YouTube 向け、2026-08-02) -->
-      <div class="space-y-1">
-        <p class="text-xs text-neutral-500">
-          {{ t('annotation.position.typeHint') }}
-        </p>
-        <div
-          v-if="props.positionPass.currentShot.value?.shotNumber === 1"
-          class="flex flex-wrap gap-1.5"
-        >
-          <UButton
-            v-for="[key, type] in SERVE_KEY_BINDINGS"
-            :key="key"
-            variant="soft"
-            color="primary"
-            size="xs"
-            @click="props.positionPass.setType(key)"
-          >
-            <UKbd size="sm">
-              {{ key }}
-            </UKbd>
-            {{ t(`annotation.shotType.${type}`) }}
-          </UButton>
-        </div>
-        <div
-          v-else
-          class="grid grid-cols-3 gap-1"
-        >
-          <UButton
-            v-for="[key, type] in TYPE_KEY_BINDINGS"
-            :key="key"
-            variant="soft"
-            color="neutral"
-            size="xs"
-            block
-            @click="props.positionPass.setType(key)"
-          >
-            <UKbd size="sm">
-              {{ key }}
-            </UKbd>
-            {{ t(`annotation.shotType.${type}`) }}
-          </UButton>
-        </div>
-      </div>
 
       <div class="flex flex-wrap items-center gap-2">
         <UButton
