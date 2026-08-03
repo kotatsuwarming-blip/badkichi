@@ -87,7 +87,7 @@ function jumpToRally(rally: AnnotationRally): void {
     replayWindow()
   } else if (mode === 'type') {
     typePass.goToRally(rally.id)
-    seekTypeRallyStart()
+    seekTypeAnchor()
   } else {
     positionPass.goToRally(rally.id)
     seekPositionAnchor()
@@ -96,9 +96,11 @@ function jumpToRally(rally: AnnotationRally): void {
 
 const activeRallyId = computed(() => session.cursor.value?.rallyId ?? null)
 
-// ---- ループ再生制御 (クイック決着窓 / YouTube 打点窓、REQ-004 / REQ-101) ----
+// ---- ループ再生制御 (決まり方の決着窓 / 種別・全ショットの打球窓、REQ-004 / REQ-101) ----
+// 種別パスは動きがないと判定できないためローカル動画でもループする (2026-08-03 再設計)
 const activeLoopWindow = computed(() => {
   if (session.mode.value === 'quick') return quick.loopWindow.value
+  if (session.mode.value === 'type') return typePass.loopWindow.value
   if (session.mode.value === 'position' && session.isYoutube.value) return positionPass.loopWindow.value
   return null
 })
@@ -112,11 +114,11 @@ function tickLoop(): void {
   const current = p.controls.getCurrentTimeMs()
   if (current === null || current <= window_.toMs) return
   if (session.mode.value === 'quick') {
-    // クイックパスは通し方式: 決着窓を1回再生したら停止して入力待ち
+    // 決まり方パスは通し方式: 決着窓を1回再生したら停止して入力待ち
     // (ループ再生より速い、ドッグフーディング 2026-07-29)。再視聴は「もう一度見る」
     if (p.state.value.status === 'playing') p.controls.pause()
   } else {
-    // 打点探索 (YouTube) は瞬間を探すためループ維持
+    // 種別・打点の打球窓は瞬間を探すためループ維持
     p.controls.seekToMs(window_.fromMs)
   }
 }
@@ -130,12 +132,12 @@ function replayWindow(): void {
   p.controls.play()
 }
 
-// 窓が変わったら窓頭から再生 (打点探索は 0.5x スロー、ui-design.md)
+// 窓が変わったら窓頭から再生 (種別・打点の打球窓は 0.5x スロー、ui-design.md)
 watch(activeLoopWindow, (window_) => {
   const p = player.value
   if (!window_ || !p) return
   p.controls.seekToMs(window_.fromMs)
-  if (session.mode.value === 'position') p.controls.setPlaybackRate(0.5)
+  if (session.mode.value !== 'quick') p.controls.setPlaybackRate(0.5)
   p.controls.play()
 })
 
@@ -157,62 +159,38 @@ function seekAndPause(ms: number): void {
   p.controls.pause()
 }
 
-/**
- * 種別パスのラリー頭シーク。アンカーは1打目の押下時刻 −2秒を優先する —
- * rallies.video_start_timestamp_ms はライブ記録の「ラリー開始押下」でサーブ後のことがあり、
- * そこから再生するとサーブが見えない (ドッグフーディング 2026-08-02)。
- */
-function seekTypeRallyStart(): void {
+/** 種別パスの現在位置へ動画を合わせる (常にスローループ。2026-08-03 再設計) */
+function seekTypeAnchor(): void {
   const p = player.value
-  const rally = typePass.currentRally.value
-  if (!p || !rally) return
-  const firstShot = session.shotsOf(rally.id)[0]
-  const startMs = firstShot?.videoTimestampMs != null
-    ? Math.max(0, firstShot.videoTimestampMs - 2000)
-    : rally.videoStartTimestampMs
-  if (startMs === null) return
-  p.controls.seekToMs(startMs)
-  p.controls.setPlaybackRate(1)
+  const window_ = typePass.loopWindow.value
+  if (!p || !window_) return
+  p.controls.seekToMs(window_.fromMs)
+  p.controls.setPlaybackRate(0.5)
   p.controls.play()
 }
-
-// 種別パス: ラリー頭へシーク + 通常速で再生、ラリー間を飛ばす (REQ-008)
-watch(
-  () => [session.mode.value, typePass.currentRally.value?.id] as const,
-  ([mode, rallyId]) => {
-    if (mode !== 'type' || rallyId === undefined) return
-    seekTypeRallyStart()
-  }
-)
-
-/** やり直し: 種別クリアに加えて動画もラリー頭へ巻き戻す (ドッグフーディング 2026-08-02) */
-async function onRedoRally(): Promise<void> {
-  await typePass.redoRally()
-  seekTypeRallyStart()
-}
-
-// 種別パス: ラリー内の入力が揃ったら自動一時停止 (REQ-008 の境界停止)
-watch(() => typePass.rallyComplete.value, (complete) => {
-  if (complete && session.mode.value === 'type') player.value?.controls.pause()
-})
 
 // ---- ショット行の補正 (押し損ね/押しすぎ、ドッグフーディング 2026-07-29) ----
 async function onInsertShot(): Promise<void> {
   const rally = typePass.currentRally.value
   if (!rally) return
   const shots = typePass.currentShots.value
-  const expected = typePass.expectedShot.value
-  const position = expected ? shots.findIndex(s => s.id === expected.id) : shots.length
+  const current = typePass.currentShot.value
+  const position = current ? shots.findIndex(s => s.id === current.id) : shots.length
   const ok = await session.insertShotAt(rally.id, position)
-  if (ok) typePass.goToRally(rally.id)
+  if (ok) typePass.start() // 再読込後、最初の未入力 (= 挿入行) から再開
 }
 
 async function onDeleteShot(): Promise<void> {
-  const rally = typePass.currentRally.value
-  const expected = typePass.expectedShot.value
-  if (!rally || !expected) return
-  const ok = await session.deleteShotAt(expected.id)
-  if (ok) typePass.goToRally(rally.id)
+  const current = typePass.currentShot.value
+  if (!current) return
+  const ok = await session.deleteShotAt(current.id)
+  if (ok) typePass.start()
+}
+
+/** 種別パスのショットチップからのジャンプ。動画も追従させる */
+function onJumpShotType(shotId: string): void {
+  typePass.goToShot(shotId)
+  seekTypeAnchor()
 }
 
 /** 打点パスのショットチップからのジャンプ (2026-08-03)。動画も現在位置へ追従させる */
@@ -258,9 +236,16 @@ function onKeydown(event: KeyboardEvent): void {
   }
   const key = codeToKey(event.code)
   if (key === null) return
+  // 種別パス: 種別キー → (3打目以降) 1/2 で打者 (キーボード専用、2026-08-03 再設計)
   if (session.mode.value === 'type') {
     event.preventDefault()
-    typePass.handleKey(key, { backhand: event.shiftKey })
+    if (typePass.awaitingHitter.value) {
+      const idx = key === '1' ? 0 : key === '2' ? 1 : null
+      const candidate = idx === null ? undefined : typePass.hitterCandidates.value[idx]
+      if (candidate) typePass.selectHitter(candidate.playerId)
+      return
+    }
+    typePass.inputType(key, { backhand: event.shiftKey })
     return
   }
   // 全ショットパス: 種別の同時入力 (前進はタップ側。2026-08-02。Shift = バックハンド)。
@@ -300,8 +285,9 @@ async function undoAndReposition(): Promise<void> {
   if (mode === 'position' && cursor.shotId) {
     positionPass.goToShot(cursor.shotId)
     seekPositionAnchor()
-  } else if (mode === 'type') {
-    typePass.goToRally(cursor.rallyId)
+  } else if (mode === 'type' && cursor.shotId) {
+    typePass.goToShot(cursor.shotId)
+    seekTypeAnchor()
   } else if (mode === 'quick') {
     quick.goToRally(cursor.rallyId)
     replayWindow()
@@ -439,7 +425,7 @@ onBeforeUnmount(() => {
             @toggle-hand="value => (typePass.recordHand.value = value)"
             @insert-shot="onInsertShot"
             @delete-shot="onDeleteShot"
-            @redo="onRedoRally"
+            @jump-shot="onJumpShotType"
           />
           <AnnotationPositionPassPanel
             v-else
