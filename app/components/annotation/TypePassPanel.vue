@@ -184,7 +184,7 @@ function isReceiveKey(type: ShotType): boolean {
         v-if="props.typePass.loopWindow.value"
         class="text-xs text-neutral-500"
       >
-        {{ t('annotation.position.loopHint') }}
+        {{ t('annotation.type.loopHint') }}
       </p>
     </template>
   </div>
