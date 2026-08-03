@@ -25,7 +25,10 @@ const m = vi.hoisted(() => {
     fixtures,
     fromMock: vi.fn((table: string) => builderFor(table)),
     saveShotMock: vi.fn(),
-    saveRallyMock: vi.fn()
+    saveRallyMock: vi.fn(),
+    updateShotNumberMock: vi.fn(),
+    insertShotRowMock: vi.fn(),
+    deleteShotRowMock: vi.fn()
   }
 })
 
@@ -38,6 +41,9 @@ vi.mock('~/composables/useAnnotationSave', () => ({
   useAnnotationSave: () => ({
     saveShotPatch: m.saveShotMock,
     saveRallyPatch: m.saveRallyMock,
+    updateShotNumber: m.updateShotNumberMock,
+    insertShotRow: m.insertShotRowMock,
+    deleteShotRow: m.deleteShotRowMock,
     pending: { value: false },
     lastError: { value: null }
   })
@@ -179,6 +185,20 @@ describe('useAnnotationSession', () => {
     const ok = await session.patchShot('sh1', { shotType: 'clear' })
     expect(ok).toBe(false)
     expect(session.findShot('sh1')?.shotType).toBe('clear')
+  })
+
+  it('insertShotAt(先頭): タイムスタンプはラリー開始押下を使う (サーブ押し損ね補正、2026-08-03)', async () => {
+    const session = useAnnotationSession('m1')
+    await session.load()
+    m.updateShotNumberMock.mockResolvedValue({ data: true, error: null })
+    m.insertShotRowMock.mockResolvedValue({ data: 'new1', error: null })
+
+    const ok = await session.insertShotAt('r1', 0)
+    expect(ok).toBe(true)
+    // 既存 sh1/sh2 は後ろから +1 renumber → 新しい 1 打目はラリー開始押下 (1000ms)
+    expect(m.updateShotNumberMock).toHaveBeenCalledWith('sh2', 3)
+    expect(m.updateShotNumberMock).toHaveBeenCalledWith('sh1', 2)
+    expect(m.insertShotRowMock).toHaveBeenCalledWith('r1', 1, 1000)
   })
 
   it('存在しない行へのパッチは false (保存も送らない)', async () => {
