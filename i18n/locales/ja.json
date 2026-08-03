@@ -459,7 +459,8 @@
       "drive": "ドライブ",
       "receive_long": "ロングレシーブ",
       "receive_drive": "ドライブレシーブ",
-      "receive_short": "ショートレシーブ"
+      "receive_short": "ショートレシーブ",
+      "unknown": "不明"
     },
     "rallyList": {
       "title": "ラリー一覧",
