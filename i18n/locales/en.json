@@ -459,7 +459,8 @@
       "drive": "Drive",
       "receive_long": "Long receive",
       "receive_drive": "Drive receive",
-      "receive_short": "Short receive"
+      "receive_short": "Short receive",
+      "unknown": "Unclear"
     },
     "rallyList": {
       "title": "Rallies",

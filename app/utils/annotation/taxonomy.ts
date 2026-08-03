@@ -11,7 +11,8 @@ import type { ShotType, ShotTypeGroup } from '~/types/shot-annotation'
 export const TYPE_KEY_BINDINGS: ReadonlyArray<[string, ShotType]> = [
   ['1', 'clear'], ['2', 'smash'], ['3', 'cut'], ['4', 'reverse_cut'], ['5', 'drop'],
   ['6', 'drive'], ['7', 'push'], ['8', 'half'], ['9', 'hairpin'], ['0', 'lob'],
-  ['Q', 'receive_long'], ['W', 'receive_drive'], ['E', 'receive_short']
+  ['Q', 'receive_long'], ['W', 'receive_drive'], ['E', 'receive_short'],
+  ['U', 'unknown'] // 判定不能 (ミスヒット等。2026-08-03)
 ]
 
 /** 1打目（サーブ）の三択キー（REQ-109）。パネル表示にも共用 */
@@ -46,7 +47,8 @@ const GROUP_OF: Record<ShotType, ShotTypeGroup> = {
   drive: 'flat',
   receive_long: 'receive',
   receive_drive: 'receive',
-  receive_short: 'receive'
+  receive_short: 'receive',
+  unknown: 'other'
 }
 
 /**

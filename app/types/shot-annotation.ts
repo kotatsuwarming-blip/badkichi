@@ -12,19 +12,20 @@ import type { Team, PlayerId } from '~/utils/rule-engine/types'
 // 語彙（ADR-017 §6 / §7 の確定値 = CHECK 制約と一致）
 // ========================================
 
-/** ショット種別 16種 (ADR-017 §6) */
+/** ショット種別 17種 (ADR-017 §6 + unknown。2026-08-03: 判定不能ショットを明示) */
 export const SHOT_TYPES = [
   'serve_short', 'serve_long', 'serve_drive',
   'clear', 'smash', 'cut', 'reverse_cut', 'drop',
   'hairpin', 'lob', 'push', 'half',
   'drive',
-  'receive_long', 'receive_drive', 'receive_short'
+  'receive_long', 'receive_drive', 'receive_short',
+  'unknown'
 ] as const
 
 export type ShotType = typeof SHOT_TYPES[number]
 
 /** UI 表示グループ（パレットの並びのみ。キー割当は固定） */
-export type ShotTypeGroup = 'serve' | 'rear' | 'front' | 'flat' | 'receive'
+export type ShotTypeGroup = 'serve' | 'rear' | 'front' | 'flat' | 'receive' | 'other'
 
 /**
  * ラリー決着 6値 (ADR-017 §7、2026-08-02 改訂)。
