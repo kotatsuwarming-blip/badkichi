@@ -263,9 +263,16 @@ function onKeydown(event: KeyboardEvent): void {
     typePass.handleKey(key, { backhand: event.shiftKey })
     return
   }
-  // 打点パス: 種別の同時入力 (前進はタップ側。2026-08-02。Shift = バックハンド)
+  // 全ショットパス: 種別の同時入力 (前進はタップ側。2026-08-02。Shift = バックハンド)。
+  // 打者二択の待機中は 1/2 キーで選択 (カーソルをコートから動かさない、2026-08-03)
   if (session.mode.value === 'position') {
     event.preventDefault()
+    if (positionPass.awaitingHitter.value) {
+      const idx = key === '1' ? 0 : key === '2' ? 1 : null
+      const candidate = idx === null ? undefined : positionPass.hitterCandidates.value[idx]
+      if (candidate) positionPass.selectHitter(candidate.playerId)
+      return
+    }
     positionPass.setType(key, { backhand: event.shiftKey })
     return
   }
