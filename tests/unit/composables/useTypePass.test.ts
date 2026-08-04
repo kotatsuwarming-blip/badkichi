@@ -121,8 +121,8 @@ describe('useTypePass (ステップ&ループ方式、2026-08-03)', () => {
     tp.start()
     await tp.inputType('2') // 1打目に smash は無効
     expect(patchShot).not.toHaveBeenCalled()
-    await tp.inputType('l')
-    await tp.inputType('l') // 2打目に serve_long は無効
+    await tp.inputType('l') // 1打目の L = serve_long
+    await tp.inputType('s') // 2打目に serve_short は無効 (L は lob_low 割当のため S で確認)
     expect(shotsMap.r1![1]!.shotType).toBeNull()
     expect(tp.currentShot.value?.id).toBe('sh2')
   })
