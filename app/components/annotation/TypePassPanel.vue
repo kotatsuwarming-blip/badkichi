@@ -23,8 +23,12 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-function isReceiveKey(type: ShotType): boolean {
-  return type.startsWith('receive_')
+/** 打点由来の候補 + レシーブ文脈 (REQ-103) を強調表示 (2026-08-05) */
+const suggested = computed(() => new Set(props.typePass.suggestedTypes.value))
+
+function isHighlighted(type: ShotType): boolean {
+  return suggested.value.has(type)
+    || (props.typePass.receiveHighlight.value && type.startsWith('receive_'))
 }
 </script>
 
@@ -134,8 +138,8 @@ function isReceiveKey(type: ShotType): boolean {
           <UButton
             v-for="[key, type] in TYPE_KEY_BINDINGS"
             :key="key"
-            :variant="props.typePass.receiveHighlight.value && isReceiveKey(type) ? 'solid' : 'soft'"
-            :color="props.typePass.receiveHighlight.value && isReceiveKey(type) ? 'primary' : 'neutral'"
+            :variant="isHighlighted(type) ? 'solid' : 'soft'"
+            :color="isHighlighted(type) ? 'primary' : 'neutral'"
             size="xs"
             class="lg:justify-start"
             block
