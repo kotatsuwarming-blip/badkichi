@@ -89,7 +89,11 @@
 - **技術設計完了（2026-08-03）**: `docs/design/shot-stats/` に 6 ファイル。設計時の実装調査で
   スキーマ差分が判明し要件書へ反映済み — **end_reason は 6 値（in/out → floor 統合、deriveInOut で導出）/
   shot_type は 17 値（unknown 追加）/ shots はソフトデリート**。本ノート §1 の「taxonomy 16種 / end_reason 7値」は
-  ADR-017 時点の記述であり、実装は上記が正。次は `/kairo-tasks shot-stats`。
+  ADR-017 時点の記述であり、実装は上記が正。
+- **タスク分割完了（2026-08-04）**: `docs/tasks/shot-stats/overview.md`（overview 先行方式・
+  13 タスク / 4 フェーズ / 88h）。**実装順はライブ系先行**（基盤 → J/K/L → 探針 A→C→D→F/G）。
+  M2（ラリー展開タブ完成）で先行 dev 検証可。実装は PR #50 マージ後に `feat/shot-stats` を
+  main から切って `/kairo-implement` で着手。
 
 ## 8. 関連ファイル
 
