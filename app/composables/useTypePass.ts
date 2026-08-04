@@ -17,10 +17,12 @@ import type {
   AnnotationRosterEntry,
   AnnotationShot,
   LoopWindow,
-  ShotAnnotationPatch
+  ShotAnnotationPatch,
+  ShotType
 } from '~/types/shot-annotation'
 import { loopWindowFor, startFromPreviousShot } from '~/utils/annotation/offset'
 import { isReceiveContext, keyToShotType } from '~/utils/annotation/taxonomy'
+import { suggestShotTypes } from '~/utils/annotation/suggest'
 
 /** session のうち種別パスが必要とする面 (構造的部分型) */
 export interface TypePassDeps {
@@ -48,6 +50,8 @@ export interface UseTypePassReturn {
   loopWindow: ComputedRef<LoopWindow | null>
   /** 直前ショットがスマッシュ/プッシュ/ドライブ → レシーブ3種をハイライト (REQ-103) */
   receiveHighlight: ComputedRef<boolean>
+  /** 打点から推定した種別候補 (打点パス先行入力時の強調表示、2026-08-05)。レシーブ文脈込み */
+  suggestedTypes: ComputedRef<ShotType[]>
   /** 打者の二択候補 (3打目以降のみ、REQ-012) */
   hitterCandidates: ComputedRef<AnnotationRosterEntry[]>
   awaitingHitter: Ref<boolean>
@@ -127,6 +131,26 @@ export function useTypePass(deps: TypePassDeps): UseTypePassReturn {
     const i = shots.findIndex(s => s.id === shot.id)
     const prev = shots[i - 1]
     return isReceiveContext(prev?.shotType ?? null)
+  })
+
+  /**
+   * 打点からの種別候補 (2026-08-05)。打点パスを先に済ませてあれば
+   * 「自打点の深さ × 行き先 (次ショット打点 or 最終打はラリー落下点)」で絞り込む。
+   */
+  const suggestedTypes = computed<ShotType[]>(() => {
+    const entry = currentEntry.value
+    if (!entry) return []
+    const shots = deps.shotsOf(entry.rally.id)
+    const i = shots.findIndex(s => s.id === entry.shot.id)
+    const prev = shots[i - 1]
+    const next = shots[i + 1]
+    const destY = next ? next.hitY : entry.rally.landY
+    return suggestShotTypes({
+      shotNumber: entry.shot.shotNumber,
+      hitY: entry.shot.hitY,
+      destY,
+      prevType: prev?.shotType ?? null
+    })
   })
 
   /** 打者チーム: 打順の偶奇で確定 (奇数打 = サーブ側、REQ-012) */
@@ -235,6 +259,7 @@ export function useTypePass(deps: TypePassDeps): UseTypePassReturn {
     anchorMs,
     loopWindow,
     receiveHighlight,
+    suggestedTypes,
     hitterCandidates,
     awaitingHitter,
     isDone,
