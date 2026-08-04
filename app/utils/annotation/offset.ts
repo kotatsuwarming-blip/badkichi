@@ -10,12 +10,12 @@ import type { LoopPurpose, LoopWindow } from '~/types/shot-annotation'
 
 /**
  * 用途別の非対称窓 (ms)。初期値は design-interview D6（試用後に調整）。
- * hitSearch の after はドッグフーディング 2026-08-03 で 300→1200 に拡大
- * （打点パスで種別も同時入力するため、打った後の行き先が見える長さが必要）。
+ * hitSearch: 2026-08-03 に after 300→1200 (行き先が見える長さ)、2026-08-05 に
+ * 前後 900 へ縮小 (周回待ちの短縮。前は直前ショットの打刻からの動的開始が主役になった)。
  */
 const WINDOWS: Record<LoopPurpose, { before: number, after: number }> = {
   rallyEnd: { before: 1000, after: 2500 },
-  hitSearch: { before: 1200, after: 1200 }
+  hitSearch: { before: 900, after: 900 }
 }
 
 /**
@@ -39,4 +39,18 @@ export function loopWindowFor(purpose: LoopPurpose, anchorMs: number): LoopWindo
     fromMs: Math.max(0, anchorMs - w.before),
     toMs: anchorMs + w.after
   }
+}
+
+/**
+ * 直前ショットの時刻が分かっていれば、そこをループ開始点にして前置きを削る
+ * (ドッグフーディング 2026-08-05「直前ショットの打刻以降から再生したい」)。
+ * 直前時刻が窓開始より前 (= 既定の窓の方が狭い) やアンカー以降 (異常値) は既定のまま。
+ */
+export function startFromPreviousShot(
+  window: LoopWindow,
+  prevShotMs: number | null,
+  anchorMs: number
+): LoopWindow {
+  if (prevShotMs === null || prevShotMs <= window.fromMs || prevShotMs >= anchorMs) return window
+  return { fromMs: prevShotMs, toMs: window.toMs }
 }

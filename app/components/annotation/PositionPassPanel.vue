@@ -75,7 +75,9 @@ function confirmCurrentFrame() {
           size="xs"
           @click="emit('jump-shot', shotItem.id)"
         >
-          #{{ shotItem.shotNumber }}{{ shotItem.shotType ? ` ${t(`annotation.shotType.${shotItem.shotType}`)}` : '' }}
+          <!-- 番号のみ: 入力のたびにラベル幅が変わって折り返し、コート図がズレるのを防ぐ
+               (種別名は種別パスのチップが担う、2026-08-05) -->
+          #{{ shotItem.shotNumber }}
         </UButton>
         <UBadge
           v-if="props.positionPass.currentShot.value?.hand"
