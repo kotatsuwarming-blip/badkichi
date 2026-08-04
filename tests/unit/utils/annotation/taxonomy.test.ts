@@ -16,7 +16,8 @@ describe('keyToShotType', () => {
     expect(keyToShotType('7', 3)).toBe('push')
     expect(keyToShotType('8', 3)).toBe('half')
     expect(keyToShotType('9', 3)).toBe('hairpin')
-    expect(keyToShotType('0', 3)).toBe('lob')
+    expect(keyToShotType('0', 3)).toBe('lob_high') // lob 分割 (2026-08-05)
+    expect(keyToShotType('l', 3)).toBe('lob_low') // L = Low の頭文字
     expect(keyToShotType('q', 3)).toBe('receive_long')
     expect(keyToShotType('w', 3)).toBe('receive_drive')
     expect(keyToShotType('e', 3)).toBe('receive_short')
@@ -32,9 +33,9 @@ describe('keyToShotType', () => {
     expect(keyToShotType('q', 1)).toBeNull()
   })
 
-  it('2打目以降はサーブキーが無効', () => {
+  it('2打目以降はサーブキーが無効 (L は lob_low に割当済みのため S/D で確認)', () => {
     expect(keyToShotType('s', 2)).toBeNull()
-    expect(keyToShotType('l', 5)).toBeNull()
+    expect(keyToShotType('d', 5)).toBeNull()
   })
 
   it('大文字入力も同じ種別に解決される', () => {
@@ -71,7 +72,9 @@ describe('groupOf', () => {
     expect(groupOf('hairpin')).toBe('front')
     expect(groupOf('push')).toBe('front')
     expect(groupOf('half')).toBe('front')
-    expect(groupOf('lob')).toBe('front')
+    expect(groupOf('lob')).toBe('front') // レガシー
+    expect(groupOf('lob_high')).toBe('front')
+    expect(groupOf('lob_low')).toBe('front')
     expect(groupOf('drive')).toBe('flat')
     expect(groupOf('receive_short')).toBe('receive')
   })

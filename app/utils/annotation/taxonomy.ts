@@ -10,7 +10,8 @@ import type { ShotType, ShotTypeGroup } from '~/types/shot-annotation'
 /** 通常ショットの固定キー割当（数字段 + QWE、ui-design.md）。パネル表示にも共用 */
 export const TYPE_KEY_BINDINGS: ReadonlyArray<[string, ShotType]> = [
   ['1', 'clear'], ['2', 'smash'], ['3', 'cut'], ['4', 'reverse_cut'], ['5', 'drop'],
-  ['6', 'drive'], ['7', 'push'], ['8', 'half'], ['9', 'hairpin'], ['0', 'lob'],
+  ['6', 'drive'], ['7', 'push'], ['8', 'half'], ['9', 'hairpin'],
+  ['0', 'lob_high'], ['L', 'lob_low'], // lob 分割 (0=ハイ / L=Low の頭文字、2026-08-05)
   ['Q', 'receive_long'], ['W', 'receive_drive'], ['E', 'receive_short'],
   ['U', 'unknown'] // 判定不能 (ミスヒット等。2026-08-03)
 ]
@@ -41,7 +42,9 @@ const GROUP_OF: Record<ShotType, ShotTypeGroup> = {
   reverse_cut: 'rear',
   drop: 'rear',
   hairpin: 'front',
-  lob: 'front',
+  lob: 'front', // レガシー (2026-08-05 分割前の既存データ)
+  lob_high: 'front',
+  lob_low: 'front',
   push: 'front',
   half: 'front',
   drive: 'flat',
