@@ -196,6 +196,21 @@ describe('useTypePass (ステップ&ループ方式、2026-08-03)', () => {
     expect(tp.loopWindow.value).toEqual({ fromMs: 1400, toMs: 2900 })
   })
 
+  it('suggestedTypes: 打点パス先行時は自打点×次打点から候補を絞る。最終打はラリー落下点 (2026-08-05)', () => {
+    const shotsMap = fourShots()
+    shotsMap.r1![2]!.hitY = 0.05 // 3打目: 奥で打った
+    shotsMap.r1![3]!.hitY = 0.95 // 4打目 (相手): 奥で触った → クリア系
+    const r = rally('r1', 1)
+    r.landY = 0.6 // 最終打の行き先 = 落下点 (前) → 4打目はドロップ系候補
+    shotsMap.r1![3]!.hitY = 0.95
+    const { deps } = makeDeps(shotsMap, [r])
+    const tp = useTypePass(deps)
+    tp.goToShot('sh3')
+    expect(tp.suggestedTypes.value).toEqual(['clear_high', 'clear_driven'])
+    tp.goToShot('sh4') // 最終打: 奥 (0.95) × 落下点 front (0.6)
+    expect(tp.suggestedTypes.value).toEqual(['drop', 'cut', 'reverse_cut'])
+  })
+
   it('最終ショットの後は isDone。skipShot は入力なしで前進', () => {
     const shotsMap = { r1: [shot('sh1', 'r1', 1), shot('sh2', 'r1', 2)] }
     const { deps } = makeDeps(shotsMap)
