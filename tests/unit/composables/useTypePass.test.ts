@@ -183,7 +183,17 @@ describe('useTypePass (ステップ&ループ方式、2026-08-03)', () => {
     const tp = useTypePass(deps)
     tp.start()
     expect(tp.anchorMs.value).toBe(2000) // 後続 sh2 の押下時刻へ倒す
-    expect(tp.loopWindow.value).toEqual({ fromMs: 800, toMs: 3200 })
+    expect(tp.loopWindow.value).toEqual({ fromMs: 1100, toMs: 2900 })
+  })
+
+  it('直前ショットの打刻があればループ開始点にする (前置き短縮、2026-08-05)', () => {
+    const shotsMap = fourShots() // ts = 1000, 2000, 3000, 4000
+    shotsMap.r1![0]!.annotatedTimestampMs = 1400
+    const { deps } = makeDeps(shotsMap)
+    const tp = useTypePass(deps)
+    tp.goToShot('sh2')
+    // 既定は 2000-900=1100 だが、直前打刻 1400 の方が後ろなのでそこから
+    expect(tp.loopWindow.value).toEqual({ fromMs: 1400, toMs: 2900 })
   })
 
   it('最終ショットの後は isDone。skipShot は入力なしで前進', () => {
