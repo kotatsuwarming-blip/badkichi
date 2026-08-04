@@ -7,7 +7,8 @@ import { keyToShotType, isReceiveContext, groupOf } from '~/utils/annotation/tax
 
 describe('keyToShotType', () => {
   it('通常ショット: 数字段 + QWE の固定マッピング (REQ-007)', () => {
-    expect(keyToShotType('1', 3)).toBe('clear')
+    expect(keyToShotType('1', 3)).toBe('clear_high') // clear 分割 (2026-08-05)
+    expect(keyToShotType('d', 3)).toBe('clear_driven') // D = Driven の頭文字
     expect(keyToShotType('2', 3)).toBe('smash')
     expect(keyToShotType('3', 3)).toBe('cut')
     expect(keyToShotType('4', 3)).toBe('reverse_cut')
@@ -33,9 +34,9 @@ describe('keyToShotType', () => {
     expect(keyToShotType('q', 1)).toBeNull()
   })
 
-  it('2打目以降はサーブキーが無効 (L は lob_low に割当済みのため S/D で確認)', () => {
+  it('2打目以降はサーブキーが無効 (L/D は lob_low/clear_driven に割当済みのため S で確認)', () => {
     expect(keyToShotType('s', 2)).toBeNull()
-    expect(keyToShotType('d', 5)).toBeNull()
+    expect(keyToShotType('s', 5)).toBeNull()
   })
 
   it('大文字入力も同じ種別に解決される', () => {
@@ -66,7 +67,9 @@ describe('isReceiveContext', () => {
 describe('groupOf', () => {
   it('UI 表示グループの対応 (ADR-017 §6 の表)', () => {
     expect(groupOf('serve_drive')).toBe('serve')
-    expect(groupOf('clear')).toBe('rear')
+    expect(groupOf('clear')).toBe('rear') // レガシー
+    expect(groupOf('clear_high')).toBe('rear')
+    expect(groupOf('clear_driven')).toBe('rear')
     expect(groupOf('reverse_cut')).toBe('rear')
     expect(groupOf('drop')).toBe('rear')
     expect(groupOf('hairpin')).toBe('front')
