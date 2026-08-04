@@ -19,7 +19,7 @@ import type {
   LoopWindow,
   ShotAnnotationPatch
 } from '~/types/shot-annotation'
-import { averageOffset, loopWindowFor } from '~/utils/annotation/offset'
+import { averageOffset, loopWindowFor, startFromPreviousShot } from '~/utils/annotation/offset'
 import { keyToShotType } from '~/utils/annotation/taxonomy'
 
 /** session のうち打点パスが必要とする面 (構造的部分型) */
@@ -143,11 +143,21 @@ export function usePositionPass(deps: PositionPassDeps): UsePositionPassReturn {
     return STRIP_OFFSETS_MS.map(offset => Math.max(0, anchor + offset))
   })
 
+  /** 直前ショットの時刻 (打刻優先)。ループ開始点の動的短縮に使う (2026-08-05) */
+  function previousShotMs(entry: PassEntry): number | null {
+    const shots = deps.shotsOf(entry.rally.id)
+    const i = shots.findIndex(s => s.id === entry.shot.id)
+    const prev = shots[i - 1]
+    if (!prev) return null
+    return prev.annotatedTimestampMs ?? prev.videoTimestampMs
+  }
+
   const loopWindow = computed<LoopWindow | null>(() => {
     if (!isYoutube.value) return null
+    const entry = currentEntry.value
     const anchor = anchorMs.value
-    if (anchor === null) return null
-    return loopWindowFor('hitSearch', anchor)
+    if (!entry || anchor === null) return null
+    return startFromPreviousShot(loopWindowFor('hitSearch', anchor), previousShotMs(entry), anchor)
   })
 
   /** 打者チーム: 打順の偶奇で確定 (奇数打 = サーブ側、REQ-012) */
