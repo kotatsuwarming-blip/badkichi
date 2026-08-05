@@ -45,6 +45,23 @@ const coverageMock = {
 }
 vi.mock('~/composables/useAnnotationCoverage', () => ({ useAnnotationCoverage: () => coverageMock }))
 
+const flowExecute = vi.fn()
+const flowMock = {
+  rows: ref([]),
+  pending: ref(false),
+  loaded: ref(false),
+  error: ref<string | null>(null),
+  execute: flowExecute,
+  subject: ref({ kind: 'all' as const }),
+  phaseEntries: ref([]),
+  measure: ref('avg'),
+  tempo: ref({ samples: [], excluded: 0 }),
+  setNumbers: ref<number[]>([]),
+  ralliesOfSet: () => [],
+  isEmpty: ref(false)
+}
+vi.mock('~/composables/useRallyFlowView', () => ({ useRallyFlowView: () => flowMock }))
+
 // eslint-disable-next-line import/first
 import GroupStats from '~/pages/groups/[id]/stats.vue'
 
@@ -59,7 +76,10 @@ const stubs = {
   StatsRallyLengthChart: { props: ['bins', 'selectedKeys'], template: '<div />' },
   StatsRallyTable: RallyTableStub,
   StatsVideoPane: { props: ['source', 'rallyMarkersMs', 'autoSeekMs'], template: '<div data-testid="pane" />' },
-  StatsAnnotationBadge: { props: ['summary'], template: '<div data-testid="annotation-badge" />' }
+  StatsAnnotationBadge: { props: ['summary'], template: '<div data-testid="annotation-badge" />' },
+  StatsPhaseRateChart: { props: ['entries'], template: '<div data-testid="phase-chart" />' },
+  StatsTempoChart: { props: ['samples', 'excluded', 'measure'], template: '<div data-testid="tempo-chart" />' },
+  StatsSetFlowChart: { props: ['points'], emits: ['select'], template: '<div data-testid="flow-chart" />' }
 }
 
 function mountPage() {
@@ -98,5 +118,18 @@ describe('Group 横断 stats ページ', () => {
     await w.find('[data-testid="tab-rallyflow"]').trigger('click')
     expect(hidden('[data-testid="panel-rallyflow"]')).toBe(false)
     expect(coverageExecute).toHaveBeenCalledTimes(1)
+  })
+
+  it('タブ: ラリー展開 (Group) は J/K のみ表示・L なし (TASK-0005〜0007)', async () => {
+    flowExecute.mockClear()
+    flowMock.loaded.value = true
+    const w = mountPage()
+    await w.find('[data-testid="tab-rallyflow"]').trigger('click')
+    // loaded=true のため execute は呼ばれない（遅延取得は未取得時のみ）
+    expect(flowExecute).not.toHaveBeenCalled()
+    expect(w.find('[data-testid="phase-chart"]').exists()).toBe(true)
+    expect(w.find('[data-testid="tempo-chart"]').exists()).toBe(true)
+    expect(w.find('[data-testid="flow-chart"]').exists()).toBe(false)
+    flowMock.loaded.value = false
   })
 })

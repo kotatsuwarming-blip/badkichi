@@ -155,12 +155,41 @@ export type TempoMeasure = 'avg' | 'last3'
 /** K: 適格ラリーのテンポ値（分布描画用, REQ-015/106） */
 export interface TempoSample {
   rallyId: string
-  /** 選択中の視点チームが取ったか */
-  won: boolean
+  /** 選択中の視点チームが取ったか（null = 視点なし = 対象全体） */
+  won: boolean | null
   /** (shot_count - 1) / (duration_ms / 1000) 打/秒 */
   avgShotsPerSec: number
   /** ラスト 3 打の 2 間隔平均（ms）。3 本未満は null */
   last3IntervalMs: number | null
+}
+
+/**
+ * ラリー展開タブの統合行（stats_rallies × stats_rally_tempo を rally_id でマージ。
+ * tempo 側は確定ラリーのみ返すため、マージ結果も確定ラリーのみ = REQ-101 充足）
+ */
+export interface FlowRally {
+  rallyId: string
+  matchId: string
+  setNumber: number
+  rallyNumber: number
+  servingTeam: Team
+  pointWinner: Team
+  scoreA: number
+  scoreB: number
+  videoStartMs: number | null
+  shotCount: number
+  timedCount: number
+  durationMs: number | null
+  last3Ms: number | null
+  teamA: [string, string]
+  teamB: [string, string]
+}
+
+/** J: 対象（選手/ペア）ごとの局面別得点率（entity=all は選手ごとに 1 エントリ） */
+export interface PhaseRateEntry {
+  subjectId: string
+  label: string
+  rates: PhaseRate[]
 }
 
 /** L: セット推移の 1 点（REQ-017） */
