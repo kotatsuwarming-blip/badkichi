@@ -30,7 +30,7 @@
 **信頼性**: 🔵 *実装調査 2026-08-03（migrations / app/types/shot-annotation.ts）*
 
 - `rallies.end_reason` は **6 値**（`floor/net/not_over/body/service_fault/unknown`）。in/out は「最終打者チーム × point_winner」から導出（`deriveInOut`）
-- `shots.shot_type` は **17 値**（16 種 + `unknown`）
+- `shots.shot_type` は **19 値**（18 種 + `unknown`。2026-08-05 に lob → lob_high/lob_low、clear → clear_high/clear_driven へ分割。DB CHECK にはレガシー値 lob/clear が旧試合互換で残るが、コードの SHOT_TYPES は 19 値が正）
 - `shots` はソフトデリート（`deleted_at`）。集計は必ず `deleted_at IS NULL`
 - 純関数の実シグネチャ: `deriveOutDirection(land: CourtPoint): OutDirection | null` / `decisiveShotIndex(shotCount, endReason, winnerHitLast): number | null`
 
@@ -148,7 +148,7 @@ tests/
 ### パフォーマンス 🔵
 - 集計は RPC（Postgres）側で実施し、クライアントは細粒度 grain のフィルタ・整形のみ（NFR-002）
 - タブ遅延ロードで概要タブの初期表示 3 秒（NFR-001）を既存同等に維持 🔵 *ヒアリング2026-08-04 で了承*
-- ショット分析タブは 4 RPC 並列取得。grain 行数は Group 横断でも数千行程度（選手 × 17 球種 × 3 hand / × 18 ゾーン） 🟡 *見積り値。実装時に実測で検証（ヒアリング2026-08-04: 注記を残す前提で了承）*
+- ショット分析タブは 4 RPC 並列取得。grain 行数は Group 横断でも数千行程度（選手 × 19 球種 × 3 hand / × 18 ゾーン） 🟡 *見積り値。実装時に実測で検証（ヒアリング2026-08-04: 注記を残す前提で了承）*
 
 ### セキュリティ 🔵
 - SECURITY INVOKER による RLS 継承（NFR-101 / REQ-403）。integration テストで他 Group 0 件を検証

@@ -22,8 +22,10 @@
 > 即効くため、基盤 → ラリー展開タブ → 探針（注釈パス依存の軽い順 A→C→D→F/G）の順。
 >
 > **前提**: 実装ブランチ `feat/shot-stats` は **PR #50（shot-annotation）マージ後**に main から
-> 切る（生成型 `app/types/supabase.ts` の注釈列に依存）。CLAUDE.md ワークフロー
-> （ブランチ → dev マージ → localhost 検証 → main へ PR）に従う。
+> 切る（生成型 `app/types/supabase.ts` の注釈列に依存）。**→ 2026-08-05 マージ済み・実装開始可**。
+> CLAUDE.md ワークフロー（ブランチ → dev マージ → localhost 検証 → main へ PR）に従う。
+> shot_type は 19 値（18種 + unknown。2026-08-05 の lob/clear 分割後）が正。
+> ドッグフーディング済みの注釈フル入力試合が 1 件あり、Phase 3 の動作確認データに使える。
 
 ## フェーズ構成
 
