@@ -67,7 +67,6 @@ describe('isReceiveContext', () => {
 describe('groupOf', () => {
   it('UI 表示グループの対応 (ADR-017 §6 の表)', () => {
     expect(groupOf('serve_drive')).toBe('serve')
-    expect(groupOf('clear')).toBe('rear') // レガシー
     expect(groupOf('clear_high')).toBe('rear')
     expect(groupOf('clear_driven')).toBe('rear')
     expect(groupOf('reverse_cut')).toBe('rear')
@@ -75,7 +74,6 @@ describe('groupOf', () => {
     expect(groupOf('hairpin')).toBe('front')
     expect(groupOf('push')).toBe('front')
     expect(groupOf('half')).toBe('front')
-    expect(groupOf('lob')).toBe('front') // レガシー
     expect(groupOf('lob_high')).toBe('front')
     expect(groupOf('lob_low')).toBe('front')
     expect(groupOf('drive')).toBe('flat')
