@@ -62,6 +62,35 @@ const flowMock = {
 }
 vi.mock('~/composables/useRallyFlowView', () => ({ useRallyFlowView: () => flowMock }))
 
+const shotMock = {
+  pending: ref(false),
+  loaded: ref(false),
+  error: ref<string | null>(null),
+  execute: vi.fn(),
+  subject: ref({ kind: 'all' as const }),
+  setNumber: ref<number | null>(null),
+  zoneHand: ref(null),
+  playerFilter: ref<string | null>(null),
+  typeFilter: ref(null),
+  handFilter: ref(null),
+  hitterIds: ref<string[]>([]),
+  presentTypes: ref<string[]>([]),
+  knownSetNumbers: ref<number[]>([]),
+  typeRows: ref([]),
+  filteredTypeRows: ref([]),
+  serveRows: ref([]),
+  zoneRows: ref([]),
+  endingRows: ref([]),
+  endingEntries: ref([]),
+  decisiveRanking: ref([]),
+  landZonesWon: ref({ cells: [], outFallback: { side: 0, back: 0, both: 0 }, unlocated: 0 }),
+  landZonesLost: ref({ cells: [], outFallback: { side: 0, back: 0, both: 0 }, unlocated: 0 }),
+  heatmapCells: ref([]),
+  heatmapTotal: ref(0),
+  isEmpty: ref(false)
+}
+vi.mock('~/composables/useShotStatsView', () => ({ useShotStatsView: () => shotMock }))
+
 // eslint-disable-next-line import/first
 import GroupStats from '~/pages/groups/[id]/stats.vue'
 
@@ -79,7 +108,15 @@ const stubs = {
   StatsAnnotationBadge: { props: ['summary'], template: '<div data-testid="annotation-badge" />' },
   StatsPhaseRateChart: { props: ['entries'], template: '<div data-testid="phase-chart" />' },
   StatsTempoChart: { props: ['samples', 'excluded', 'measure'], template: '<div data-testid="tempo-chart" />' },
-  StatsSetFlowChart: { props: ['points'], emits: ['select'], template: '<div data-testid="flow-chart" />' }
+  StatsSetFlowChart: { props: ['points'], emits: ['select'], template: '<div data-testid="flow-chart" />' },
+  StatsShotFilterBar: { props: ['hitterIds', 'presentTypes', 'setNumbers', 'playerFilter', 'typeFilter', 'handFilter', 'setNumber', 'nameOf'], template: '<div data-testid="shot-filter" />' },
+  StatsEndingsChart: { props: ['entries', 'ranking'], template: '<div data-testid="endings-chart" />' },
+  StatsEndingsCourtMap: { props: ['won', 'lost'], template: '<div data-testid="endings-map" />' },
+  StatsServeTypeChart: { props: ['rows', 'nameOf'], template: '<div data-testid="serve-chart" />' },
+  StatsShotMixChart: { props: ['rows'], template: '<div data-testid="mix-chart" />' },
+  StatsShotMixScatter: { props: ['rows'], template: '<div data-testid="mix-scatter" />' },
+  StatsHandChart: { props: ['rows'], template: '<div data-testid="hand-chart" />' },
+  StatsShotHeatmap: { props: ['cells', 'total', 'pointedTotal'], template: '<div data-testid="heatmap" />' }
 }
 
 function mountPage() {

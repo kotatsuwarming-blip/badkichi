@@ -56,6 +56,16 @@ export interface ShotZoneRow {
   shots: number
 }
 
+/** stats_serve_types の行（grain: サーバー × 1打目種別 × ポジション） */
+export interface ServeTypeStatRow {
+  server_player_id: string
+  /** 1 打目の注釈（null = 未注釈） */
+  shot_type: ShotType | null
+  server_position: 'right' | 'left'
+  total: number
+  won: number
+}
+
 /** stats_rally_endings の行（確定ラリー 1 行） */
 export interface RallyEndingRow {
   rally_id: string
@@ -125,6 +135,27 @@ export interface EndingBreakdown {
   totalRallies: number
   /** end_reason 注釈済みのラリー数 */
   annotatedRallies: number
+}
+
+/** A: 対象（選手/ペア）ごとの決着内訳（entity=all は選手ごとに 1 エントリ） */
+export interface EndingEntry {
+  subjectId: string
+  label: string
+  breakdown: EndingBreakdown
+}
+
+/** A: 決定打球種ランキングの 1 行（REQ-006。null 種別は「未注釈」, REQ-108） */
+export interface DecisiveRankRow {
+  shotType: ShotType | null
+  count: number
+}
+
+/** A: 落下点ゾーン集計の結果（座標 null は out_direction フォールバック, REQ-103） */
+export interface LandZoneResult {
+  cells: ZoneCell[]
+  outFallback: { side: number, back: number, both: number }
+  /** 座標も out_direction も無い決着数 */
+  unlocated: number
 }
 
 /** ゾーンセル（SVG コート図の描画単位） */

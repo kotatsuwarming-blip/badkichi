@@ -81,19 +81,19 @@
 
 ## Phase 3: ショット分析タブ = 探針 5 枚（32h）
 
-- [ ] TASK-0009: `useShotStatsView` composable + フィルタ 4 軸 - 8h (TDD) 🔵
+- [x] TASK-0009: `useShotStatsView` composable + フィルタ 4 軸 - 8h (TDD) 🔵
   *4 RPC 並列取得。選手・球種 = クライアント絞り込み / セット・hand = パラメータ再取得
   （ヒアリング2026-08-04 了承の grain 設計）。全チャート連動（REQ-004）*
-- [ ] TASK-0010: A 決着分析（`endings.ts` + `mirror.ts` + `StatsCourtZones.vue` +
+- [x] TASK-0010: A 決着分析（`endings.ts` + `mirror.ts` + `StatsCourtZones.vue` +
   `StatsEndingsChart.vue` + `StatsEndingsCourtMap.vue`） - 10h (TDD) 🔵
   *決着 4 分類 + unknown 別掲（REQ-005, EDGE-105）・決定打ランキング「未注釈」区別
   （REQ-006/108）・SVG コート図 3×3 落下点（REQ-007）・ミラー/クランプ（REQ-105, EDGE-101）・
   out_direction フォールバック（REQ-103）。TC-005/006/007 系*
-- [ ] TASK-0011: C サーブ種別 + G フォア/バック（`StatsServeTypeChart.vue` +
+- [x] TASK-0011: C サーブ種別 + G フォア/バック（`StatsServeTypeChart.vue` +
   `StatsHandChart.vue`） - 6h (TDD) 🔵
   *C: serve 3 種 × 得点率・右/左絞り込み（REQ-008, StatsPositionToggle 再利用）。
   G: 球種別 F/B 比率 + F/B 別成果・hand null 除外の母数反映（REQ-012/102）。TC-008/012 系*
-- [ ] TASK-0012: D 球種構成比・成果 + F 配球ヒートマップ（`StatsShotMixChart.vue` +
+- [x] TASK-0012: D 球種構成比・成果 + F 配球ヒートマップ（`StatsShotMixChart.vue` +
   `StatsShotOutcomeChart.vue` + `StatsShotMixScatter.vue` + `StatsShotHeatmap.vue`） - 8h (TDD) 🔵
   *D: 構成比・ミス率/決定率（分母 = 総打数）・使用割合×得点率散布図・相手選手も選択可
   （REQ-009/010, TC-009/010 系）。F: StatsCourtZones 再利用のヒートマップ + 選手・球種フィルタ

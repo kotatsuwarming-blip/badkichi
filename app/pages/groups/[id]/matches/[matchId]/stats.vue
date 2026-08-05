@@ -18,6 +18,7 @@ import { useMatchForRecording } from '~/composables/useMatchForRecording'
 import { useStatsView } from '~/composables/useStatsView'
 import { useAnnotationCoverage } from '~/composables/useAnnotationCoverage'
 import { useRallyFlowView } from '~/composables/useRallyFlowView'
+import { useShotStatsView } from '~/composables/useShotStatsView'
 import { useAnalytics } from '~/composables/useAnalytics'
 import { buildWorm } from '~/utils/shot-stats/momentum'
 import { subjectTeamOf } from '~/utils/shot-stats/flow'
@@ -45,10 +46,16 @@ const flow = useRallyFlowView({ kind: 'match', matchId, groupId }, {
   entity: () => view.globalFilter.value.entity,
   nameOf: view.nameOf
 })
+const shot = useShotStatsView({ kind: 'match', matchId, groupId }, {
+  includedMatchIds: view.includedMatchIds,
+  entity: () => view.globalFilter.value.entity,
+  nameOf: view.nameOf
+})
 watch(activeTab, (tab) => {
   // タブ初回アクティブ時に遅延取得（NFR-001）
   if (tab !== 'overview' && !coverage.loaded.value) coverage.execute()
   if (tab === 'rallyflow' && !flow.loaded.value) flow.execute()
+  if (tab === 'shots' && !shot.loaded.value) shot.execute()
 })
 
 // L: セット選択とワーム系列（視点 = 選択中の選手/ペアのチーム。全体時はチーム A, REQ-017）
@@ -193,8 +200,53 @@ function backToPair(): void {
             v-if="coverage.loaded.value"
             :summary="coverage.summary.value"
           />
-          <p class="placeholder">
-            {{ $t('shotStats.comingSoon') }}
+          <template v-if="shot.loaded.value && !shot.isEmpty.value">
+            <StatsShotFilterBar
+              :hitter-ids="shot.hitterIds.value"
+              :present-types="shot.presentTypes.value"
+              :set-numbers="shot.knownSetNumbers.value"
+              :player-filter="shot.playerFilter.value"
+              :type-filter="shot.typeFilter.value"
+              :hand-filter="shot.handFilter.value"
+              :set-number="shot.setNumber.value"
+              :name-of="view.nameOf"
+              @update:player-filter="shot.playerFilter.value = $event"
+              @update:type-filter="shot.typeFilter.value = $event"
+              @update:hand-filter="shot.handFilter.value = $event; shot.zoneHand.value = $event"
+              @update:set-number="shot.setNumber.value = $event"
+            />
+            <StatsEndingsChart
+              :entries="shot.endingEntries.value"
+              :ranking="shot.decisiveRanking.value"
+            />
+            <StatsEndingsCourtMap
+              :won="shot.landZonesWon.value"
+              :lost="shot.landZonesLost.value"
+            />
+            <StatsServeTypeChart
+              :rows="shot.serveRows.value"
+              :name-of="view.nameOf"
+            />
+            <StatsShotMixChart :rows="shot.filteredTypeRows.value" />
+            <StatsShotMixScatter :rows="shot.filteredTypeRows.value" />
+            <StatsHandChart :rows="shot.filteredTypeRows.value" />
+            <StatsShotHeatmap
+              :cells="shot.heatmapCells.value"
+              :total="shot.heatmapTotal.value"
+              :pointed-total="coverage.summary.value.shots_pointed"
+            />
+          </template>
+          <p
+            v-else-if="shot.pending.value"
+            class="placeholder"
+          >
+            {{ $t('shotStats.loading') }}
+          </p>
+          <p
+            v-else
+            class="placeholder"
+          >
+            {{ $t('shotStats.shotsEmpty') }}
           </p>
         </div>
         <div

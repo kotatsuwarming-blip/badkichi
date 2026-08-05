@@ -511,6 +511,48 @@
       "maxRuns": "Longest streak: won {won} / lost {lost}",
       "empty": "No confirmed rallies"
     },
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "denominator": "annotated {n} / total {total}",
+    "shotsEmpty": "No annotation data yet (annotate matches at /annotate)",
+    "filter": {
+      "allPlayers": "All players",
+      "allTypes": "All shot types",
+      "allHands": "Both hands",
+      "allSets": "All sets"
+    },
+    "endings": {
+      "title": "Point endings (won / lost breakdown)",
+      "ace": "Won by ace",
+      "opponentError": "Won by opponent error",
+      "ownError": "Lost by own error",
+      "opponentAce": "Lost to ace",
+      "unknown": "Unknown",
+      "unannotated": "Unannotated",
+      "rankingTitle": "Decisive shot ranking",
+      "landTitle": "Landing spots",
+      "landWon": "Won",
+      "landLost": "Lost",
+      "outNote": "Out: side {side} / back {back} / both {both}, unlocated {unlocated}"
+    },
+    "serve": {
+      "title": "Serve type × win rate"
+    },
+    "mix": {
+      "title": "Shot mix and outcomes",
+      "share": "Usage share",
+      "decisiveRate": "Decisive rate",
+      "missRate": "Error rate",
+      "scatterTitle": "Usage share × win rate",
+      "rallyRate": "Win rate"
+    },
+    "hand": {
+      "title": "Forehand / backhand",
+      "count": "Shots",
+      "outcome": "decisive {decisive} / error {miss}"
+    },
+    "heatmap": {
+      "title": "Shot position heatmap",
+      "hint": "Player perspective (own side at bottom). Out-of-court clamped to edge"
+    }
   }
 }

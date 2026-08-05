@@ -341,12 +341,29 @@ describe.skipIf(skip)('shot-stats 集計 RPC 統合テスト', () => {
     expect(rows[3]!.last3_avg_interval_ms).toBeNull()
   })
 
+  // ---- stats_serve_types ----
+
+  it('REQ-008: サーブ種別 × ポジション grain で母数・勝数を返す', async () => {
+    const { data, error } = await userAClient.rpc('stats_serve_types', { p_match_id: matchId })
+    expect(error).toBeNull()
+    const rows = data as Array<Record<string, number | string | null>>
+    // p0 serve_long: R1 (A勝) + R3 (B勝) → total 2 / won 1。全ラリー right ポジション
+    const long = rows.find(r => r.server_player_id === p[0] && r.shot_type === 'serve_long')!
+    expect(long.server_position).toBe('right')
+    expect(Number(long.total)).toBe(2)
+    expect(Number(long.won)).toBe(1)
+    // p0 serve_short: R2 (A勝) + R6 (service_fault, B勝) → total 2 / won 1
+    const short = rows.find(r => r.server_player_id === p[0] && r.shot_type === 'serve_short')!
+    expect(Number(short.total)).toBe(2)
+    expect(Number(short.won)).toBe(1)
+  })
+
   // ---- RLS / invalid_scope ----
 
   it('NFR-101: 他 Group の userB は 5 RPC いずれも 0 件', async () => {
     for (const fn of [
       'stats_annotation_coverage', 'stats_shot_types', 'stats_shot_zones',
-      'stats_rally_endings', 'stats_rally_tempo'
+      'stats_rally_endings', 'stats_rally_tempo', 'stats_serve_types'
     ]) {
       const { data, error } = await userBClient.rpc(fn, { p_match_id: matchId })
       expect(error, fn).toBeNull()

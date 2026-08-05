@@ -72,6 +72,36 @@ const flowMock = {
 }
 vi.mock('~/composables/useRallyFlowView', () => ({ useRallyFlowView: () => flowMock }))
 
+const shotExecute = vi.fn()
+const shotMock = {
+  pending: ref(false),
+  loaded: ref(false),
+  error: ref<string | null>(null),
+  execute: shotExecute,
+  subject: ref({ kind: 'all' as const }),
+  setNumber: ref<number | null>(null),
+  zoneHand: ref(null),
+  playerFilter: ref<string | null>(null),
+  typeFilter: ref(null),
+  handFilter: ref(null),
+  hitterIds: ref<string[]>([]),
+  presentTypes: ref<string[]>([]),
+  knownSetNumbers: ref<number[]>([]),
+  typeRows: ref([]),
+  filteredTypeRows: ref([]),
+  serveRows: ref([]),
+  zoneRows: ref([]),
+  endingRows: ref([]),
+  endingEntries: ref([]),
+  decisiveRanking: ref([]),
+  landZonesWon: ref({ cells: [], outFallback: { side: 0, back: 0, both: 0 }, unlocated: 0 }),
+  landZonesLost: ref({ cells: [], outFallback: { side: 0, back: 0, both: 0 }, unlocated: 0 }),
+  heatmapCells: ref([]),
+  heatmapTotal: ref(0),
+  isEmpty: ref(false)
+}
+vi.mock('~/composables/useShotStatsView', () => ({ useShotStatsView: () => shotMock }))
+
 // eslint-disable-next-line import/first
 import MatchStats from '~/pages/groups/[id]/matches/[matchId]/stats.vue'
 
@@ -91,7 +121,15 @@ const stubs = {
   StatsAnnotationBadge: { props: ['summary'], template: '<div data-testid="annotation-badge" />' },
   StatsPhaseRateChart: { props: ['entries'], template: '<div data-testid="phase-chart" />' },
   StatsTempoChart: { props: ['samples', 'excluded', 'measure'], template: '<div data-testid="tempo-chart" />' },
-  StatsSetFlowChart: FlowChartStub
+  StatsSetFlowChart: FlowChartStub,
+  StatsShotFilterBar: { props: ['hitterIds', 'presentTypes', 'setNumbers', 'playerFilter', 'typeFilter', 'handFilter', 'setNumber', 'nameOf'], template: '<div data-testid="shot-filter" />' },
+  StatsEndingsChart: { props: ['entries', 'ranking'], template: '<div data-testid="endings-chart" />' },
+  StatsEndingsCourtMap: { props: ['won', 'lost'], template: '<div data-testid="endings-map" />' },
+  StatsServeTypeChart: { props: ['rows', 'nameOf'], template: '<div data-testid="serve-chart" />' },
+  StatsShotMixChart: { props: ['rows'], template: '<div data-testid="mix-chart" />' },
+  StatsShotMixScatter: { props: ['rows'], template: '<div data-testid="mix-scatter" />' },
+  StatsHandChart: { props: ['rows'], template: '<div data-testid="hand-chart" />' },
+  StatsShotHeatmap: { props: ['cells', 'total', 'pointedTotal'], template: '<div data-testid="heatmap" />' }
 }
 
 function mountPage() {
@@ -181,5 +219,18 @@ describe('試合単位 stats ページ', () => {
     expect(paneSeekSpy).toHaveBeenCalledWith(3000)
     flowMock.loaded.value = false
     flowMock.setNumbers.value = []
+  })
+
+  it('タブ: ショット分析で探針5枚 + フィルタバーを表示 (TASK-0009〜0012)', async () => {
+    shotExecute.mockClear()
+    shotMock.loaded.value = true
+    const w = mountPage()
+    await w.find('[data-testid="tab-shots"]').trigger('click')
+    for (const tid of ['shot-filter', 'endings-chart', 'endings-map', 'serve-chart', 'mix-chart', 'mix-scatter', 'hand-chart', 'heatmap']) {
+      expect(w.find(`[data-testid="${tid}"]`).exists(), tid).toBe(true)
+    }
+    // loaded=true のため execute は呼ばれない
+    expect(shotExecute).not.toHaveBeenCalled()
+    shotMock.loaded.value = false
   })
 })
