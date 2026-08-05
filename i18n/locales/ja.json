@@ -511,6 +511,48 @@
       "maxRuns": "最大連取 {won} / 最大連失 {lost}",
       "empty": "確定ラリーがありません"
     },
-    "loading": "読み込み中…"
+    "loading": "読み込み中…",
+    "denominator": "注釈済み {n} / 全体 {total}",
+    "shotsEmpty": "注釈データがありません（/annotate で注釈を追加できます）",
+    "filter": {
+      "allPlayers": "全選手",
+      "allTypes": "全球種",
+      "allHands": "F/B 両方",
+      "allSets": "全セット"
+    },
+    "endings": {
+      "title": "決着分析（得点・失点の内訳）",
+      "ace": "エース獲得",
+      "opponentError": "相手ミス獲得",
+      "ownError": "自ミス失点",
+      "opponentAce": "被エース失点",
+      "unknown": "不明",
+      "unannotated": "未注釈",
+      "rankingTitle": "決定打ランキング",
+      "landTitle": "決着落下点",
+      "landWon": "得点",
+      "landLost": "失点",
+      "outNote": "コート外: サイド {side} / バック {back} / 両方 {both}・位置不明 {unlocated}"
+    },
+    "serve": {
+      "title": "サーブ種別 × 得点率"
+    },
+    "mix": {
+      "title": "球種構成比と成果",
+      "share": "使用割合",
+      "decisiveRate": "決定率",
+      "missRate": "ミス率",
+      "scatterTitle": "使用割合 × 得点率",
+      "rallyRate": "得点率"
+    },
+    "hand": {
+      "title": "フォア/バック分析",
+      "count": "本数",
+      "outcome": "決定率 {decisive} / ミス率 {miss}"
+    },
+    "heatmap": {
+      "title": "配球ヒートマップ（打点）",
+      "hint": "選手視点（下が自陣）。範囲外はコート際に算入"
+    }
   }
 }
