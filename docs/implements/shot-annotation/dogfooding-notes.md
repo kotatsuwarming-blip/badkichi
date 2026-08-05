@@ -5,8 +5,12 @@
 
 ## 現在の状態
 
-- ブランチ: `feat/shot-annotation`（PR #50 オープン、mainは未取込。PR #49 tsumikiコマンドもオープン）
-- テスト: 422件 green / lint / typecheck clean
+- **PR #50 は 2026-08-05 に main へマージ済み**（migrate-prd で本番 DB へ migration 8本適用済み。
+  PR #49 tsumiki もマージ済み）。`feat/shot-annotation` ブランチは役目を終えた。
+  以後の変更は main から目的別ブランチを切る
+- テスト: 447件 green / lint / typecheck clean
+- ドッグフーディングの実データは「地区センター練習 (通し計測用)」に全パス入力済み
+  （決まり方3分/種別25分/全ショット20分）。オリジナル (0433d0f5) はライブ記録の原本として残置
 - ドッグフーディング: YouTube動画「地区センター練習」でクイック→種別→打点を実施中。
   再アノテーション用の複製は `scripts/duplicate-match-for-annotation.sql`（Supabase Dashboard で実行）
 - オリジナル (0433d0f5) のライブ記録はほぼ無傷 (37ラリー222ショット時刻あり)。ただし
