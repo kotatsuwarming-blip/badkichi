@@ -37,7 +37,6 @@ const GROUP_OF: Record<ShotType, ShotTypeGroup> = {
   serve_short: 'serve',
   serve_long: 'serve',
   serve_drive: 'serve',
-  clear: 'rear', // レガシー (2026-08-05 分割前の既存データ)
   clear_high: 'rear',
   clear_driven: 'rear',
   smash: 'rear',
@@ -45,7 +44,6 @@ const GROUP_OF: Record<ShotType, ShotTypeGroup> = {
   reverse_cut: 'rear',
   drop: 'rear',
   hairpin: 'front',
-  lob: 'front', // レガシー (2026-08-05 分割前の既存データ)
   lob_high: 'front',
   lob_low: 'front',
   push: 'front',

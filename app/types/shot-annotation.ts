@@ -13,11 +13,11 @@ import type { Team, PlayerId } from '~/utils/rule-engine/types'
 // ========================================
 
 /**
- * ショット種別 (ADR-017 §6 改訂)。
+ * ショット種別 18種 (ADR-017 §6 改訂)。
  * 2026-08-03: unknown (判定不能) を追加。
- * 2026-08-05: lob → lob_high / lob_low、clear → clear_high / clear_driven に分割
- *             (ドッグフーディング FB)。'lob' / 'clear' は旧データ表示用のレガシー値
- *             (パレットには出さない)。
+ * 2026-08-05: lob → lob_high / lob_low、clear → clear_high / clear_driven に分割し、
+ *             既存データの振り分け完了後にレガシー値 'lob'/'clear' をコードから撤去
+ *             (DB CHECK は旧ドッグフーディング試合に残る行のため許容を継続)。
  */
 export const SHOT_TYPES = [
   'serve_short', 'serve_long', 'serve_drive',
@@ -25,8 +25,7 @@ export const SHOT_TYPES = [
   'hairpin', 'lob_high', 'lob_low', 'push', 'half',
   'drive',
   'receive_long', 'receive_drive', 'receive_short',
-  'unknown',
-  'lob', 'clear' // レガシー (分割前の既存データ)
+  'unknown'
 ] as const
 
 export type ShotType = typeof SHOT_TYPES[number]
