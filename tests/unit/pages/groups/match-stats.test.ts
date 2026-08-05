@@ -55,12 +55,30 @@ const coverageMock = {
 }
 vi.mock('~/composables/useAnnotationCoverage', () => ({ useAnnotationCoverage: () => coverageMock }))
 
+const flowExecute = vi.fn()
+const flowMock = {
+  rows: ref([]),
+  pending: ref(false),
+  loaded: ref(false),
+  error: ref<string | null>(null),
+  execute: flowExecute,
+  subject: ref({ kind: 'all' as const }),
+  phaseEntries: ref([]),
+  measure: ref('avg'),
+  tempo: ref({ samples: [], excluded: 0 }),
+  setNumbers: ref<number[]>([]),
+  ralliesOfSet: () => [],
+  isEmpty: ref(false)
+}
+vi.mock('~/composables/useRallyFlowView', () => ({ useRallyFlowView: () => flowMock }))
+
 // eslint-disable-next-line import/first
 import MatchStats from '~/pages/groups/[id]/matches/[matchId]/stats.vue'
 
 const paneSeekSpy = vi.fn()
 const RateChartStub = { props: ['entries', 'mode'], emits: ['select'], template: '<div data-testid="rate-chart" />' }
 const RallyTableStub = { props: ['rows', 'names'], emits: ['select'], template: '<div data-testid="table" />' }
+const FlowChartStub = { props: ['points'], emits: ['select'], template: '<div data-testid="flow-chart" />' }
 const stubs = {
   UButton: { props: ['to'], template: '<button @click="$emit(\'click\')"><slot /></button>' },
   StatsGlobalFilterBar: { props: ['players', 'matchesMeta', 'globalFilter', 'includedMatchIds', 'showPeriod'], template: '<div data-testid="filter-bar" />' },
@@ -70,7 +88,10 @@ const stubs = {
   StatsRallyLengthChart: { props: ['bins', 'selectedKeys'], template: '<div />' },
   StatsRallyTable: RallyTableStub,
   StatsVideoPane: { props: ['source', 'rallyMarkersMs'], methods: { seekToMs(ms: number) { paneSeekSpy(ms) } }, template: '<div data-testid="pane" />' },
-  StatsAnnotationBadge: { props: ['summary'], template: '<div data-testid="annotation-badge" />' }
+  StatsAnnotationBadge: { props: ['summary'], template: '<div data-testid="annotation-badge" />' },
+  StatsPhaseRateChart: { props: ['entries'], template: '<div data-testid="phase-chart" />' },
+  StatsTempoChart: { props: ['samples', 'excluded', 'measure'], template: '<div data-testid="tempo-chart" />' },
+  StatsSetFlowChart: FlowChartStub
 }
 
 function mountPage() {
@@ -139,5 +160,26 @@ describe('試合単位 stats ページ', () => {
     expect(w.find('[data-testid="table"]').exists()).toBe(true)
     // 注釈率はタブ初回アクティブ時に遅延取得
     expect(coverageExecute).toHaveBeenCalledTimes(1)
+  })
+
+  it('タブ: ラリー展開で J/K/L を表示し、L タップで動画ジャンプ (TASK-0005〜0008 / REQ-019)', async () => {
+    paneSeekSpy.mockClear()
+    flowExecute.mockClear()
+    flowMock.loaded.value = true
+    flowMock.setNumbers.value = [1, 2]
+    const w = mountPage()
+    await w.find('[data-testid="tab-rallyflow"]').trigger('click')
+    expect(w.find('[data-testid="phase-chart"]').exists()).toBe(true)
+    expect(w.find('[data-testid="tempo-chart"]').exists()).toBe(true)
+    expect(w.find('[data-testid="flow-chart"]').exists()).toBe(true)
+    expect(w.find('[data-testid="set-2"]').exists()).toBe(true)
+    // L の点タップ → 2 秒前から再生
+    w.findComponent(FlowChartStub).vm.$emit('select', {
+      rallyId: 'r1', rallyNumber: 1, diff: 1, scoreA: 0, scoreB: 0, videoStartMs: 5000
+    })
+    await w.vm.$nextTick()
+    expect(paneSeekSpy).toHaveBeenCalledWith(3000)
+    flowMock.loaded.value = false
+    flowMock.setNumbers.value = []
   })
 })

@@ -65,16 +65,16 @@
 
 ## Phase 2: ラリー展開タブ = ライブ系先行（26h）
 
-- [ ] TASK-0005: `useRallyFlowView` composable - 6h (TDD) 🔵
+- [x] TASK-0005: `useRallyFlowView` composable - 6h (TDD) 🔵
   *stats_rallies（既存）+ stats_rally_tempo + coverage を並列取得。スコープ・フィルタは
   既存 StatsGlobalFilter を共有（dataflow.md）*
-- [ ] TASK-0006: J 局面別得点率（`phase.ts` + `StatsPhaseRateChart.vue`） - 6h (TDD) 🔵
+- [x] TASK-0006: J 局面別得点率（`phase.ts` + `StatsPhaseRateChart.vue`） - 6h (TDD) 🔵
   *序盤 0-7/中盤 8-14/終盤 15-（リード側基準）+ 接戦 = 終盤 2 点差以内・延長含む
   （REQ-013/014, TC-013 系）。選手/ペア別・母数併記*
-- [ ] TASK-0007: K 展開スピード（`tempo.ts` + `StatsTempoChart.vue`） - 6h (TDD) 🔵
+- [x] TASK-0007: K 展開スピード（`tempo.ts` + `StatsTempoChart.vue`） - 6h (TDD) 🔵
   *全ショット時刻ありのみ適格（REQ-106, TC-106 系）。連続値分布・得点/失点重ね・
   avg⇄last3 トグル（REQ-015/016）・近似注記（REQ-107）・除外数併記*
-- [ ] TASK-0008: L セット推移（`momentum.ts` + `StatsSetFlowChart.vue`） - 8h (TDD) 🔵
+- [x] TASK-0008: L セット推移（`momentum.ts` + `StatsSetFlowChart.vue`） - 8h (TDD) 🔵
   *階段折れ線 + 3 連続以上のラン帯 + 最大連取/連失注記 + 11 点目印（REQ-017/018,
   TC-017/018 系）。タップ → スコア表示 + 動画ジャンプ + ラリー一覧連動（REQ-019, 既定 2 秒前）。
   試合単位のみ・記録途中セット対応（REQ-203）*

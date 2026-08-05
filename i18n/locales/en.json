@@ -484,6 +484,33 @@
       "handed": "F/B",
       "timed": "Timing"
     },
-    "comingSoon": "Charts for this tab are coming soon"
+    "comingSoon": "Charts for this tab are coming soon",
+    "phase": {
+      "title": "Score rate by phase",
+      "early": "Early",
+      "mid": "Mid",
+      "late": "Late",
+      "clutch": "Clutch"
+    },
+    "tempo": {
+      "title": "Rally tempo",
+      "avg": "Average",
+      "last3": "Endgame",
+      "unitAvg": "shots/sec",
+      "unitLast3": "sec (last-3 interval)",
+      "won": "Won rallies",
+      "lost": "Lost rallies",
+      "all": "All rallies",
+      "note": "Approximate values based on tap timestamps ({n} rallies shown / {excluded} excluded)"
+    },
+    "flow": {
+      "title": "Set momentum",
+      "diff": "Point diff",
+      "interval": "11 pts",
+      "set": "Set {n}",
+      "maxRuns": "Longest streak: won {won} / lost {lost}",
+      "empty": "No confirmed rallies"
+    },
+    "loading": "Loading…"
   }
 }

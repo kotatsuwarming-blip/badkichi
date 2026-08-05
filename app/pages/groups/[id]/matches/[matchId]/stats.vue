@@ -12,10 +12,15 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { VideoSource } from '~/types/video-playback'
 import type { PairRate, PlayerRate, RallyRow, StatsRole } from '~/types/stats-dashboard'
+import type { FlowRally, WormPoint } from '~/types/shot-stats'
+import type { Team } from '~/utils/rule-engine/types'
 import { useMatchForRecording } from '~/composables/useMatchForRecording'
 import { useStatsView } from '~/composables/useStatsView'
 import { useAnnotationCoverage } from '~/composables/useAnnotationCoverage'
+import { useRallyFlowView } from '~/composables/useRallyFlowView'
 import { useAnalytics } from '~/composables/useAnalytics'
+import { buildWorm } from '~/utils/shot-stats/momentum'
+import { subjectTeamOf } from '~/utils/shot-stats/flow'
 
 const SEEK_LEAD_MS = 2000 // 再生はサーブの 2 秒前から（受け入れ2026-06-09）
 
@@ -35,10 +40,35 @@ const view = useStatsView({ kind: 'match', matchId, groupId })
 type StatsTab = 'overview' | 'shots' | 'rallyflow'
 const activeTab = ref<StatsTab>('overview')
 const coverage = useAnnotationCoverage(() => ({ p_match_id: matchId }))
-watch(activeTab, (tab) => {
-  // タブ初回アクティブ時に注釈率を遅延取得（NFR-001）
-  if (tab !== 'overview' && !coverage.loaded.value) coverage.execute()
+const flow = useRallyFlowView({ kind: 'match', matchId, groupId }, {
+  includedMatchIds: view.includedMatchIds,
+  entity: () => view.globalFilter.value.entity,
+  nameOf: view.nameOf
 })
+watch(activeTab, (tab) => {
+  // タブ初回アクティブ時に遅延取得（NFR-001）
+  if (tab !== 'overview' && !coverage.loaded.value) coverage.execute()
+  if (tab === 'rallyflow' && !flow.loaded.value) flow.execute()
+})
+
+// L: セット選択とワーム系列（視点 = 選択中の選手/ペアのチーム。全体時はチーム A, REQ-017）
+const selectedSet = ref<number | null>(null)
+function perspectiveOf(rallies: FlowRally[]): Team {
+  const subj = flow.subject.value
+  if (subj.kind === 'all' || rallies.length === 0) return 'A'
+  return subjectTeamOf(rallies[0]!, subj) ?? 'A'
+}
+const currentSet = computed(() => selectedSet.value ?? flow.setNumbers.value[0] ?? null)
+const wormPoints = computed<WormPoint[]>(() => {
+  if (currentSet.value === null) return []
+  const rallies = flow.ralliesOfSet(currentSet.value)
+  return buildWorm(rallies, perspectiveOf(rallies))
+})
+function onSelectWormPoint(point: WormPoint): void {
+  // タップ → 動画ジャンプ（既定 2 秒前, REQ-019）
+  if (point.videoStartMs === null) return
+  videoPane.value?.seekToMs(Math.max(0, point.videoStartMs - SEEK_LEAD_MS))
+}
 
 // 対象選択用の選手一覧（この試合の 4 選手）
 const players = computed(() => (match.value?.roster ?? []).map(r => ({ id: r.playerId, name: r.name })))
@@ -172,8 +202,45 @@ function backToPair(): void {
           class="tab-panel"
           data-testid="panel-rallyflow"
         >
-          <p class="placeholder">
-            {{ $t('shotStats.comingSoon') }}
+          <template v-if="flow.loaded.value && !flow.isEmpty.value">
+            <StatsPhaseRateChart :entries="flow.phaseEntries.value" />
+            <StatsTempoChart
+              :samples="flow.tempo.value.samples"
+              :excluded="flow.tempo.value.excluded"
+              :measure="flow.measure.value"
+              @update:measure="flow.measure.value = $event"
+            />
+            <div
+              v-if="flow.setNumbers.value.length > 0"
+              class="set-toggle"
+            >
+              <UButton
+                v-for="sn in flow.setNumbers.value"
+                :key="sn"
+                size="xs"
+                :variant="currentSet === sn ? 'solid' : 'ghost'"
+                :data-testid="`set-${sn}`"
+                @click="selectedSet = sn"
+              >
+                {{ $t('shotStats.flow.set', { n: sn }) }}
+              </UButton>
+            </div>
+            <StatsSetFlowChart
+              :points="wormPoints"
+              @select="onSelectWormPoint"
+            />
+          </template>
+          <p
+            v-else-if="flow.pending.value"
+            class="placeholder"
+          >
+            {{ $t('shotStats.loading') }}
+          </p>
+          <p
+            v-else
+            class="placeholder"
+          >
+            {{ $t('shotStats.flow.empty') }}
           </p>
         </div>
         <div
@@ -274,6 +341,7 @@ function backToPair(): void {
 .stats-tabs { display: flex; gap: 0.5rem; align-items: center; }
 .tab-panel { display: flex; flex-direction: column; gap: 1rem; }
 .placeholder { font-size: 0.875rem; opacity: 0.7; }
+.set-toggle { display: flex; gap: 0.25rem; align-items: center; flex-wrap: wrap; }
 .stats-header { display: flex; align-items: center; gap: 1rem; }
 .match-name { font-weight: 600; }
 .record-btn { margin-left: auto; }

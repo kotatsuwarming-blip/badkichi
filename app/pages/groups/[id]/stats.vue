@@ -13,6 +13,7 @@ import type { VideoSource } from '~/types/video-playback'
 import type { PairRate, PlayerRate, RallyRow, StatsRole } from '~/types/stats-dashboard'
 import { useStatsView } from '~/composables/useStatsView'
 import { useAnnotationCoverage } from '~/composables/useAnnotationCoverage'
+import { useRallyFlowView } from '~/composables/useRallyFlowView'
 import { usePlayers } from '~/composables/usePlayers'
 import { useAnalytics } from '~/composables/useAnalytics'
 
@@ -36,9 +37,15 @@ const coverage = useAnnotationCoverage(() => ({
   p_group_id: groupId,
   p_match_ids: view.includedMatchIds.value
 }))
+const flow = useRallyFlowView({ kind: 'group', groupId }, {
+  includedMatchIds: view.includedMatchIds,
+  entity: () => view.globalFilter.value.entity,
+  nameOf: view.nameOf
+})
 watch(activeTab, (tab) => {
-  // タブ初回アクティブ時に注釈率を遅延取得（NFR-001）
+  // タブ初回アクティブ時に遅延取得（NFR-001）
   if (tab !== 'overview' && !coverage.loaded.value) coverage.execute()
+  if (tab === 'rallyflow' && !flow.loaded.value) flow.execute()
 })
 const playerOptions = computed(() => (players.value ?? []).map(p => ({ id: p.id, name: p.name })))
 
@@ -178,8 +185,27 @@ function backToPair(): void {
           class="tab-panel"
           data-testid="panel-rallyflow"
         >
-          <p class="placeholder">
-            {{ $t('shotStats.comingSoon') }}
+          <!-- Group 横断は J/K のみ（L セット推移は試合単位限定, REQ-017） -->
+          <template v-if="flow.loaded.value && !flow.isEmpty.value">
+            <StatsPhaseRateChart :entries="flow.phaseEntries.value" />
+            <StatsTempoChart
+              :samples="flow.tempo.value.samples"
+              :excluded="flow.tempo.value.excluded"
+              :measure="flow.measure.value"
+              @update:measure="flow.measure.value = $event"
+            />
+          </template>
+          <p
+            v-else-if="flow.pending.value"
+            class="placeholder"
+          >
+            {{ $t('shotStats.loading') }}
+          </p>
+          <p
+            v-else
+            class="placeholder"
+          >
+            {{ $t('shotStats.flow.empty') }}
           </p>
         </div>
         <div

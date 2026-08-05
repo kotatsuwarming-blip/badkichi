@@ -484,6 +484,33 @@
       "handed": "F/B",
       "timed": "時刻"
     },
-    "comingSoon": "このタブのチャートは準備中です"
+    "comingSoon": "このタブのチャートは準備中です",
+    "phase": {
+      "title": "局面別得点率",
+      "early": "序盤",
+      "mid": "中盤",
+      "late": "終盤",
+      "clutch": "接戦"
+    },
+    "tempo": {
+      "title": "展開スピード",
+      "avg": "平均テンポ",
+      "last3": "終盤テンポ",
+      "unitAvg": "打/秒",
+      "unitLast3": "秒（ラスト3打の間隔）",
+      "won": "得点ラリー",
+      "lost": "失点ラリー",
+      "all": "全ラリー",
+      "note": "記録時の押下時刻ベースの近似値です（対象 {n} 本 / 対象外 {excluded} 本）"
+    },
+    "flow": {
+      "title": "セット推移",
+      "diff": "得点差",
+      "interval": "11点",
+      "set": "第{n}セット",
+      "maxRuns": "最大連取 {won} / 最大連失 {lost}",
+      "empty": "確定ラリーがありません"
+    },
+    "loading": "読み込み中…"
   }
 }
