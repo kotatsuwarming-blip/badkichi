@@ -470,5 +470,20 @@
       "rally": "Set {set} #{n}",
       "shots": "{n} shots"
     }
+  },
+  "shotStats": {
+    "tabs": {
+      "overview": "Overview",
+      "shots": "Shot analysis",
+      "rallyflow": "Rally flow"
+    },
+    "badge": {
+      "ended": "Endings",
+      "typed": "Types",
+      "pointed": "Positions",
+      "handed": "F/B",
+      "timed": "Timing"
+    },
+    "comingSoon": "Charts for this tab are coming soon"
   }
 }

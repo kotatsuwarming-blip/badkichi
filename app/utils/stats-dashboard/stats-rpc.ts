@@ -18,7 +18,10 @@ type LooseRpc = (fn: string, args: Record<string, unknown>) => Promise<RpcResult
 /** 読み取り専用 stats RPC を呼び、行配列（エラー時は throw）を返す */
 export async function callStatsRpc<T>(
   client: SupabaseClient,
-  fn: 'stats_player_rates' | 'stats_pair_rates' | 'stats_rally_length' | 'stats_rallies',
+  fn:
+    | 'stats_player_rates' | 'stats_pair_rates' | 'stats_rally_length' | 'stats_rallies'
+    | 'stats_annotation_coverage' | 'stats_shot_types' | 'stats_shot_zones'
+    | 'stats_rally_endings' | 'stats_rally_tempo',
   args: Record<string, unknown>
 ): Promise<T[]> {
   const rpc = client.rpc.bind(client) as unknown as LooseRpc

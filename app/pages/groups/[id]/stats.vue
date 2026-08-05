@@ -7,11 +7,12 @@
  *
  * 関連要件: REQ-002/004/010/012/104 + 受け入れ2026-06-09
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { VideoSource } from '~/types/video-playback'
 import type { PairRate, PlayerRate, RallyRow, StatsRole } from '~/types/stats-dashboard'
 import { useStatsView } from '~/composables/useStatsView'
+import { useAnnotationCoverage } from '~/composables/useAnnotationCoverage'
 import { usePlayers } from '~/composables/usePlayers'
 import { useAnalytics } from '~/composables/useAnalytics'
 
@@ -26,6 +27,19 @@ onMounted(() => capture('stats_viewed', { scope: 'group', group_id: groupId }))
 
 const view = useStatsView({ kind: 'group', groupId })
 const { data: players } = usePlayers()
+
+// 3 タブ（概要 / ショット分析 / ラリー展開, NFR-203・設計2026-08-04）。
+// チャート列のみ切替え、動画・テーブルはタブ横断で保持（v-show, アンマウントしない）
+type StatsTab = 'overview' | 'shots' | 'rallyflow'
+const activeTab = ref<StatsTab>('overview')
+const coverage = useAnnotationCoverage(() => ({
+  p_group_id: groupId,
+  p_match_ids: view.includedMatchIds.value
+}))
+watch(activeTab, (tab) => {
+  // タブ初回アクティブ時に注釈率を遅延取得（NFR-001）
+  if (tab !== 'overview' && !coverage.loaded.value) coverage.execute()
+})
 const playerOptions = computed(() => (players.value ?? []).map(p => ({ id: p.id, name: p.name })))
 
 const overviewMode = ref<'player' | 'pair'>('player')
@@ -112,6 +126,33 @@ function backToPair(): void {
       @toggle-match="view.toggleMatchExclusion"
     />
 
+    <nav class="stats-tabs">
+      <UButton
+        size="sm"
+        :variant="activeTab === 'overview' ? 'solid' : 'ghost'"
+        data-testid="tab-overview"
+        @click="activeTab = 'overview'"
+      >
+        {{ $t('shotStats.tabs.overview') }}
+      </UButton>
+      <UButton
+        size="sm"
+        :variant="activeTab === 'shots' ? 'solid' : 'ghost'"
+        data-testid="tab-shots"
+        @click="activeTab = 'shots'"
+      >
+        {{ $t('shotStats.tabs.shots') }}
+      </UButton>
+      <UButton
+        size="sm"
+        :variant="activeTab === 'rallyflow' ? 'solid' : 'ghost'"
+        data-testid="tab-rallyflow"
+        @click="activeTab = 'rallyflow'"
+      >
+        {{ $t('shotStats.tabs.rallyflow') }}
+      </UButton>
+    </nav>
+
     <StatsEmptyState v-if="view.isEmpty.value" />
 
     <div
@@ -119,59 +160,87 @@ function backToPair(): void {
       class="stats-grid"
     >
       <section class="charts-col">
-        <template v-if="isEntity">
-          <div class="entity-controls">
-            <StatsPositionToggle
-              :position="view.drilldown.value.position"
-              @change="view.setDrillPosition"
+        <div
+          v-show="activeTab === 'shots'"
+          class="tab-panel"
+          data-testid="panel-shots"
+        >
+          <StatsAnnotationBadge
+            v-if="coverage.loaded.value"
+            :summary="coverage.summary.value"
+          />
+          <p class="placeholder">
+            {{ $t('shotStats.comingSoon') }}
+          </p>
+        </div>
+        <div
+          v-show="activeTab === 'rallyflow'"
+          class="tab-panel"
+          data-testid="panel-rallyflow"
+        >
+          <p class="placeholder">
+            {{ $t('shotStats.comingSoon') }}
+          </p>
+        </div>
+        <div
+          v-show="activeTab === 'overview'"
+          class="tab-panel"
+          data-testid="panel-overview"
+        >
+          <template v-if="isEntity">
+            <div class="entity-controls">
+              <StatsPositionToggle
+                :position="view.drilldown.value.position"
+                @change="view.setDrillPosition"
+              />
+              <UButton
+                v-if="view.drilldown.value.memberId"
+                size="xs"
+                variant="ghost"
+                data-testid="back-to-pair"
+                @click="backToPair"
+              >
+                {{ $t('stats.backToPair') }}
+              </UButton>
+            </div>
+            <StatsRateChart
+              :entries="view.entityRates.value"
+              mode="player"
+              :selected-role="view.drilldown.value.role"
+              @select="onEntitySelect"
             />
-            <UButton
-              v-if="view.drilldown.value.memberId"
-              size="xs"
-              variant="ghost"
-              data-testid="back-to-pair"
-              @click="backToPair"
-            >
-              {{ $t('stats.backToPair') }}
-            </UButton>
-          </div>
-          <StatsRateChart
-            :entries="view.entityRates.value"
-            mode="player"
-            :selected-role="view.drilldown.value.role"
-            @select="onEntitySelect"
+          </template>
+          <template v-else>
+            <div class="mode-toggle">
+              <UButton
+                size="xs"
+                :variant="overviewMode === 'player' ? 'solid' : 'ghost'"
+                data-testid="mode-player"
+                @click="overviewMode = 'player'"
+              >
+                {{ $t('stats.mode.player') }}
+              </UButton>
+              <UButton
+                size="xs"
+                :variant="overviewMode === 'pair' ? 'solid' : 'ghost'"
+                data-testid="mode-pair"
+                @click="overviewMode = 'pair'"
+              >
+                {{ $t('stats.mode.pair') }}
+              </UButton>
+            </div>
+            <StatsRateChart
+              :entries="overviewEntries"
+              :mode="overviewMode"
+              @select="onOverviewSelect"
+            />
+          </template>
+          <StatsRallyLengthChart
+            :bins="view.rallyLengthBins.value"
+            :selected-keys="view.drilldown.value.shotBinKeys"
+            @select-bins="view.setDrillBins"
           />
-        </template>
-        <template v-else>
-          <div class="mode-toggle">
-            <UButton
-              size="xs"
-              :variant="overviewMode === 'player' ? 'solid' : 'ghost'"
-              data-testid="mode-player"
-              @click="overviewMode = 'player'"
-            >
-              {{ $t('stats.mode.player') }}
-            </UButton>
-            <UButton
-              size="xs"
-              :variant="overviewMode === 'pair' ? 'solid' : 'ghost'"
-              data-testid="mode-pair"
-              @click="overviewMode = 'pair'"
-            >
-              {{ $t('stats.mode.pair') }}
-            </UButton>
-          </div>
-          <StatsRateChart
-            :entries="overviewEntries"
-            :mode="overviewMode"
-            @select="onOverviewSelect"
-          />
-        </template>
-        <StatsRallyLengthChart
-          :bins="view.rallyLengthBins.value"
-          :selected-keys="view.drilldown.value.shotBinKeys"
-          @select-bins="view.setDrillBins"
-        />
+        </div>
       </section>
 
       <section class="video-col">
@@ -210,6 +279,9 @@ function backToPair(): void {
 
 <style scoped>
 .group-stats-page { display: flex; flex-direction: column; gap: 1rem; padding: 1rem; }
+.stats-tabs { display: flex; gap: 0.5rem; align-items: center; }
+.tab-panel { display: flex; flex-direction: column; gap: 1rem; }
+.placeholder { font-size: 0.875rem; opacity: 0.7; }
 .stats-header { display: flex; align-items: center; gap: 1rem; }
 .title { font-weight: 600; }
 .mode-toggle { display: flex; gap: 0.5rem; align-items: center; }

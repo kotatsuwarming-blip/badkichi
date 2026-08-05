@@ -470,5 +470,20 @@
       "rally": "第{set}セット #{n}",
       "shots": "{n}打"
     }
+  },
+  "shotStats": {
+    "tabs": {
+      "overview": "概要",
+      "shots": "ショット分析",
+      "rallyflow": "ラリー展開"
+    },
+    "badge": {
+      "ended": "決着",
+      "typed": "種別",
+      "pointed": "打点",
+      "handed": "F/B",
+      "timed": "時刻"
+    },
+    "comingSoon": "このタブのチャートは準備中です"
   }
 }

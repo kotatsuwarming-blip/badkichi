@@ -31,6 +31,20 @@ const view = {
 vi.mock('~/composables/useStatsView', () => ({ useStatsView: () => view }))
 vi.mock('~/composables/usePlayers', () => ({ usePlayers: () => ({ data: ref([{ id: 'p0', name: '田中' }]) }) }))
 
+const coverageExecute = vi.fn()
+const coverageMock = {
+  rows: ref([]),
+  summary: ref({
+    match_id: '', shots_total: 0, shots_typed: 0, shots_pointed: 0, shots_handed: 0,
+    shots_attributed: 0, rallies_total: 0, rallies_ended: 0, rallies_fully_timed: 0
+  }),
+  pending: ref(false),
+  loaded: ref(false),
+  error: ref<string | null>(null),
+  execute: coverageExecute
+}
+vi.mock('~/composables/useAnnotationCoverage', () => ({ useAnnotationCoverage: () => coverageMock }))
+
 // eslint-disable-next-line import/first
 import GroupStats from '~/pages/groups/[id]/stats.vue'
 
@@ -44,7 +58,8 @@ const stubs = {
   StatsPositionToggle: { props: ['position'], template: '<div data-testid="position-toggle" />' },
   StatsRallyLengthChart: { props: ['bins', 'selectedKeys'], template: '<div />' },
   StatsRallyTable: RallyTableStub,
-  StatsVideoPane: { props: ['source', 'rallyMarkersMs', 'autoSeekMs'], template: '<div data-testid="pane" />' }
+  StatsVideoPane: { props: ['source', 'rallyMarkersMs', 'autoSeekMs'], template: '<div data-testid="pane" />' },
+  StatsAnnotationBadge: { props: ['summary'], template: '<div data-testid="annotation-badge" />' }
 }
 
 function mountPage() {
@@ -71,5 +86,17 @@ describe('Group 横断 stats ページ', () => {
     const w = mountPage()
     expect(w.find('[data-testid="empty"]').exists()).toBe(true)
     view.isEmpty.value = false
+  })
+
+  it('タブ: ラリー展開へ切替で注釈率を遅延取得 (TASK-0004)', async () => {
+    coverageExecute.mockClear()
+    coverageMock.loaded.value = false
+    const w = mountPage()
+    // v-show の inline style で表示状態を判定（happy-dom では isVisible が拾えないため）
+    const hidden = (sel: string) => (w.find(sel).attributes('style') ?? '').includes('display: none')
+    expect(hidden('[data-testid="panel-rallyflow"]')).toBe(true)
+    await w.find('[data-testid="tab-rallyflow"]').trigger('click')
+    expect(hidden('[data-testid="panel-rallyflow"]')).toBe(false)
+    expect(coverageExecute).toHaveBeenCalledTimes(1)
   })
 })
