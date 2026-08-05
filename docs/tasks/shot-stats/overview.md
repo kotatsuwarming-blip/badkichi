@@ -48,17 +48,17 @@
 
 ## Phase 1: 基盤構築（24h）
 
-- [ ] TASK-0001: RPC migration（stats_annotation_coverage / stats_shot_types / stats_shot_zones /
+- [x] TASK-0001: RPC migration（stats_annotation_coverage / stats_shot_types / stats_shot_zones /
   stats_rally_endings / stats_rally_tempo + GRANT） - 4h (DIRECT) 🔵
   *database-schema.sql をそのまま `supabase/migrations/<ts>_shot_stats_read_functions.sql` へ。
   CI 経由 db:push（REQ-402）。適用後 `pnpm db:types` で生成型更新*
-- [ ] TASK-0002: RPC integration テスト - 6h (TDD) 🔵
+- [x] TASK-0002: RPC integration テスト - 6h (TDD) 🔵
   *`tests/integration/stats-dashboard/shot-stats-rpc.integration.test.ts`。RLS 隔離（TC-C-E02）・
   invalid_scope・**decisiveShotIndex / deriveOutDirection との規則突き合わせ（REQ-406 / TC-406-01）**・
   レット除外（TC-C-01）を検証*
-- [ ] TASK-0003: 型定義 `app/types/shot-stats.ts` + `callStatsRpc` fn union 拡張 - 4h (TDD) 🔵
+- [x] TASK-0003: 型定義 `app/types/shot-stats.ts` + `callStatsRpc` fn union 拡張 - 4h (TDD) 🔵
   *interfaces.ts を実装。ECharts プラグインへ Scatter/MarkLine/MarkArea 追加登録も含む*
-- [ ] TASK-0004: stats 画面 3 タブ化 + coverage バッジ - 10h (TDD) 🔵
+- [x] TASK-0004: stats 画面 3 タブ化 + coverage バッジ - 10h (TDD) 🔵
   *両 stats ページを「概要 / ショット分析 / ラリー展開」に再編（既存機能デグレなし = 既存
   unit テスト green 維持）。グローバルフィルタ・動画ペインはタブ横断（v-show 保持）。
   タブ遅延ロード骨格。`coverage.ts` 純関数 + `StatsAnnotationBadge.vue`（REQ-002/003）*
