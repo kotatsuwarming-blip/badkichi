@@ -31,11 +31,20 @@ describe('suggestShotTypes', () => {
       .toEqual(['drop', 'cut', 'reverse_cut'])
   })
 
-  it('前 × 奥 → ロブ2種 / 前 × 前 → ヘアピン', () => {
+  it('前 × 奥 → ロブ2種+プッシュ / 前 × 前 → ヘアピン (2026-08-05 校正)', () => {
     expect(suggestShotTypes({ shotNumber: 3, hitY: 0.45, destY: 0.95, prevType: null }))
-      .toEqual(['lob_high', 'lob_low'])
+      .toEqual(['lob_high', 'lob_low', 'push'])
     expect(suggestShotTypes({ shotNumber: 3, hitY: 0.45, destY: 0.6, prevType: null }))
       .toEqual(['hairpin'])
+  })
+
+  it('奥 × ミッド / ミッド × 奥 / 前 × ミッド (2026-08-05 校正)', () => {
+    expect(suggestShotTypes({ shotNumber: 3, hitY: 0.05, destY: 0.75, prevType: null }))
+      .toEqual(['smash', 'clear_driven', 'cut', 'reverse_cut', 'drive'])
+    expect(suggestShotTypes({ shotNumber: 3, hitY: 0.25, destY: 0.95, prevType: null }))
+      .toEqual(['drive', 'lob_high', 'lob_low'])
+    expect(suggestShotTypes({ shotNumber: 3, hitY: 0.45, destY: 0.75, prevType: null }))
+      .toEqual(['push', 'drive', 'half', 'lob_low'])
   })
 
   it('行き先不明 (destY null) は自打点ゾーンの広めの候補', () => {
