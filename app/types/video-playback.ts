@@ -187,6 +187,12 @@ export interface UseVideoPlayerReturn {
 export interface VideoPlayerProps {
   /** 親が useVideoPlayer(source) で生成したインスタンス 🔵 */
   player: UseVideoPlayerReturn
+  /**
+   * J/L の ±10 秒スキップを有効にするか (既定 true)。
+   * アノテーションの種別/打点モードは L がサーブ入力キーと衝突するため false を渡す
+   * (ドッグフーディング 2026-08-03)。
+   */
+  skipKeys?: boolean
 }
 
 /**
