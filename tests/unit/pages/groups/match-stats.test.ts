@@ -41,6 +41,20 @@ const view = {
 vi.mock('~/composables/useMatchForRecording', () => ({ useMatchForRecording: () => ({ data: matchData, refresh: vi.fn() }) }))
 vi.mock('~/composables/useStatsView', () => ({ useStatsView: () => view }))
 
+const coverageExecute = vi.fn()
+const coverageMock = {
+  rows: ref([]),
+  summary: ref({
+    match_id: '', shots_total: 0, shots_typed: 0, shots_pointed: 0, shots_handed: 0,
+    shots_attributed: 0, rallies_total: 0, rallies_ended: 0, rallies_fully_timed: 0
+  }),
+  pending: ref(false),
+  loaded: ref(false),
+  error: ref<string | null>(null),
+  execute: coverageExecute
+}
+vi.mock('~/composables/useAnnotationCoverage', () => ({ useAnnotationCoverage: () => coverageMock }))
+
 // eslint-disable-next-line import/first
 import MatchStats from '~/pages/groups/[id]/matches/[matchId]/stats.vue'
 
@@ -55,7 +69,8 @@ const stubs = {
   StatsPositionToggle: { props: ['position'], template: '<div data-testid="position-toggle" />' },
   StatsRallyLengthChart: { props: ['bins', 'selectedKeys'], template: '<div />' },
   StatsRallyTable: RallyTableStub,
-  StatsVideoPane: { props: ['source', 'rallyMarkersMs'], methods: { seekToMs(ms: number) { paneSeekSpy(ms) } }, template: '<div data-testid="pane" />' }
+  StatsVideoPane: { props: ['source', 'rallyMarkersMs'], methods: { seekToMs(ms: number) { paneSeekSpy(ms) } }, template: '<div data-testid="pane" />' },
+  StatsAnnotationBadge: { props: ['summary'], template: '<div data-testid="annotation-badge" />' }
 }
 
 function mountPage() {
@@ -105,5 +120,24 @@ describe('試合単位 stats ページ', () => {
     w.findComponent(RallyTableStub).vm.$emit('select', { rally_id: 'r1', video_start_timestamp_ms: 3000 })
     await w.vm.$nextTick()
     expect(paneSeekSpy).toHaveBeenCalledWith(1000) // 3000 - 2000
+  })
+
+  it('タブ: ショット分析へ切替で概要パネルが隠れ、注釈率を遅延取得 (TASK-0004)', async () => {
+    coverageExecute.mockClear()
+    coverageMock.loaded.value = false
+    const w = mountPage()
+    // v-show の inline style で表示状態を判定（happy-dom では isVisible が拾えないため）
+    const hidden = (sel: string) => (w.find(sel).attributes('style') ?? '').includes('display: none')
+    // 初期は概要タブ。他タブのパネルは v-show で非表示
+    expect(hidden('[data-testid="panel-overview"]')).toBe(false)
+    expect(hidden('[data-testid="panel-shots"]')).toBe(true)
+    await w.find('[data-testid="tab-shots"]').trigger('click')
+    expect(hidden('[data-testid="panel-shots"]')).toBe(false)
+    expect(hidden('[data-testid="panel-overview"]')).toBe(true)
+    // 動画・テーブルはタブ横断で保持（アンマウントされない）
+    expect(w.find('[data-testid="pane"]').exists()).toBe(true)
+    expect(w.find('[data-testid="table"]').exists()).toBe(true)
+    // 注釈率はタブ初回アクティブ時に遅延取得
+    expect(coverageExecute).toHaveBeenCalledTimes(1)
   })
 })
