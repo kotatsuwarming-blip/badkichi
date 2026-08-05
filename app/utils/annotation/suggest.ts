@@ -25,23 +25,23 @@ export function zoneOfY(y: number): CourtZone {
   return 'mid'
 }
 
-/** 自打点ゾーン × 行き先ゾーン (unknown = 行き先不明) → 候補種別 */
+/** 自打点ゾーン × 行き先ゾーン (unknown = 行き先不明) → 候補種別 (2026-08-05 ユーザー校正済み) */
 const ZONE_SUGGESTIONS: Record<CourtZone, Record<CourtZone | 'unknown', ShotType[]>> = {
   rear: {
     rear: ['clear_high', 'clear_driven'],
-    mid: ['smash', 'clear_driven', 'half'],
+    mid: ['smash', 'clear_driven', 'cut', 'reverse_cut', 'drive'],
     front: ['drop', 'cut', 'reverse_cut'],
     unknown: ['clear_high', 'clear_driven', 'smash', 'drop', 'cut', 'reverse_cut']
   },
   mid: {
-    rear: ['drive', 'lob_low', 'clear_driven'],
+    rear: ['drive', 'lob_high', 'lob_low'],
     mid: ['drive', 'half', 'push'],
     front: ['half', 'hairpin', 'drop'],
     unknown: ['drive', 'half', 'push']
   },
   front: {
-    rear: ['lob_high', 'lob_low'],
-    mid: ['push', 'drive'],
+    rear: ['lob_high', 'lob_low', 'push'],
+    mid: ['push', 'drive', 'half', 'lob_low'],
     front: ['hairpin'],
     unknown: ['hairpin', 'lob_high', 'lob_low', 'push']
   }
