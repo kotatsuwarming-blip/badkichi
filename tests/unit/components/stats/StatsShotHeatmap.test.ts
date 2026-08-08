@@ -92,6 +92,20 @@ describe('StatsShotHeatmap', () => {
     expect(w.find('[data-testid="extra-back"]').exists()).toBe(false)
   })
 
+  it('選択時に横のプロファイルグラフが出て、候補の 0 本も表示される (#5)', async () => {
+    const w = mountMap()
+    expect(w.find('[data-testid="zone-profile"]').exists()).toBe(false) // 未選択時は非表示
+    await w.setProps({ selected: { row: 2, col: 0 } }) // 前ゾーン
+    expect(w.find('[data-testid="zone-profile"]').exists()).toBe(true)
+    // 実打: smash 3 / hairpin 1 (候補外の smash は末尾追加)、候補の push は 0 本表示
+    expect(w.find('[data-testid="profile-hairpin"]').text()).toContain('1')
+    const push = w.find('[data-testid="profile-push"]')
+    expect(push.exists()).toBe(true)
+    expect(push.text()).toContain('0')
+    expect(push.classes()).toContain('is-zero')
+    expect(w.find('[data-testid="profile-smash"]').text()).toContain('3')
+  })
+
   it('未選択時は選択を促す文言、選択時は解除の案内', async () => {
     const w = mountMap()
     expect(w.find('[data-testid="heatmap-state"]').text()).toContain('promptSelect')
