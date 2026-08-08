@@ -473,8 +473,9 @@
   },
   "shotStats": {
     "tabs": {
-      "overview": "概要",
-      "shots": "ショット分析",
+      "serve": "サーブ周り",
+      "strengths": "強み分析",
+      "weakness": "弱点分析",
       "rallyflow": "ラリー展開"
     },
     "badge": {
@@ -484,7 +485,6 @@
       "handed": "F/B",
       "timed": "時刻"
     },
-    "comingSoon": "このタブのチャートは準備中です",
     "phase": {
       "title": "局面別得点率",
       "early": "序盤",
@@ -513,11 +513,8 @@
     },
     "loading": "読み込み中…",
     "denominator": "注釈済み {n} / 全体 {total}",
-    "shotsEmpty": "注釈データがありません（/annotate で注釈を追加できます）",
     "filter": {
       "allPlayers": "全選手",
-      "allTypes": "全球種",
-      "allHands": "F/B 両方",
       "allSets": "全セット"
     },
     "endings": {
@@ -578,6 +575,16 @@
     "combo": {
       "count": "本数",
       "rate": "得点率"
+    },
+    "weakness": {
+      "missTitle": "ミスした打点",
+      "missNote": "自分のショットがネット・アウトで終わった打点（選手視点・下が自陣）",
+      "concededTitle": "決められた落下点",
+      "teamNote": "チーム単位の集計です（ダブルスはどちらの選手が取るべきだったか判別できないため、ペア両選手で共有）",
+      "followupNote": "「崩され」の遡り分析（例: スマッシュレシーブが甘くなり最終的に決められたケースの起点特定）は集計方法を検討中です"
+    },
+    "strengths": {
+      "note": "強み分析（決定打まわり）は再考中です。当面は配球ヒートマップ（3打目以降）を表示しています"
     }
   }
 }

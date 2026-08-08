@@ -92,6 +92,7 @@ const shotMock = {
   selectOrigin: vi.fn(),
   originCells: ref([]),
   destCells: ref([]),
+  missOriginCells: ref([]),
   destExtras: ref({
     net: { count: 0, breakdown: [] }, left: { count: 0, breakdown: [] },
     right: { count: 0, breakdown: [] }, back: { count: 0, breakdown: [] }
@@ -119,7 +120,8 @@ const stubs = {
   StatsPhaseRateChart: { props: ['entries'], template: '<div data-testid="phase-chart" />' },
   StatsTempoChart: { props: ['samples', 'excluded', 'measure'], template: '<div data-testid="tempo-chart" />' },
   StatsSetFlowChart: { props: ['points'], emits: ['select'], template: '<div data-testid="flow-chart" />' },
-  StatsShotFilterBar: { props: ['hitterIds', 'presentTypes', 'setNumbers', 'playerFilter', 'typeFilter', 'handFilter', 'setNumber', 'nameOf'], template: '<div data-testid="shot-filter" />' },
+  StatsShotFilterBar: { props: ['hitterIds', 'setNumbers', 'playerFilter', 'setNumber', 'nameOf'], template: '<div data-testid="shot-filter" />' },
+  StatsWeaknessMaps: { props: ['missCells', 'lost'], template: '<div data-testid="weakness-maps" />' },
   StatsEndingsChart: { props: ['entries', 'ranking'], template: '<div data-testid="endings-chart" />' },
   StatsEndingsCourtMap: { props: ['won', 'lost'], template: '<div data-testid="endings-map" />' },
   StatsServeTypeChart: { props: ['rows', 'nameOf'], template: '<div data-testid="serve-chart" />' },
@@ -156,25 +158,23 @@ describe('Group 横断 stats ページ', () => {
     view.isEmpty.value = false
   })
 
-  it('タブ: ラリー展開へ切替で注釈率を遅延取得 (TASK-0004)', async () => {
+  it('タブ: ラリー展開は遅延取得、注釈系は初期ロード (#8)', async () => {
     coverageExecute.mockClear()
-    coverageMock.loaded.value = false
+    flowExecute.mockClear()
+    flowMock.loaded.value = false
     const w = mountPage()
-    // v-show の inline style で表示状態を判定（happy-dom では isVisible が拾えないため）
+    expect(coverageExecute).toHaveBeenCalledTimes(1) // 既定タブが注釈系のため mount 時
     const hidden = (sel: string) => (w.find(sel).attributes('style') ?? '').includes('display: none')
     expect(hidden('[data-testid="panel-rallyflow"]')).toBe(true)
     await w.find('[data-testid="tab-rallyflow"]').trigger('click')
     expect(hidden('[data-testid="panel-rallyflow"]')).toBe(false)
-    expect(coverageExecute).toHaveBeenCalledTimes(1)
+    expect(flowExecute).toHaveBeenCalledTimes(1)
   })
 
-  it('タブ: ラリー展開 (Group) は J/K のみ表示・L なし (TASK-0005〜0007)', async () => {
-    flowExecute.mockClear()
+  it('タブ: ラリー展開 (Group) は J/K + ラリー長のみ・L なし (#8)', async () => {
     flowMock.loaded.value = true
     const w = mountPage()
     await w.find('[data-testid="tab-rallyflow"]').trigger('click')
-    // loaded=true のため execute は呼ばれない（遅延取得は未取得時のみ）
-    expect(flowExecute).not.toHaveBeenCalled()
     expect(w.find('[data-testid="phase-chart"]').exists()).toBe(true)
     expect(w.find('[data-testid="tempo-chart"]').exists()).toBe(true)
     expect(w.find('[data-testid="flow-chart"]').exists()).toBe(false)
