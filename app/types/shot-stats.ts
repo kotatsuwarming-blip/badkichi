@@ -56,22 +56,44 @@ export interface ShotZoneRow {
   shots: number
 }
 
-/** stats_shot_placement の行（grain: 打者 × 球種 × 打点セル × 配球先セル） */
+/** stats_shot_placement の行（grain: 打者 × 球種 × 打点セル × 配球先） */
 export interface ShotPlacementRow {
   hit_player_id: string
   shot_type: ShotType | null
   /** 自陣半面 0=バック側 〜 zones-1=ネット側 */
   origin_row: number
   origin_col: number
-  /** 相手半面 0=ネット側 〜 zones-1=バック側 */
-  dest_row: number
-  dest_col: number
+  /** 行き先の種別: in=コート内 / net=ネット・不越 / out=アウト（2026-08-08 #4） */
+  dest_kind: 'in' | 'net' | 'out'
+  /** out のときの方向（選手視点）。角は side 優先 */
+  dest_out: 'left' | 'right' | 'back' | null
+  /** 相手半面 0=ネット側 〜 zones-1=バック側（in のみ） */
+  dest_row: number | null
+  dest_col: number | null
   shots: number
+}
+
+/** 球種内訳 */
+export interface PlacementBreakdown {
+  type: ShotType | null
+  count: number
 }
 
 /** F: 配球先セル（球種内訳つき, ヒアリング2026-08-08） */
 export interface PlacementDestCell extends ZoneCell {
-  breakdown: { type: ShotType | null, count: number }[]
+  breakdown: PlacementBreakdown[]
+}
+
+/** F: コート外の行き先（ネット / 左右アウト / バックアウト）の集計 */
+export interface PlacementExtra {
+  count: number
+  breakdown: PlacementBreakdown[]
+}
+export interface PlacementExtras {
+  net: PlacementExtra
+  left: PlacementExtra
+  right: PlacementExtra
+  back: PlacementExtra
 }
 
 /** stats_serve_types の行（grain: サーバー × 1打目種別 × ポジション） */

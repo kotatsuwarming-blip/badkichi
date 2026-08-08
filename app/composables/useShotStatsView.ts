@@ -12,12 +12,12 @@ import type { Hand, ShotType } from '~/types/shot-annotation'
 import type { StatsEntity } from '~/types/stats-dashboard'
 import type {
   PlacementDestCell, RallyEndingRow, ServeTypeStatRow, ShotPlacementRow,
-  ShotTypeStatRow, StatsSubject, ZoneCell
+  ShotTypeStatRow, StatsSubject
 } from '~/types/shot-stats'
 import type { StatsViewScope } from '~/composables/useStatsView'
 import { callStatsRpc } from '~/utils/stats-dashboard/stats-rpc'
 import { buildDecisiveRanking, buildEndingEntries, buildLandZones } from '~/utils/shot-stats/endings'
-import { buildDestCells, buildOriginCells } from '~/utils/shot-stats/placement'
+import { buildDestCells, buildDestExtras, buildOriginCells } from '~/utils/shot-stats/placement'
 
 export function useShotStatsView(
   scope: StatsViewScope,
@@ -119,14 +119,20 @@ export function useShotStatsView(
     )
   )
 
-  /** 手前（自陣）3×3: 各セルから打った本数（選択 UI + 薄いヒート表示用） */
-  const originCells = computed<ZoneCell[]>(() => buildOriginCells(filteredPlacement.value))
+  /** 手前（自陣）3×3: 各セルから打った本数 + 球種内訳（選択 UI + ホバー内訳, #4） */
+  const originCells = computed<PlacementDestCell[]>(() => buildOriginCells(filteredPlacement.value))
 
   /** 奥（相手）3×3: 配球先の本数 + 球種内訳（選択セル起点。未選択は全体合計） */
   const destCells = computed<PlacementDestCell[]>(() =>
     buildDestCells(filteredPlacement.value, selectedOrigin.value)
   )
-  const heatmapTotal = computed(() => destCells.value.reduce((s, c) => s + c.count, 0))
+  /** コート外の行き先（ネット / 左右アウト / バックアウト。寄せずに別枠表示, #4） */
+  const destExtras = computed(() => buildDestExtras(filteredPlacement.value, selectedOrigin.value))
+  const heatmapTotal = computed(() =>
+    destCells.value.reduce((s, c) => s + c.count, 0)
+    + destExtras.value.net.count + destExtras.value.left.count
+    + destExtras.value.right.count + destExtras.value.back.count
+  )
 
   function selectOrigin(cell: { row: number, col: number } | null): void {
     // 同一セル再選択で解除
@@ -158,7 +164,7 @@ export function useShotStatsView(
     // A
     endingEntries, decisiveRanking, landZonesWon, landZonesLost,
     // F
-    selectedOrigin, selectOrigin, originCells, destCells, heatmapTotal,
+    selectedOrigin, selectOrigin, originCells, destCells, destExtras, heatmapTotal,
     isEmpty
   }
 }

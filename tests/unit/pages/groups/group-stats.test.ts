@@ -89,6 +89,10 @@ const shotMock = {
   selectOrigin: vi.fn(),
   originCells: ref([]),
   destCells: ref([]),
+  destExtras: ref({
+    net: { count: 0, breakdown: [] }, left: { count: 0, breakdown: [] },
+    right: { count: 0, breakdown: [] }, back: { count: 0, breakdown: [] }
+  }),
   heatmapTotal: ref(0),
   isEmpty: ref(false)
 }
@@ -119,7 +123,7 @@ const stubs = {
   StatsShotMixChart: { props: ['rows'], template: '<div data-testid="mix-chart" />' },
   StatsShotMixScatter: { props: ['rows'], template: '<div data-testid="mix-scatter" />' },
   StatsHandChart: { props: ['rows'], template: '<div data-testid="hand-chart" />' },
-  StatsShotHeatmap: { props: ['originCells', 'destCells', 'selected', 'total', 'pointedTotal'], template: '<div data-testid="heatmap" />' }
+  StatsShotHeatmap: { props: ['originCells', 'destCells', 'destExtras', 'selected', 'total', 'pointedTotal'], template: '<div data-testid="heatmap" />' }
 }
 
 function mountPage() {
