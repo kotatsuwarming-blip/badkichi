@@ -38,9 +38,9 @@ function originY(row: number): number {
   return H - (row + 1) * cellH()
 }
 
-/** 奥セル（dest_row 0=ネット側）→ SVG y */
+/** 奥セル（dest_row 0=ネット側）→ SVG y（row 0 = ネット直上 [NET−cellH, NET]） */
 function destY(row: number): number {
-  return NET - (row + 1) * cellH() + cellH()
+  return NET - (row + 1) * cellH()
 }
 
 function originCellAt(row: number, col: number): ZoneCell | null {

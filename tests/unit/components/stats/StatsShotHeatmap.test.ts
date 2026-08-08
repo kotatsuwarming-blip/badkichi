@@ -20,7 +20,8 @@ const originCells: ZoneCell[] = [
   { row: 0, col: 2, count: 2, ratio: 0.5 }
 ]
 const destCells: PlacementDestCell[] = [
-  { row: 2, col: 1, count: 5, ratio: 1, breakdown: [{ type: 'smash', count: 3 }, { type: 'clear_high', count: 2 }] }
+  { row: 2, col: 1, count: 5, ratio: 1, breakdown: [{ type: 'smash', count: 3 }, { type: 'clear_high', count: 2 }] },
+  { row: 0, col: 0, count: 1, ratio: 0.2, breakdown: [{ type: 'hairpin', count: 1 }] }
 ]
 
 function mountMap(selected: { row: number, col: number } | null = null) {
@@ -44,6 +45,20 @@ describe('StatsShotHeatmap', () => {
     expect(dest.exists()).toBe(true)
     expect(dest.find('title').text()).toContain('annotation.shotType.smash 3')
     expect(dest.find('title').text()).toContain('annotation.shotType.clear_high 2')
+  })
+
+  it('奥セルは相手半面 (ネットより上) に描画される（回帰: ネット越え描画バグ）', () => {
+    // コート全長 H=1340 / ネット y=670 / セル高 = 1340/6 ≈ 223.33
+    const w = mountMap()
+    // dest row 0 (ネット側) = [446.67, 670] → 上半面
+    const nearNet = Number(w.find('[data-testid="dest-0-0"]').attributes('y'))
+    expect(nearNet).toBeCloseTo(670 - 1340 / 6, 1)
+    expect(nearNet + 1340 / 6).toBeLessThanOrEqual(670 + 0.01)
+    // dest row 2 (バック側) = [0, 223.33]
+    expect(Number(w.find('[data-testid="dest-2-1"]').attributes('y'))).toBeCloseTo(0, 1)
+    // 手前 (origin) は全て下半面
+    const originFront = Number(w.find('[data-testid="origin-2-0"]').attributes('y'))
+    expect(originFront).toBeCloseTo(670, 1)
   })
 
   it('手前セルのタップで selectOrigin を emit', async () => {
