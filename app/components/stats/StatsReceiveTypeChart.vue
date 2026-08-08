@@ -11,6 +11,7 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useChartTextColor } from '~/composables/useChartTextColor'
+import { countAxisScale } from '~/utils/shot-stats/chart-axis'
 import { buildCourses, buildReturnEntries, buildServeFacets, SERVE_FACETS } from '~/utils/shot-stats/receive'
 import type { RateEntry } from '~/utils/shot-stats/receive'
 import type { ServePosition } from '~/types/stats-dashboard'
@@ -56,6 +57,7 @@ function rateText(total: number, won: number): string {
 }
 
 function comboOption(entries: RateEntry[]) {
+  const scale = countAxisScale(Math.max(...entries.map(e => e.total), 0))
   return {
     tooltip: {
       trigger: 'axis',
@@ -73,15 +75,16 @@ function comboOption(entries: RateEntry[]) {
       data: entries.map(e => typeLabel(e.type)),
       axisLabel: { color: chartText.value, fontSize: 12 }
     },
+    // 両軸を同一分割数に固定してグリッド線を1組に統合（2軸で横線が倍増して見えづらいため）
     yAxis: [
       {
-        // alignTicks: 本数軸と%軸の分割数を揃え、グリッド線を1組に統合（2軸で横線が倍増して見えづらいため）
-        type: 'value', name: t('shotStats.combo.count'), min: 0, nameGap: 12, minInterval: 1, alignTicks: true,
+        type: 'value', name: t('shotStats.combo.count'), min: 0, nameGap: 12,
+        max: scale.max, interval: scale.interval,
         axisLabel: { color: chartText.value, fontSize: 13 },
         nameTextStyle: { color: chartText.value, fontSize: 12 }
       },
       {
-        type: 'value', name: '%', min: 0, max: 100, nameGap: 12, alignTicks: true,
+        type: 'value', name: '%', min: 0, max: 100, nameGap: 12, interval: 20,
         splitLine: { show: false },
         axisLabel: { color: chartText.value, fontSize: 13 },
         nameTextStyle: { color: chartText.value, fontSize: 12 }
