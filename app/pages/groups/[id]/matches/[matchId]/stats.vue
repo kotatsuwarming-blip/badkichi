@@ -227,6 +227,10 @@ function backToPair(): void {
               :rows="shot.serveRows.value"
               :name-of="view.nameOf"
             />
+            <StatsReceiveTypeChart
+              :rows="shot.receiveRows.value"
+              :name-of="view.nameOf"
+            />
             <StatsShotMixChart :rows="shot.filteredTypeRows.value" />
             <StatsShotMixScatter :rows="shot.filteredTypeRows.value" />
             <StatsHandChart :rows="shot.filteredTypeRows.value" />

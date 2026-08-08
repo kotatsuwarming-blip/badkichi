@@ -106,6 +106,16 @@ export interface ServeTypeStatRow {
   won: number
 }
 
+/** stats_receive_types の行（grain: レシーバー × 2打目種別 × サーブ位置） */
+export interface ReceiveTypeStatRow {
+  receiver_player_id: string
+  /** 2 打目の注釈（null = 未注釈）。レシーブ不発生のラリーは行自体が無い */
+  shot_type: ShotType | null
+  server_position: 'right' | 'left'
+  total: number
+  won: number
+}
+
 /** stats_rally_endings の行（確定ラリー 1 行） */
 export interface RallyEndingRow {
   rally_id: string

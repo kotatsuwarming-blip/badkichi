@@ -90,6 +90,7 @@ const shotMock = {
   typeRows: ref([]),
   filteredTypeRows: ref([]),
   serveRows: ref([]),
+  receiveRows: ref([]),
   zoneRows: ref([]),
   endingRows: ref([]),
   endingEntries: ref([]),
@@ -133,6 +134,7 @@ const stubs = {
   StatsEndingsChart: { props: ['entries', 'ranking'], template: '<div data-testid="endings-chart" />' },
   StatsEndingsCourtMap: { props: ['won', 'lost'], template: '<div data-testid="endings-map" />' },
   StatsServeTypeChart: { props: ['rows', 'nameOf'], template: '<div data-testid="serve-chart" />' },
+  StatsReceiveTypeChart: { props: ['rows', 'nameOf'], template: '<div data-testid="receive-chart" />' },
   StatsShotMixChart: { props: ['rows'], template: '<div data-testid="mix-chart" />' },
   StatsShotMixScatter: { props: ['rows'], template: '<div data-testid="mix-scatter" />' },
   StatsHandChart: { props: ['rows'], template: '<div data-testid="hand-chart" />' },
@@ -233,7 +235,7 @@ describe('試合単位 stats ページ', () => {
     shotMock.loaded.value = true
     const w = mountPage()
     await w.find('[data-testid="tab-shots"]').trigger('click')
-    for (const tid of ['shot-filter', 'endings-chart', 'endings-map', 'serve-chart', 'mix-chart', 'mix-scatter', 'hand-chart', 'heatmap']) {
+    for (const tid of ['shot-filter', 'endings-chart', 'endings-map', 'serve-chart', 'receive-chart', 'mix-chart', 'mix-scatter', 'hand-chart', 'heatmap']) {
       expect(w.find(`[data-testid="${tid}"]`).exists(), tid).toBe(true)
     }
     // loaded=true のため execute は呼ばれない

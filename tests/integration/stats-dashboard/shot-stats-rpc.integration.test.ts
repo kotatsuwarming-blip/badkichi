@@ -145,13 +145,15 @@ describe.skipIf(skip)('shot-stats 集計 RPC 統合テスト', () => {
         { hitPlayerId: p[0], shotType: 'smash', hand: 'forehand', hitX: 0.4, hitY: 0.75, videoMs: 2400 }
       ]
     })
-    // R2: net (相手ミスで A 獲得)。決定打 = 直前の s1 serve_short。s2 は時刻なし → 全時刻ありでない
+    // R2: net (相手ミスで A 獲得)。4 打構成: 決定打 = 3 打目 drive。s2 以降時刻なし → 全時刻ありでない
     await insertAnnotatedRally(serviceClient, setId, {
       rallyNumber: 2, servingTeam: 'A', server: p[0], receiver: p[2], pointWinner: 'A',
       endReason: 'net',
       shots: [
         { hitPlayerId: p[0], shotType: 'serve_short', videoMs: 1000 },
-        // 打点あり + ネット決着 → placement で dest_kind='net' になる (#4)
+        { hitPlayerId: p[2], shotType: 'receive_short', videoMs: null },
+        { hitPlayerId: p[0], shotType: 'drive', videoMs: null },
+        // 4 打目 (rn>=3) + 打点あり + ネット決着 → placement で dest_kind='net' (#4/#5)
         { hitPlayerId: p[2], shotType: 'hairpin', hitX: 0.6, hitY: 0.7, videoMs: null }
       ]
     })
@@ -195,11 +197,11 @@ describe.skipIf(skip)('shot-stats 集計 RPC 統合テスト', () => {
     // 確定ラリー = R1,R2,R3,R6 (R4 レット / R5 未確定は除外)
     expect(Number(row.rallies_total)).toBe(4)
     expect(Number(row.rallies_ended)).toBe(4)
-    expect(Number(row.shots_total)).toBe(9) // 3+2+3+1
-    expect(Number(row.shots_typed)).toBe(8) // R1 s2 のみ未注釈
+    expect(Number(row.shots_total)).toBe(11) // 3+4+3+1
+    expect(Number(row.shots_typed)).toBe(10) // R1 s2 のみ未注釈
     expect(Number(row.shots_pointed)).toBe(4) // R1 s2/s3, R2 s2, R3 s3
     expect(Number(row.shots_handed)).toBe(1) // R1 s3 forehand
-    expect(Number(row.shots_attributed)).toBe(9)
+    expect(Number(row.shots_attributed)).toBe(11)
     expect(Number(row.rallies_fully_timed)).toBe(3) // R1,R3,R6 (R2 は s2 時刻なし)
   })
 
@@ -218,9 +220,9 @@ describe.skipIf(skip)('shot-stats 集計 RPC 統合テスト', () => {
     expect(rows[0]!.last_hitter_team).toBe('A')
     expect(rows[0]!.decisive_shot_type).toBe('smash')
 
-    // R2: net → 決定打 = 1 つ前 serve_short。純関数: decisiveShotIndex(2,'net') = 0
-    expect(decisiveShotIndex(2, 'net')).toBe(0)
-    expect(rows[1]!.decisive_shot_type).toBe('serve_short')
+    // R2: net → 決定打 = 1 つ前 drive。純関数: decisiveShotIndex(4,'net') = 2
+    expect(decisiveShotIndex(4, 'net')).toBe(2)
+    expect(rows[1]!.decisive_shot_type).toBe('drive')
 
     // R3: floor × 敗者最終打 → 決定打 = 1 つ前 lob_low。純関数: decisiveShotIndex(3,'floor',false) = 1
     expect(decisiveShotIndex(3, 'floor', false)).toBe(1)
@@ -249,13 +251,16 @@ describe.skipIf(skip)('shot-stats 集計 RPC 統合テスト', () => {
     const find = (pid: string, stype: string | null) =>
       rows.find(r => r.hit_player_id === pid && r.shot_type === stype)
 
-    // p0 serve_short (R2 決定打 / R6 サーブミス): shots2, serve_first2, serve_won1, decisive1, miss1
+    // p0 serve_short (R2 / R6 サーブミス): shots2, serve_first2, serve_won1, miss1。
+    // R2 の決定打は 4 打構成化で drive になったため serve_short の decisive は 0
     const p0short = find(p[0], 'serve_short')!
     expect(Number(p0short.shots)).toBe(2)
     expect(Number(p0short.serve_first_shots)).toBe(2)
     expect(Number(p0short.serve_won)).toBe(1)
-    expect(Number(p0short.decisive_won)).toBe(1)
+    expect(Number(p0short.decisive_won)).toBe(0)
     expect(Number(p0short.miss_lost)).toBe(1)
+    // R2 の決定打 = p0 drive
+    expect(Number(find(p[0], 'drive')!.decisive_won)).toBe(1)
     expect(Number(p0short.rallies)).toBe(2)
     expect(Number(p0short.rallies_won)).toBe(1)
 
@@ -318,8 +323,8 @@ describe.skipIf(skip)('shot-stats 集計 RPC 統合テスト', () => {
     expect(Number(rows[0]!.duration_ms)).toBe(1400)
     expect(Number(rows[0]!.last3_avg_interval_ms)).toBeCloseTo(700, 3)
 
-    // R2: 2本中1本時刻なし → timed_count 1 (クライアントで対象外判定, REQ-106)
-    expect(Number(rows[1]!.shot_count)).toBe(2)
+    // R2: 4本中3本時刻なし → timed_count 1 (クライアントで対象外判定, REQ-106)
+    expect(Number(rows[1]!.shot_count)).toBe(4)
     expect(Number(rows[1]!.timed_count)).toBe(1)
 
     // R3: 全時刻あり。duration 1000ms、last3 500ms
@@ -346,11 +351,8 @@ describe.skipIf(skip)('shot-stats 集計 RPC 統合テスト', () => {
     expect(Number(smash.dest_row)).toBe(2)
     expect(Number(smash.dest_col)).toBe(1)
     expect(Number(smash.shots)).toBe(1)
-    // R1 s2 (p2, 種別未注釈, cam=B・チームB → y のみ反転): dest = 次接触 s3 → 相手ネット側 (0,1)
-    const p2row = rows.find(r => r.hit_player_id === p[2] && r.shot_type === null)!
-    expect(p2row.dest_kind).toBe('in')
-    expect(Number(p2row.dest_row)).toBe(0)
-    expect(Number(p2row.dest_col)).toBe(1)
+    // R1 s2 (p2, rn=2) はレシーブのため対象外 (#5: 3打目以降のみ)
+    expect(rows.find(r => r.hit_player_id === p[2] && r.shot_type === null)).toBeUndefined()
     // R3 s3 (p1 smash): floor × land (1.2, 0.5) 範囲外 → x 反転で (-0.2, 0.5) = 左アウト。寄せない (#4)
     const outRow = rows.find(r => r.hit_player_id === p[1] && r.shot_type === 'smash')!
     expect(outRow.dest_kind).toBe('out')
@@ -379,12 +381,29 @@ describe.skipIf(skip)('shot-stats 集計 RPC 統合テスト', () => {
     expect(Number(short.won)).toBe(1)
   })
 
+  // ---- stats_receive_types ----
+
+  it('#5: レシーブ種別 × サーブ位置 grain。レシーブ不発生 (service_fault 等) は除外', async () => {
+    const { data, error } = await userAClient.rpc('stats_receive_types', { p_match_id: matchId })
+    expect(error).toBeNull()
+    const rows = data as Array<Record<string, number | string | null>>
+    // レシーバーは全ラリー p2。R1 = 未注釈 / R2 = receive_short / R3 = lob_low。R6 (1打のみ) は除外
+    expect(rows.reduce((s, r) => s + Number(r.total), 0)).toBe(3)
+    const rShort = rows.find(r => r.shot_type === 'receive_short')!
+    expect(rShort.receiver_player_id).toBe(p[2])
+    expect(Number(rShort.total)).toBe(1)
+    expect(Number(rShort.won)).toBe(0) // R2 は A (サーブ側) の得点
+    const rLob = rows.find(r => r.shot_type === 'lob_low')!
+    expect(Number(rLob.won)).toBe(1) // R3 は B (レシーブ側) の得点
+  })
+
   // ---- RLS / invalid_scope ----
 
   it('NFR-101: 他 Group の userB は 5 RPC いずれも 0 件', async () => {
     for (const fn of [
       'stats_annotation_coverage', 'stats_shot_types', 'stats_shot_zones',
-      'stats_rally_endings', 'stats_rally_tempo', 'stats_serve_types', 'stats_shot_placement'
+      'stats_rally_endings', 'stats_rally_tempo', 'stats_serve_types', 'stats_shot_placement',
+      'stats_receive_types'
     ]) {
       const { data, error } = await userBClient.rpc(fn, { p_match_id: matchId })
       expect(error, fn).toBeNull()

@@ -551,7 +551,7 @@
       "outcome": "decisive {decisive} / error {miss}"
     },
     "heatmap": {
-      "title": "Shot placement heatmap",
+      "title": "Shot placement heatmap (3rd shot onward)",
       "promptSelect": "Tap a zone on the near court to filter placements hit from there (currently showing all)",
       "selectedCell": "Showing placements from the selected zone (tap again to clear)",
       "originTip": "{n} shots from this zone",
@@ -562,6 +562,9 @@
       "net": "Net",
       "profileTitle": "Shots from this zone",
       "middleNote": "Middle zone shows only shot types actually hit (no fixed candidate list)"
+    },
+    "receive": {
+      "title": "Receive type × win rate"
     }
   }
 }

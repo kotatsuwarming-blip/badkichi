@@ -11,7 +11,7 @@ import { computed, ref, watch, type Ref } from 'vue'
 import type { Hand, ShotType } from '~/types/shot-annotation'
 import type { StatsEntity } from '~/types/stats-dashboard'
 import type {
-  PlacementDestCell, RallyEndingRow, ServeTypeStatRow, ShotPlacementRow,
+  PlacementDestCell, RallyEndingRow, ReceiveTypeStatRow, ServeTypeStatRow, ShotPlacementRow,
   ShotTypeStatRow, StatsSubject
 } from '~/types/shot-stats'
 import type { StatsViewScope } from '~/composables/useStatsView'
@@ -39,6 +39,7 @@ export function useShotStatsView(
 
   const typeRows = ref<ShotTypeStatRow[]>([])
   const serveRows = ref<ServeTypeStatRow[]>([])
+  const receiveRows = ref<ReceiveTypeStatRow[]>([])
   const placementRows = ref<ShotPlacementRow[]>([])
   const endingRows = ref<RallyEndingRow[]>([])
   const pending = ref(false)
@@ -58,14 +59,16 @@ export function useShotStatsView(
     pending.value = true
     error.value = null
     try {
-      const [types, serves, placement, endings] = await Promise.all([
+      const [types, serves, receives, placement, endings] = await Promise.all([
         callStatsRpc<ShotTypeStatRow>(client, 'stats_shot_types', scopeArgs()),
         callStatsRpc<ServeTypeStatRow>(client, 'stats_serve_types', scopeArgs()),
+        callStatsRpc<ReceiveTypeStatRow>(client, 'stats_receive_types', scopeArgs()),
         callStatsRpc<ShotPlacementRow>(client, 'stats_shot_placement', { ...scopeArgs(), p_hand: zoneHand.value }),
         callStatsRpc<RallyEndingRow>(client, 'stats_rally_endings', scopeArgs())
       ])
       typeRows.value = types
       serveRows.value = serves
+      receiveRows.value = receives
       placementRows.value = placement
       endingRows.value = endings
       loaded.value = true
@@ -160,7 +163,7 @@ export function useShotStatsView(
     // フィルタ
     setNumber, zoneHand, playerFilter, typeFilter, handFilter, hitterIds, presentTypes, knownSetNumbers,
     // 生 grain（チャートコンポーネント側で導出）
-    typeRows, filteredTypeRows, serveRows, placementRows, endingRows,
+    typeRows, filteredTypeRows, serveRows, receiveRows, placementRows, endingRows,
     // A
     endingEntries, decisiveRanking, landZonesWon, landZonesLost,
     // F
