@@ -110,29 +110,45 @@ function breakdownText(cell: PlacementDestCell): string {
           pointer-events="none"
         >{{ cell.count }}</text>
       </g>
-      <!-- 手前（自陣）半面: 選択可能セル（薄いヒート + 選択枠） -->
+      <!-- 手前（自陣）半面: 選択可能セル（打った本数の数字 + ヒート + 選択枠） -->
       <g
         v-for="row in zones"
         :key="`or-${row}`"
       >
-        <rect
+        <g
           v-for="col in zones"
           :key="`oc-${row}-${col}`"
-          class="origin-cell"
-          :x="(W / zones) * (col - 1)"
-          :y="originY(row - 1)"
-          :width="W / zones"
-          :height="cellH()"
-          :fill="isSelected(row - 1, col - 1)
-            ? 'rgba(234, 179, 8, 0.4)'
-            : `rgba(148, 163, 184, ${0.06 + (originCellAt(row - 1, col - 1)?.ratio ?? 0) * 0.3})`"
-          :stroke="isSelected(row - 1, col - 1) ? 'rgb(234, 179, 8)' : 'transparent'"
-          stroke-width="8"
-          :data-testid="`origin-${row - 1}-${col - 1}`"
-          @click="emit('selectOrigin', { row: row - 1, col: col - 1 })"
         >
-          <title>{{ $t('shotStats.heatmap.originTip', { n: originCellAt(row - 1, col - 1)?.count ?? 0 }) }}</title>
-        </rect>
+          <rect
+            class="origin-cell"
+            :x="(W / zones) * (col - 1)"
+            :y="originY(row - 1)"
+            :width="W / zones"
+            :height="cellH()"
+            :fill="isSelected(row - 1, col - 1)
+              ? 'rgba(234, 179, 8, 0.4)'
+              : `rgba(148, 163, 184, ${0.06 + (originCellAt(row - 1, col - 1)?.ratio ?? 0) * 0.35})`"
+            :stroke="isSelected(row - 1, col - 1) ? 'rgb(234, 179, 8)' : 'transparent'"
+            stroke-width="8"
+            :data-testid="`origin-${row - 1}-${col - 1}`"
+            @click="emit('selectOrigin', { row: row - 1, col: col - 1 })"
+          >
+            <title>{{ $t('shotStats.heatmap.originTip', { n: originCellAt(row - 1, col - 1)?.count ?? 0 }) }}</title>
+          </rect>
+          <!-- そのゾーンから打った本数（0 は非表示。奥の配球数と区別するためやや控えめ） -->
+          <text
+            v-if="(originCellAt(row - 1, col - 1)?.count ?? 0) > 0"
+            :x="(W / zones) * (col - 1) + (W / zones) / 2"
+            :y="originY(row - 1) + cellH() / 2"
+            text-anchor="middle"
+            dominant-baseline="central"
+            font-size="48"
+            fill="currentColor"
+            opacity="0.7"
+            pointer-events="none"
+            :data-testid="`origin-count-${row - 1}-${col - 1}`"
+          >{{ originCellAt(row - 1, col - 1)!.count }}</text>
+        </g>
       </g>
       <!-- コートライン -->
       <g
