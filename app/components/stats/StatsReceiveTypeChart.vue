@@ -75,12 +75,14 @@ function comboOption(entries: RateEntry[]) {
     },
     yAxis: [
       {
-        type: 'value', name: t('shotStats.combo.count'), min: 0, nameGap: 12, minInterval: 1,
+        // alignTicks: 本数軸と%軸の分割数を揃え、グリッド線を1組に統合（2軸で横線が倍増して見えづらいため）
+        type: 'value', name: t('shotStats.combo.count'), min: 0, nameGap: 12, minInterval: 1, alignTicks: true,
         axisLabel: { color: chartText.value, fontSize: 13 },
         nameTextStyle: { color: chartText.value, fontSize: 12 }
       },
       {
-        type: 'value', name: '%', min: 0, max: 100, nameGap: 12,
+        type: 'value', name: '%', min: 0, max: 100, nameGap: 12, alignTicks: true,
+        splitLine: { show: false },
         axisLabel: { color: chartText.value, fontSize: 13 },
         nameTextStyle: { color: chartText.value, fontSize: 12 }
       }
