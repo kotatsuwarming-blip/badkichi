@@ -35,8 +35,12 @@ export function useRallyFlowView(
     return { p_group_id: scope.groupId, p_match_ids: opts.includedMatchIds.value }
   }
 
+  // latest-wins: 実行中でも常に最新引数で発行し、最新でない応答は捨てる
+  // （pending 中の要求破棄が古い試合選択の表示を残すバグの原因だった）
+  let seq = 0
+
   async function execute(): Promise<void> {
-    if (pending.value) return
+    const req = ++seq
     pending.value = true
     error.value = null
     try {
@@ -44,18 +48,20 @@ export function useRallyFlowView(
         callStatsRpc<RallyRow>(client, 'stats_rallies', { ...scopeArgs(), p_limit: 1000 }),
         callStatsRpc<RallyTempoRow>(client, 'stats_rally_tempo', scopeArgs())
       ])
+      if (req !== seq) return
       rows.value = mergeFlowRallies(rallies, tempo)
       loaded.value = true
     } catch (e) {
+      if (req !== seq) return
       error.value = e instanceof Error ? e.message : String(e)
     } finally {
-      pending.value = false
+      if (req === seq) pending.value = false
     }
   }
 
-  // 対象試合（期間フィルタ）変更時は取得済みなら追従再取得
+  // 対象試合（期間フィルタ）変更時は取得開始済み（初回ロード中含む）なら追従再取得
   watch(opts.includedMatchIds, () => {
-    if (loaded.value) execute()
+    if (loaded.value || pending.value) execute()
   })
 
   // StatsEntity と StatsSubject は同形（kind: all/player/pair）

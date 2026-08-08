@@ -54,8 +54,12 @@ export function useShotStatsView(
     return base
   }
 
+  // latest-wins: 実行中でも常に最新引数で発行し、最新でない応答は捨てる
+  // （pending 中の要求破棄が古い試合選択の表示を残すバグの原因だった）
+  let seq = 0
+
   async function execute(): Promise<void> {
-    if (pending.value) return
+    const req = ++seq
     pending.value = true
     error.value = null
     try {
@@ -66,6 +70,7 @@ export function useShotStatsView(
         callStatsRpc<ShotPlacementRow>(client, 'stats_shot_placement', { ...scopeArgs(), p_hand: zoneHand.value }),
         callStatsRpc<RallyEndingRow>(client, 'stats_rally_endings', scopeArgs())
       ])
+      if (req !== seq) return
       typeRows.value = types
       serveRows.value = serves
       receiveRows.value = receives
@@ -73,15 +78,16 @@ export function useShotStatsView(
       endingRows.value = endings
       loaded.value = true
     } catch (e) {
+      if (req !== seq) return
       error.value = e instanceof Error ? e.message : String(e)
     } finally {
-      pending.value = false
+      if (req === seq) pending.value = false
     }
   }
 
-  // パラメータ側フィルタ・対象試合の変更は取得済みなら追従再取得
+  // パラメータ側フィルタ・対象試合の変更は取得開始済み（初回ロード中含む）なら追従再取得
   watch([opts.includedMatchIds, setNumber, zoneHand], () => {
-    if (loaded.value) execute()
+    if (loaded.value || pending.value) execute()
   })
 
   const subject = computed<StatsSubject>(() => opts.entity() as StatsSubject)

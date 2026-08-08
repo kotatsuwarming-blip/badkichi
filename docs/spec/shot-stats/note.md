@@ -168,6 +168,15 @@
 使用割合×得点率（StatsShotMixScatter）・F/B 分析（StatsHandChart）。
 フィルタは**打者・セットの 2 軸のみ**（球種・hand の全体フィルタ撤去）。
 
+**バグ修正（2026-08-08 dev 検証）— 試合選択変更が集計に反映されない競合**:
+未注釈試合をチェックボックスで外しても決着率バッジ・グラフに計上されたままになる
+（何度か押すと直る）。原因は (1) 注釈率バッジ（useAnnotationCoverage）に
+includedMatchIds 追従の watch が無く初回 onMounted の集合で固定
+(2) useShotStatsView / useRallyFlowView の execute() が pending 中の要求を破棄 +
+watch ガード `if (loaded)` が初回ロード中の変更も破棄。
+対処: 3 composable を **latest-wins**（リクエスト連番で古い応答を破棄）に変更、
+watch ガードを `loaded || pending` に緩和、group stats.vue にバッジ追従 watch を追加。
+
 **未解決の設計課題（次セッションで検討）**:
 - **崩され遡り分析**: 「スマッシュレシーブが甘くなる → プッシュを打たれる → 返せず失点」の
   ケースで、決定打（プッシュ）ではなく起点（スマッシュレシーブ）を弱点として集計したい。
