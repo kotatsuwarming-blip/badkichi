@@ -18,17 +18,24 @@ export function useAnnotationCoverage(args: () => Record<string, unknown>) {
   const loaded = ref(false)
   const error = ref<string | null>(null)
 
+  // latest-wins: 実行中でも常に最新引数で発行し、最新でない応答は捨てる
+  // （pending 中の要求破棄が古い試合選択の表示を残すバグの原因だった）
+  let seq = 0
+
   async function execute(): Promise<void> {
-    if (pending.value) return
+    const req = ++seq
     pending.value = true
     error.value = null
     try {
-      rows.value = await callStatsRpc<AnnotationCoverageRow>(client, 'stats_annotation_coverage', args())
+      const result = await callStatsRpc<AnnotationCoverageRow>(client, 'stats_annotation_coverage', args())
+      if (req !== seq) return
+      rows.value = result
       loaded.value = true
     } catch (e) {
+      if (req !== seq) return
       error.value = e instanceof Error ? e.message : String(e)
     } finally {
-      pending.value = false
+      if (req === seq) pending.value = false
     }
   }
 

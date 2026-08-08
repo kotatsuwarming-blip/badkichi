@@ -55,6 +55,10 @@ onMounted(() => {
 watch(activeTab, (tab) => {
   if (tab === 'rallyflow' && !flow.loaded.value) flow.execute()
 })
+// バッジは対象試合（チェックボックス・期間）の変更に追従（shot/flow は composable 内 watch）
+watch(view.includedMatchIds, () => {
+  if (coverage.loaded.value || coverage.pending.value) coverage.execute()
+})
 const playerOptions = computed(() => (players.value ?? []).map(p => ({ id: p.id, name: p.name })))
 
 const overviewMode = ref<'player' | 'pair'>('player')
