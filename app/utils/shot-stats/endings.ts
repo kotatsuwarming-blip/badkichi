@@ -13,7 +13,7 @@ import type {
 } from '~/types/shot-stats'
 import type { Team } from '~/utils/rule-engine/types'
 import { deriveOutDirection } from '~/utils/annotation/court-coords'
-import { mirrorForTeam, zoneOf } from '~/utils/shot-stats/mirror'
+import { zoneOf } from '~/utils/shot-stats/mirror'
 
 /** RallyEndingRow 上での対象チーム解決（flow.subjectTeamOf と同規則） */
 export function endingSubjectTeam(row: RallyEndingRow, subject: StatsSubject): Team | null {
@@ -134,7 +134,10 @@ export function buildDecisiveRanking(rows: RallyEndingRow[], limit = 8): Decisiv
 }
 
 /**
- * 決着落下点のゾーン集計（REQ-007）。視点チームへミラーし 3×3（全長 2×zones 行）へ。
+ * 決着落下点のゾーン集計（REQ-007）。視点チームへ正規化し 3×3（全長 2×zones 行）へ。
+ * 座標は「動画見たまま」= カメラ基準で保存されているため（ユーザ確認 2026-08-08）、
+ * **視点チーム = camera_near_team のとき 180° 反転**で選手視点にする。
+ * camera_near_team 不明のラリーは向きを決められず unlocated 扱い。
  * land 座標 null のときのみ out_direction を採用（REQ-103, deriveOutDirection と同一規則）。
  * kind: 対象視点の 得点（won）/ 失点（lost）決着で絞る。
  */
@@ -154,7 +157,12 @@ export function buildLandZones(
     if ((kind === 'won') !== won) continue
     if (r.end_reason !== 'floor') continue // 落下点は floor 決着のみ（body/net 等は落下しない）
     if (r.land_x !== null && r.land_y !== null) {
-      const p = mirrorForTeam({ x: r.land_x, y: r.land_y }, team)
+      if (r.camera_near_team === null) {
+        unlocated += 1 // 向き不明（camera_near_team なし）
+        continue
+      }
+      const flip = r.camera_near_team === team
+      const p = flip ? { x: 1 - r.land_x, y: 1 - r.land_y } : { x: r.land_x, y: r.land_y }
       const dir = deriveOutDirection(p)
       if (dir !== null) {
         outFallback[dir] += 1

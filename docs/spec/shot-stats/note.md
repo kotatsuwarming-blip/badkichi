@@ -109,6 +109,13 @@
   additive 追加（stats_shot_zones は DB に残るが未使用）。REQ-011 の実装形はこちらが正。
 - チャートの文字重なり修正（同フィードバック）: 回転x軸ラベルと凡例の衝突回避（凡例を上部/スクロール化）、
   散布図ラベルの自動間引き（labelLayout.hideOverlap）。
+- **【重要】座標の向きはカメラ基準と判明（2026-08-08）**: 本ノート §3-1 の「y=0 = チーム A 側」
+  （ADR-017 由来）は実データでは成立しない。注釈スタジオのコート図にチーム向きラベルが無く、
+  注釈者は**動画の見たまま**（カメラ手前の選手 = 図の下側）でタップしている（ユーザ確認）。
+  正しい選手視点変換 = **「打者/対象チーム = rallies.camera_near_team なら 180° 反転」**。
+  camera_near_team null のラリーは座標集計から除外（母数併記）。stats_shot_placement・
+  stats_rally_endings（camera_near_team 出力追加）・buildLandZones を修正済み。
+  **shot-annotation 側の文書（REQ-014 / ADR-017 の絶対座標定義）も将来この実態に合わせて改訂すべき**。
 
 ## 8. 関連ファイル
 
