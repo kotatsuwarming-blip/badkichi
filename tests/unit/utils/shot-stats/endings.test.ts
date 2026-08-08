@@ -13,6 +13,7 @@ function row(partial: Partial<RallyEndingRow>): RallyEndingRow {
     serving_team: 'A', point_winner: 'A', end_reason: 'floor',
     last_hitter_team: 'A', decisive_shot_type: 'smash', decisive_hit_player_id: 'p0',
     land_x: 0.5, land_y: 0.9, out_direction: null,
+    camera_near_team: 'B',
     team_a_player1_id: 'p0', team_a_player2_id: 'p1',
     team_b_player1_id: 'p2', team_b_player2_id: 'p3', ...partial
   }
@@ -79,12 +80,22 @@ describe('buildDecisiveRanking (TC-006-01 / TC-006-E01)', () => {
   })
 })
 
-describe('buildLandZones (TC-007-01 / REQ-103)', () => {
-  it('得点決着の落下点を視点ミラーしてゾーン算入', () => {
-    // p2 (チーム B) 視点: land (0.5, 0.9) → ミラー (0.5, 0.1) → row 0, col 1。
-    // ただし r1 は A の得点なので B 視点では lost 側
+describe('buildLandZones (TC-007-01 / REQ-103 / 向き=カメラ基準 2026-08-08)', () => {
+  it('視点チーム = カメラ手前チームのとき 180° 反転してゾーン算入', () => {
+    // cam='B'・p2 (チーム B) 視点: land (0.5, 0.9) → 反転 (0.5, 0.1) → row 0, col 1。
+    // r1 は A の得点なので B 視点では lost 側
     const result = buildLandZones([row({})], { kind: 'player', playerId: 'p2' }, 'lost')
     expect(result.cells).toEqual([{ row: 0, col: 1, count: 1, ratio: 1 }])
+  })
+  it('視点チームがカメラ奥のときは反転しない', () => {
+    // cam='B'・p0 (チーム A, カメラ奥) 視点: land (0.5, 0.9) そのまま → row 5, col 1
+    const result = buildLandZones([row({})], { kind: 'player', playerId: 'p0' }, 'won')
+    expect(result.cells).toEqual([{ row: 5, col: 1, count: 1, ratio: 1 }])
+  })
+  it('camera_near_team 不明のラリーは向きを決められず unlocated', () => {
+    const result = buildLandZones([row({ camera_near_team: null })], { kind: 'player', playerId: 'p0' }, 'won')
+    expect(result.cells).toHaveLength(0)
+    expect(result.unlocated).toBe(1)
   })
   it('TC-C-03 相当: 範囲外 land は out 細分バケット (deriveOutDirection 同一規則)', () => {
     const result = buildLandZones(

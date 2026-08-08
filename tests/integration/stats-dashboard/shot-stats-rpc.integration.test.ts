@@ -64,6 +64,9 @@ async function insertAnnotatedRally(client: SupabaseClient, setId: string, opts:
     point_winner: opts.pointWinner,
     is_let: opts.isLet ?? false,
     is_point_confirmed: opts.isPointConfirmed ?? (opts.pointWinner !== null),
+    // 座標はカメラ基準（動画見たまま, 2026-08-08 確定）。cam='B' なら
+    // 旧規則（チーム B をミラー）と同じ変換になるようフィクスチャは 'B' 固定
+    camera_near_team: 'B',
     end_reason: opts.endReason ?? null,
     land_x: opts.landX ?? null,
     land_y: opts.landY ?? null,
