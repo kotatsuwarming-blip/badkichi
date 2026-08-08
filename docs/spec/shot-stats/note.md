@@ -191,6 +191,8 @@ watch ガードを `loaded || pending` に緩和、group stats.vue にバッジ�
 - **配球ヒートマップをラリー展開タブへ移動**（サーブ周りに対しラリー分析のため。ユーザ指摘）。
   強み分析タブは当面プレースホルダのみ（中身は再考中のまま）。
 - useStatsView: entity は subjectMode+選択から導出。knownSetNumbers を view 側で累積保持。
+- 付随修正: ラリー長と得点率チャートにも二重グリッド線修正（countAxisScale）を適用 /
+  試合一覧ロード前は includedMatchIds=null（SSR 直アクセスで p_match_ids=[] になり全件除外される競合の解消）。
 
 **未解決の設計課題（次セッションで検討）**:
 - **崩され遡り分析**: 「スマッシュレシーブが甘くなる → プッシュを打たれる → 返せず失点」の
