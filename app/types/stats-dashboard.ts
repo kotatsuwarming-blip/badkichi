@@ -167,13 +167,22 @@ export type StatsEntity
     | { kind: 'player', playerId: string }
     | { kind: 'pair', player1Id: string, player2Id: string }
 
+/** 対象モード（選手別/ペア別）。全タブ共通の最上位フィルタ（2026-08-08 フィルタ再編） */
+export type SubjectMode = 'player' | 'pair'
+
 /**
- * グローバルフィルタ（チャート外で設定）: 対象（選手/ペア）+ 試合期間。
+ * グローバルフィルタ（チャート外で設定）: 対象モード（選手別/ペア別）+ 選手/ペア選択 +
+ * セット + 試合期間。選択が未完（null / 同一選手ペア）の間は全員比較（overview）扱い。
  * dateFrom/dateTo は YYYY-MM-DD（null = 制限なし）。excludedMatchIds は期間内から個別除外する試合。
- * 🔵 受け入れ2026-06-09（選手/ペア・期間はグローバル、個別調整も可）
+ * 🔵 受け入れ2026-06-09 + フィルタ再編2026-08-08（モード・選手・セットを同一階層の全タブ共通に）
  */
 export interface StatsGlobalFilter {
-  entity: StatsEntity
+  subjectMode: SubjectMode
+  playerId: string | null
+  pair1Id: string | null
+  pair2Id: string | null
+  /** セット絞り込み（全タブ共通）。null = 全セット */
+  setNumber: number | null
   dateFrom: string | null
   dateTo: string | null
   excludedMatchIds: string[]

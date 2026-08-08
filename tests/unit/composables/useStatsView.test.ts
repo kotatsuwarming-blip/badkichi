@@ -66,14 +66,14 @@ describe('useStatsView (group)', () => {
   it('全体は集計 RPC を p_group_id + p_match_ids で呼ぶ', async () => {
     const v = useStatsView({ kind: 'group', groupId: 'g1' })
     await flushPromises()
-    expect(rpcMock).toHaveBeenCalledWith('stats_player_rates', { p_group_id: 'g1', p_match_ids: ['m1', 'm2'] })
+    expect(rpcMock).toHaveBeenCalledWith('stats_player_rates', { p_group_id: 'g1', p_match_ids: ['m1', 'm2'], p_set_number: null })
     expect(v.overview.value?.playerRates[0]?.playerName).toBe('田中')
   })
 
   it('全体でも stats_rallies を呼びテーブルに全ラリーを出す（U-05）', async () => {
     const v = useStatsView({ kind: 'group', groupId: 'g1' })
     await flushPromises()
-    expect(rpcMock).toHaveBeenCalledWith('stats_rallies', { p_group_id: 'g1', p_match_ids: ['m1', 'm2'] })
+    expect(rpcMock).toHaveBeenCalledWith('stats_rallies', { p_group_id: 'g1', p_match_ids: ['m1', 'm2'], p_set_number: null })
     expect(v.tableRows.value).toHaveLength(2) // フィルタ無し（全体）でも候補が出る
   })
 

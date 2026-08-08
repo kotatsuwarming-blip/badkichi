@@ -20,6 +20,8 @@ export function useRallyFlowView(
   scope: StatsViewScope,
   opts: {
     includedMatchIds: Ref<string[] | null>
+    /** セット絞り込み（グローバルフィルタ共有, 2026-08-08 再編）。クライアント側で適用 */
+    setNumber: Ref<number | null>
     entity: () => StatsEntity
     nameOf: (id: string) => string
   }
@@ -67,20 +69,25 @@ export function useRallyFlowView(
   // StatsEntity と StatsSubject は同形（kind: all/player/pair）
   const subject = computed<StatsSubject>(() => opts.entity() as StatsSubject)
 
+  /** グローバルセットフィルタ適用後の対象行（クライアント側, 2026-08-08 再編） */
+  const targetRows = computed(() =>
+    opts.setNumber.value === null ? rows.value : rows.value.filter(r => r.setNumber === opts.setNumber.value)
+  )
+
   /** J: 局面別得点率（entity=all は選手ごと） */
-  const phaseEntries = computed(() => buildPhaseEntries(rows.value, subject.value, opts.nameOf))
+  const phaseEntries = computed(() => buildPhaseEntries(targetRows.value, subject.value, opts.nameOf))
 
   /** K: テンポサンプル + 除外数（REQ-106） */
   const measure = ref<TempoMeasure>('avg')
-  const tempo = computed(() => toTempoSamples(rows.value, subject.value))
+  const tempo = computed(() => toTempoSamples(targetRows.value, subject.value))
 
   /** L: セット選択（試合単位のみ使用） */
-  const setNumbers = computed(() => [...new Set(rows.value.map(r => r.setNumber))].sort((a, b) => a - b))
+  const setNumbers = computed(() => [...new Set(targetRows.value.map(r => r.setNumber))].sort((a, b) => a - b))
   function ralliesOfSet(setNumber: number): FlowRally[] {
-    return rows.value.filter(r => r.setNumber === setNumber)
+    return targetRows.value.filter(r => r.setNumber === setNumber)
   }
 
-  const isEmpty = computed(() => loaded.value && rows.value.length === 0)
+  const isEmpty = computed(() => loaded.value && targetRows.value.length === 0)
 
   return {
     rows, pending, loaded, error, execute,
