@@ -1,18 +1,11 @@
 /**
- * mirror — 選手視点固定ミラーとゾーン変換の純関数（REQ-105 / EDGE-101, TASK-0010）
+ * mirror — ゾーン変換の純関数（EDGE-101, TASK-0010）
  *
- * 座標は絶対系（x: 0-1 コート幅 / y: 0-1 全長, y=0 = チーム A 側バックバウンダリー）で
- * 保存されている。視点チームが B のときは x→1−x, y→1−y でミラーする。
+ * 選手視点への向き正規化は camera_near_team ベースで各消費側が行う
+ * （REQ-105 改訂 2026-08-08: カメラ手前打者 = y のみ反転 / カメラ奥打者 = x のみ反転）。
  * ゾーンは全長を 2×zones 行 × zones 列に分割し、範囲外はクランプ算入（EDGE-101）。
  */
 import type { CourtPoint } from '~/types/shot-annotation'
-import type { Team } from '~/utils/rule-engine/types'
-
-/** 視点チームに合わせて座標をミラー（A はそのまま / B は点対称） */
-export function mirrorForTeam(p: CourtPoint, perspective: Team): CourtPoint {
-  if (perspective === 'A') return p
-  return { x: 1 - p.x, y: 1 - p.y }
-}
 
 /** ゾーン化（クランプ算入, EDGE-101）。row: 0=手前バック 〜 zones*2-1=相手コート奥 / col: 0=左 */
 export function zoneOf(p: CourtPoint, zones = 3): { row: number, col: number } {
