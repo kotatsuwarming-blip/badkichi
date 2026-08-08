@@ -772,6 +772,26 @@ export type Database = {
           timed_count: number
         }[]
       }
+      stats_receive_detail: {
+        Args: {
+          p_group_id?: string
+          p_match_id?: string
+          p_match_ids?: string[]
+          p_set_number?: number
+        }
+        Returns: {
+          dest_col: number
+          dest_kind: string
+          dest_out: string
+          dest_row: number
+          receive_type: string
+          receiver_player_id: string
+          serve_type: string
+          server_position: string
+          total: number
+          won: number
+        }[]
+      }
       stats_receive_types: {
         Args: {
           p_group_id?: string
