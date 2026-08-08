@@ -555,7 +555,7 @@
       "promptSelect": "Tap a zone on the near court to filter placements hit from there (currently showing all)",
       "selectedCell": "Showing placements from the selected zone (tap again to clear)",
       "originTip": "{n} shots from this zone",
-      "hint": "Player perspective (own side at bottom). Hover a number for the shot-type breakdown"
+      "hint": "Player perspective (own side at bottom). Near numbers = shots hit from the zone (tap to filter), far numbers = placements (hover for shot-type breakdown)"
     }
   }
 }
