@@ -551,8 +551,11 @@
       "outcome": "decisive {decisive} / error {miss}"
     },
     "heatmap": {
-      "title": "Shot position heatmap",
-      "hint": "Player perspective (own side at bottom). Out-of-court clamped to edge"
+      "title": "Shot placement heatmap",
+      "promptSelect": "Tap a zone on the near court to filter placements hit from there (currently showing all)",
+      "selectedCell": "Showing placements from the selected zone (tap again to clear)",
+      "originTip": "{n} shots from this zone",
+      "hint": "Player perspective (own side at bottom). Hover a number for the shot-type breakdown"
     }
   }
 }

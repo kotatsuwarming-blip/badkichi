@@ -85,7 +85,10 @@ const shotMock = {
   decisiveRanking: ref([]),
   landZonesWon: ref({ cells: [], outFallback: { side: 0, back: 0, both: 0 }, unlocated: 0 }),
   landZonesLost: ref({ cells: [], outFallback: { side: 0, back: 0, both: 0 }, unlocated: 0 }),
-  heatmapCells: ref([]),
+  selectedOrigin: ref(null),
+  selectOrigin: vi.fn(),
+  originCells: ref([]),
+  destCells: ref([]),
   heatmapTotal: ref(0),
   isEmpty: ref(false)
 }
@@ -116,7 +119,7 @@ const stubs = {
   StatsShotMixChart: { props: ['rows'], template: '<div data-testid="mix-chart" />' },
   StatsShotMixScatter: { props: ['rows'], template: '<div data-testid="mix-scatter" />' },
   StatsHandChart: { props: ['rows'], template: '<div data-testid="hand-chart" />' },
-  StatsShotHeatmap: { props: ['cells', 'total', 'pointedTotal'], template: '<div data-testid="heatmap" />' }
+  StatsShotHeatmap: { props: ['originCells', 'destCells', 'selected', 'total', 'pointedTotal'], template: '<div data-testid="heatmap" />' }
 }
 
 function mountPage() {

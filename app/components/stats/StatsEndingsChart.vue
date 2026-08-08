@@ -35,7 +35,7 @@ function valueOf(entry: EndingEntry, key: typeof CATS[number]['key']): number {
 const option = computed(() => ({
   tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
   textStyle: { color: chartText.value, fontSize: 13 },
-  legend: { bottom: 0, textStyle: { color: chartText.value, fontSize: 12 } },
+  legend: { bottom: 0, type: 'scroll', textStyle: { color: chartText.value, fontSize: 12 } },
   grid: { left: 90, right: 16, top: 12, bottom: 44 },
   xAxis: { type: 'value', axisLabel: { color: chartText.value, fontSize: 12 } },
   yAxis: {

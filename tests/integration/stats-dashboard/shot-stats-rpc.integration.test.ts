@@ -341,6 +341,25 @@ describe.skipIf(skip)('shot-stats 集計 RPC 統合テスト', () => {
     expect(rows[3]!.last3_avg_interval_ms).toBeNull()
   })
 
+  // ---- stats_shot_placement ----
+
+  it('配球ペア: origin=打点セル(自陣半面) / dest=次接触 or 落下点(相手半面) をミラー付きで返す', async () => {
+    const { data, error } = await userAClient.rpc('stats_shot_placement', { p_match_id: matchId })
+    expect(error).toBeNull()
+    const rows = data as Array<Record<string, number | string | null>>
+    // R1 s3 (p0 smash, 打点 0.4/0.75): origin = 自陣ネット側 (2,1)。最終打 → land (0.5,0.9) = 相手バック中央 (2,1)
+    const smash = rows.find(r => r.hit_player_id === p[0] && r.shot_type === 'smash')!
+    expect(Number(smash.origin_row)).toBe(2)
+    expect(Number(smash.origin_col)).toBe(1)
+    expect(Number(smash.dest_row)).toBe(2)
+    expect(Number(smash.dest_col)).toBe(1)
+    expect(Number(smash.shots)).toBe(1)
+    // R1 s2 (p2, 種別未注釈, 0.2/0.3): B 視点ミラー。dest = 次接触 s3 (0.4/0.75) → ミラー (0.6/0.25) → 相手ネット側 (0,1)
+    const p2row = rows.find(r => r.hit_player_id === p[2] && r.shot_type === null)!
+    expect(Number(p2row.dest_row)).toBe(0)
+    expect(Number(p2row.dest_col)).toBe(1)
+  })
+
   // ---- stats_serve_types ----
 
   it('REQ-008: サーブ種別 × ポジション grain で母数・勝数を返す', async () => {
@@ -363,7 +382,7 @@ describe.skipIf(skip)('shot-stats 集計 RPC 統合テスト', () => {
   it('NFR-101: 他 Group の userB は 5 RPC いずれも 0 件', async () => {
     for (const fn of [
       'stats_annotation_coverage', 'stats_shot_types', 'stats_shot_zones',
-      'stats_rally_endings', 'stats_rally_tempo', 'stats_serve_types'
+      'stats_rally_endings', 'stats_rally_tempo', 'stats_serve_types', 'stats_shot_placement'
     ]) {
       const { data, error } = await userBClient.rpc(fn, { p_match_id: matchId })
       expect(error, fn).toBeNull()

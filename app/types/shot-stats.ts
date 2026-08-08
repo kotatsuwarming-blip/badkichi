@@ -56,6 +56,24 @@ export interface ShotZoneRow {
   shots: number
 }
 
+/** stats_shot_placement の行（grain: 打者 × 球種 × 打点セル × 配球先セル） */
+export interface ShotPlacementRow {
+  hit_player_id: string
+  shot_type: ShotType | null
+  /** 自陣半面 0=バック側 〜 zones-1=ネット側 */
+  origin_row: number
+  origin_col: number
+  /** 相手半面 0=ネット側 〜 zones-1=バック側 */
+  dest_row: number
+  dest_col: number
+  shots: number
+}
+
+/** F: 配球先セル（球種内訳つき, ヒアリング2026-08-08） */
+export interface PlacementDestCell extends ZoneCell {
+  breakdown: { type: ShotType | null, count: number }[]
+}
+
 /** stats_serve_types の行（grain: サーバー × 1打目種別 × ポジション） */
 export interface ServeTypeStatRow {
   server_player_id: string
