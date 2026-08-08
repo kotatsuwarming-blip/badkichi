@@ -716,6 +716,7 @@ export type Database = {
           p_set_number?: number
         }
         Returns: {
+          camera_near_team: string
           decisive_hit_player_id: string
           decisive_shot_type: string
           end_reason: string
