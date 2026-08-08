@@ -381,20 +381,26 @@ describe.skipIf(skip)('shot-stats 集計 RPC 統合テスト', () => {
     expect(Number(short.won)).toBe(1)
   })
 
-  // ---- stats_receive_types ----
+  // ---- stats_receive_detail ----
 
-  it('#5: レシーブ種別 × サーブ位置 grain。レシーブ不発生 (service_fault 等) は除外', async () => {
-    const { data, error } = await userAClient.rpc('stats_receive_types', { p_match_id: matchId })
+  it('#6: サーブ種別 × 返球 × コース grain。レシーブ不発生は除外・コース不明は dest_kind null', async () => {
+    const { data, error } = await userAClient.rpc('stats_receive_detail', { p_match_id: matchId })
     expect(error).toBeNull()
     const rows = data as Array<Record<string, number | string | null>>
-    // レシーバーは全ラリー p2。R1 = 未注釈 / R2 = receive_short / R3 = lob_low。R6 (1打のみ) は除外
+    // レシーバーは全ラリー p2。R1/R2/R3 の 3 本 (R6 は 1 打のみ = レシーブ不発生で除外)
     expect(rows.reduce((s, r) => s + Number(r.total), 0)).toBe(3)
-    const rShort = rows.find(r => r.shot_type === 'receive_short')!
-    expect(rShort.receiver_player_id).toBe(p[2])
-    expect(Number(rShort.total)).toBe(1)
-    expect(Number(rShort.won)).toBe(0) // R2 は A (サーブ側) の得点
-    const rLob = rows.find(r => r.shot_type === 'lob_low')!
-    expect(Number(rLob.won)).toBe(1) // R3 は B (レシーブ側) の得点
+    // R2: serve_short への receive_short。3 打目 (drive) は打点未注釈 → コース不明
+    const rShort = rows.find(r => r.receive_type === 'receive_short')!
+    expect(rShort.serve_type).toBe('serve_short')
+    expect(rShort.dest_kind).toBeNull()
+    expect(Number(rShort.won)).toBe(0) // A (サーブ側) の得点
+    // R3: serve_long への lob_low。3 打目接触 (0.5, 1.05) → レシーバー視点 y 反転 → 相手ネット側 (0,1)
+    const rLob = rows.find(r => r.receive_type === 'lob_low')!
+    expect(rLob.serve_type).toBe('serve_long')
+    expect(rLob.dest_kind).toBe('in')
+    expect(Number(rLob.dest_row)).toBe(0)
+    expect(Number(rLob.dest_col)).toBe(1)
+    expect(Number(rLob.won)).toBe(1) // B (レシーブ側) の得点
   })
 
   // ---- RLS / invalid_scope ----
@@ -403,7 +409,7 @@ describe.skipIf(skip)('shot-stats 集計 RPC 統合テスト', () => {
     for (const fn of [
       'stats_annotation_coverage', 'stats_shot_types', 'stats_shot_zones',
       'stats_rally_endings', 'stats_rally_tempo', 'stats_serve_types', 'stats_shot_placement',
-      'stats_receive_types'
+      'stats_receive_detail'
     ]) {
       const { data, error } = await userBClient.rpc(fn, { p_match_id: matchId })
       expect(error, fn).toBeNull()

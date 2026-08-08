@@ -33,8 +33,8 @@ describe('buildOriginCells', () => {
     const leftFront = cells.find(c => c.row === 2 && c.col === 0)!
     expect(leftFront.count).toBe(7) // smash 3+1 + hairpin 1+2
     expect(leftFront.breakdown).toEqual([
-      { type: 'smash', count: 4 },
-      { type: 'hairpin', count: 3 }
+      { type: 'smash', count: 4, miss: 1 },
+      { type: 'hairpin', count: 3, miss: 2 }
     ])
     expect(cells.find(c => c.row === 0 && c.col === 2)!.count).toBe(3)
   })
@@ -46,8 +46,8 @@ describe('buildDestCells', () => {
     const back = cells.find(c => c.row === 2 && c.col === 1)!
     expect(back.count).toBe(5) // smash 3 + clear 2
     expect(back.breakdown).toEqual([
-      { type: 'smash', count: 3 },
-      { type: 'clear_high', count: 2 }
+      { type: 'smash', count: 3, miss: 0 },
+      { type: 'clear_high', count: 2, miss: 0 }
     ])
   })
 
@@ -55,13 +55,13 @@ describe('buildDestCells', () => {
     const cells = buildDestCells(rows, { row: 2, col: 0 })
     const back = cells.find(c => c.row === 2 && c.col === 1)!
     expect(back.count).toBe(3) // clear は右後起点なので落ちる
-    expect(back.breakdown).toEqual([{ type: 'smash', count: 3 }])
+    expect(back.breakdown).toEqual([{ type: 'smash', count: 3, miss: 0 }])
     expect(cells.find(c => c.row === 0 && c.col === 0)!.count).toBe(1)
   })
 
   it('未注釈種別は type null として内訳に出る', () => {
     const cells = buildDestCells([row({ shot_type: null, shots: 2 })], null)
-    expect(cells[0]!.breakdown).toEqual([{ type: null, count: 2 }])
+    expect(cells[0]!.breakdown).toEqual([{ type: null, count: 2, miss: 0 }])
   })
 })
 
@@ -69,9 +69,9 @@ describe('buildDestExtras (#4: ネット/アウトを寄せずに表示)', () =>
   it('未選択時: 全セル起点のネット/アウトを方向別に集計 + 球種内訳', () => {
     const extras = buildDestExtras(rows, null)
     expect(extras.net.count).toBe(2)
-    expect(extras.net.breakdown).toEqual([{ type: 'hairpin', count: 2 }])
+    expect(extras.net.breakdown).toEqual([{ type: 'hairpin', count: 2, miss: 2 }])
     expect(extras.left.count).toBe(1)
-    expect(extras.left.breakdown).toEqual([{ type: 'smash', count: 1 }])
+    expect(extras.left.breakdown).toEqual([{ type: 'smash', count: 1, miss: 1 }])
     expect(extras.back.count).toBe(1)
     expect(extras.right.count).toBe(0)
   })
@@ -86,22 +86,22 @@ describe('buildDestExtras (#4: ネット/アウトを寄せずに表示)', () =>
 
 describe('buildOriginProfile (#5: ゾーン別候補つきプロファイル)', () => {
   it('前ゾーン (row=2): 候補は 0 本でも表示され「打てていない選択肢」が見える', () => {
-    const profile = buildOriginProfile([{ type: 'hairpin', count: 3 }], 2)
+    const profile = buildOriginProfile([{ type: 'hairpin', count: 3, miss: 1 }], 2)
     expect(profile.map(p => p.type)).toEqual(FRONT_ZONE_TYPES)
     expect(profile.find(p => p.type === 'hairpin')!.count).toBe(3)
     expect(profile.find(p => p.type === 'push')!.count).toBe(0)
   })
   it('後ろゾーン (row=0): ドロップ 0 本が可視化される', () => {
-    const profile = buildOriginProfile([{ type: 'smash', count: 5 }], 0)
+    const profile = buildOriginProfile([{ type: 'smash', count: 5, miss: 0 }], 0)
     expect(profile.find(p => p.type === 'drop')!.count).toBe(0)
     expect(profile.find(p => p.type === 'smash')!.count).toBe(5)
   })
   it('候補外の実打 (サーブ等) は末尾に追加され消えない', () => {
-    const profile = buildOriginProfile([{ type: 'serve_short', count: 2 }], 2)
-    expect(profile[profile.length - 1]).toEqual({ type: 'serve_short', count: 2 })
+    const profile = buildOriginProfile([{ type: 'serve_short', count: 2, miss: 0 }], 2)
+    expect(profile[profile.length - 1]).toEqual({ type: 'serve_short', count: 2, miss: 0 })
   })
   it('真ん中 (row=1) は候補固定なし・実打のみ', () => {
-    const profile = buildOriginProfile([{ type: 'drive', count: 4 }], 1)
-    expect(profile).toEqual([{ type: 'drive', count: 4 }])
+    const profile = buildOriginProfile([{ type: 'drive', count: 4, miss: 2 }], 1)
+    expect(profile).toEqual([{ type: 'drive', count: 4, miss: 2 }])
   })
 })

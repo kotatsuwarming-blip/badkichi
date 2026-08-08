@@ -561,10 +561,23 @@
       "outBack": "バックアウト",
       "net": "ネット",
       "profileTitle": "このゾーンからのショット",
-      "middleNote": "中央ゾーンは候補を固定せず、実際に打った球種のみ表示しています"
+      "middleNote": "中央ゾーンは候補を固定せず、実際に打った球種のみ表示しています",
+      "legendOk": "継続/決定",
+      "legendMiss": "ミス（ネット・アウト）"
     },
     "receive": {
-      "title": "レシーブ種別 × 得点率"
+      "title": "レシーブ分析（サーブ種別 → 返球 → コース）",
+      "promptServe": "サーブ種別の棒をタップすると、そのサーブへの返球とコースにドリルダウンできます",
+      "drilled": "{serve} への返球を表示中（同じ棒を再タップで解除）",
+      "returnsTitle": "{serve} への返球（種別ごと）",
+      "courseTitleAll": "返球コース（全返球）",
+      "courseTitle": "返球コース（{type}）",
+      "unknownCourse": "コース不明",
+      "courseHint": "相手コート（レシーバー視点・下がネット）。数字 = 本数、下段 = そのコースの得点率"
+    },
+    "combo": {
+      "count": "本数",
+      "rate": "得点率"
     }
   }
 }

@@ -16,18 +16,18 @@ import type { PlacementDestCell, PlacementExtras } from '~/types/shot-stats'
 const global = { mocks: { $t: (k: string, p?: Record<string, unknown>) => p ? `${k}:${JSON.stringify(p)}` : k } }
 
 const originCells: PlacementDestCell[] = [
-  { row: 2, col: 0, count: 4, ratio: 1, breakdown: [{ type: 'smash', count: 3 }, { type: 'hairpin', count: 1 }] },
-  { row: 0, col: 2, count: 2, ratio: 0.5, breakdown: [{ type: 'clear_high', count: 2 }] }
+  { row: 2, col: 0, count: 4, ratio: 1, breakdown: [{ type: 'smash', count: 3, miss: 1 }, { type: 'hairpin', count: 1, miss: 0 }] },
+  { row: 0, col: 2, count: 2, ratio: 0.5, breakdown: [{ type: 'clear_high', count: 2, miss: 0 }] }
 ]
 const destExtras: PlacementExtras = {
-  net: { count: 2, breakdown: [{ type: 'hairpin', count: 2 }] },
-  left: { count: 1, breakdown: [{ type: 'smash', count: 1 }] },
+  net: { count: 2, breakdown: [{ type: 'hairpin', count: 2, miss: 2 }] },
+  left: { count: 1, breakdown: [{ type: 'smash', count: 1, miss: 1 }] },
   right: { count: 0, breakdown: [] },
   back: { count: 0, breakdown: [] }
 }
 const destCells: PlacementDestCell[] = [
-  { row: 2, col: 1, count: 5, ratio: 1, breakdown: [{ type: 'smash', count: 3 }, { type: 'clear_high', count: 2 }] },
-  { row: 0, col: 0, count: 1, ratio: 0.2, breakdown: [{ type: 'hairpin', count: 1 }] }
+  { row: 2, col: 1, count: 5, ratio: 1, breakdown: [{ type: 'smash', count: 3, miss: 0 }, { type: 'clear_high', count: 2, miss: 0 }] },
+  { row: 0, col: 0, count: 1, ratio: 0.2, breakdown: [{ type: 'hairpin', count: 1, miss: 0 }] }
 ]
 
 function mountMap(selected: { row: number, col: number } | null = null) {
@@ -104,6 +104,14 @@ describe('StatsShotHeatmap', () => {
     expect(push.text()).toContain('0')
     expect(push.classes()).toContain('is-zero')
     expect(w.find('[data-testid="profile-smash"]').text()).toContain('3')
+  })
+
+  it('プロファイルのミス分が赤バーで表示される (#7)', async () => {
+    const w = mountMap()
+    await w.setProps({ selected: { row: 2, col: 0 } })
+    // smash: count 3 / miss 1 → 赤バーあり。hairpin: miss 0 → 赤バーなし
+    expect(w.find('[data-testid="profile-miss-smash"]').exists()).toBe(true)
+    expect(w.find('[data-testid="profile-miss-hairpin"]').exists()).toBe(false)
   })
 
   it('未選択時は選択を促す文言、選択時は解除の案内', async () => {
