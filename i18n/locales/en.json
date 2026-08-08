@@ -559,7 +559,9 @@
       "outLeft": "Out left",
       "outRight": "Out right",
       "outBack": "Out back",
-      "net": "Net"
+      "net": "Net",
+      "profileTitle": "Shots from this zone",
+      "middleNote": "Middle zone shows only shot types actually hit (no fixed candidate list)"
     }
   }
 }

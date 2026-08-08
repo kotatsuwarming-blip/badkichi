@@ -97,3 +97,38 @@ export function buildDestExtras(
   })
   return { net: toExtra(maps.net), left: toExtra(maps.left), right: toExtra(maps.right), back: toExtra(maps.back) }
 }
+
+/**
+ * ゾーン別のショット候補（選択時の横グラフ, フィードバック #5 2026-08-08）。
+ * 候補は 0 本でも表示して「打てていない選択肢」を可視化する。
+ * 前（ネット側 row=zones-1）/ 後ろ（バック側 row=0）はユーザ指定。
+ * 真ん中は候補が定めにくいため未定義（実際に打った球種のみ表示）。
+ */
+export const FRONT_ZONE_TYPES: ShotType[] = ['hairpin', 'lob_high', 'lob_low', 'half', 'push', 'drive']
+export const BACK_ZONE_TYPES: ShotType[] = ['drop', 'clear_high', 'clear_driven', 'smash', 'cut', 'reverse_cut', 'drive']
+
+/** 選択ゾーンの候補リスト（null = 候補固定なし = 実打のみ表示） */
+export function zoneCandidates(originRow: number, zones = 3): ShotType[] | null {
+  if (originRow === zones - 1) return FRONT_ZONE_TYPES // 前（ネット側）
+  if (originRow === 0) return BACK_ZONE_TYPES // 後ろ（バック側）
+  return null // 真ん中
+}
+
+/**
+ * 選択ゾーンのショットプロファイル（候補は 0 本込み・候補外の実打は末尾に追加）。
+ * 候補なし（真ん中）は実打を降順のまま返す。
+ */
+export function buildOriginProfile(
+  breakdown: PlacementBreakdown[],
+  originRow: number,
+  zones = 3
+): PlacementBreakdown[] {
+  const candidates = zoneCandidates(originRow, zones)
+  if (candidates === null) return breakdown
+  const byType = new Map(breakdown.map(b => [b.type ?? '__null__', b.count] as const))
+  const listed: PlacementBreakdown[] = candidates.map(type => ({ type, count: byType.get(type) ?? 0 }))
+  const extras = breakdown
+    .filter(b => !candidates.includes(b.type as ShotType))
+    .sort((a, b) => b.count - a.count)
+  return [...listed, ...extras]
+}

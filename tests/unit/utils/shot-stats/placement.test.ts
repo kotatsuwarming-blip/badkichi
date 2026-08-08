@@ -2,7 +2,7 @@
  * placement 純関数 単体テスト (配球ヒートマップ改訂, ヒアリング2026-08-08 #2〜#4)
  */
 import { describe, expect, it } from 'vitest'
-import { buildDestCells, buildDestExtras, buildOriginCells } from '~/utils/shot-stats/placement'
+import { buildDestCells, buildDestExtras, buildOriginCells, buildOriginProfile, FRONT_ZONE_TYPES } from '~/utils/shot-stats/placement'
 import type { ShotPlacementRow } from '~/types/shot-stats'
 
 function row(partial: Partial<ShotPlacementRow>): ShotPlacementRow {
@@ -81,5 +81,27 @@ describe('buildDestExtras (#4: ネット/アウトを寄せずに表示)', () =>
     expect(extras.net.count).toBe(2)
     expect(extras.left.count).toBe(1)
     expect(extras.back.count).toBe(0) // バックアウトは右後起点
+  })
+})
+
+describe('buildOriginProfile (#5: ゾーン別候補つきプロファイル)', () => {
+  it('前ゾーン (row=2): 候補は 0 本でも表示され「打てていない選択肢」が見える', () => {
+    const profile = buildOriginProfile([{ type: 'hairpin', count: 3 }], 2)
+    expect(profile.map(p => p.type)).toEqual(FRONT_ZONE_TYPES)
+    expect(profile.find(p => p.type === 'hairpin')!.count).toBe(3)
+    expect(profile.find(p => p.type === 'push')!.count).toBe(0)
+  })
+  it('後ろゾーン (row=0): ドロップ 0 本が可視化される', () => {
+    const profile = buildOriginProfile([{ type: 'smash', count: 5 }], 0)
+    expect(profile.find(p => p.type === 'drop')!.count).toBe(0)
+    expect(profile.find(p => p.type === 'smash')!.count).toBe(5)
+  })
+  it('候補外の実打 (サーブ等) は末尾に追加され消えない', () => {
+    const profile = buildOriginProfile([{ type: 'serve_short', count: 2 }], 2)
+    expect(profile[profile.length - 1]).toEqual({ type: 'serve_short', count: 2 })
+  })
+  it('真ん中 (row=1) は候補固定なし・実打のみ', () => {
+    const profile = buildOriginProfile([{ type: 'drive', count: 4 }], 1)
+    expect(profile).toEqual([{ type: 'drive', count: 4 }])
   })
 })
