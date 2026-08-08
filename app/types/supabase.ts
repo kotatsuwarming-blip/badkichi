@@ -646,6 +646,7 @@ export type Database = {
           p_group_id?: string
           p_match_id?: string
           p_match_ids?: string[]
+          p_set_number?: number
         }
         Returns: {
           player1_id: string
@@ -661,6 +662,7 @@ export type Database = {
           p_group_id?: string
           p_match_id?: string
           p_match_ids?: string[]
+          p_set_number?: number
         }
         Returns: {
           player_id: string
@@ -683,6 +685,7 @@ export type Database = {
           p_receiver_player_id?: string
           p_role?: string
           p_server_player_id?: string
+          p_set_number?: number
           p_shot_ranges?: Json
         }
         Returns: {
@@ -741,6 +744,7 @@ export type Database = {
           p_group_id?: string
           p_match_id?: string
           p_match_ids?: string[]
+          p_set_number?: number
         }
         Returns: {
           rallies: number
