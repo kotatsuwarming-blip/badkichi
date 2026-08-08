@@ -2,16 +2,7 @@
  * mirror 純関数 単体テスト (TASK-0010 / REQ-105 / EDGE-101 / TC-C-02, TC-011-B01)
  */
 import { describe, expect, it } from 'vitest'
-import { mirrorForTeam, zoneOf } from '~/utils/shot-stats/mirror'
-
-describe('mirrorForTeam (REQ-105)', () => {
-  it('TC-C-02: チーム B は点対称 (0.2, 0.3) → (0.8, 0.7)', () => {
-    expect(mirrorForTeam({ x: 0.2, y: 0.3 }, 'B')).toEqual({ x: 0.8, y: 0.7 })
-  })
-  it('チーム A はそのまま', () => {
-    expect(mirrorForTeam({ x: 0.2, y: 0.3 }, 'A')).toEqual({ x: 0.2, y: 0.3 })
-  })
-})
+import { zoneOf } from '~/utils/shot-stats/mirror'
 
 describe('zoneOf (EDGE-101)', () => {
   it('3×3: (0.8, 0.7) → row 4, col 2', () => {

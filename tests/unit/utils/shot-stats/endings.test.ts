@@ -92,6 +92,17 @@ describe('buildLandZones (TC-007-01 / REQ-103 / 向き=カメラ基準 2026-08-0
     const result = buildLandZones([row({})], { kind: 'player', playerId: 'p0' }, 'won')
     expect(result.cells).toEqual([{ row: 5, col: 1, count: 1, ratio: 1 }])
   })
+  it('左右の向き: カメラ手前視点は左右そのまま / カメラ奥視点は左右反転 (2026-08-08 修正 #3)', () => {
+    // cam='B'・land 生座標 (0.2, 0.9) = 映像の左寄り
+    const asym = row({ land_x: 0.2, land_y: 0.9 })
+    // p2 (B = カメラ手前): (0.2, 0.1) → col 0 (選手の左のまま)
+    const near = buildLandZones([asym], { kind: 'player', playerId: 'p2' }, 'lost')
+    expect(near.cells).toEqual([{ row: 0, col: 0, count: 1, ratio: 1 }])
+    // p0 (A = カメラ奥): (0.8, 0.9) → col 2 (180° 視点なので左右反転)
+    const far = buildLandZones([asym], { kind: 'player', playerId: 'p0' }, 'won')
+    expect(far.cells).toEqual([{ row: 5, col: 2, count: 1, ratio: 1 }])
+  })
+
   it('camera_near_team 不明のラリーは向きを決められず unlocated', () => {
     const result = buildLandZones([row({ camera_near_team: null })], { kind: 'player', playerId: 'p0' }, 'won')
     expect(result.cells).toHaveLength(0)

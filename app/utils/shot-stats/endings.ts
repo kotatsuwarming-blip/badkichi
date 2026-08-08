@@ -161,8 +161,12 @@ export function buildLandZones(
         unlocated += 1 // 向き不明（camera_near_team なし）
         continue
       }
-      const flip = r.camera_near_team === team
-      const p = flip ? { x: 1 - r.land_x, y: 1 - r.land_y } : { x: r.land_x, y: r.land_y }
+      // 選手視点変換（2026-08-08 修正 #3）: 対象 = カメラ手前 → y のみ反転（映像がすでに選手視点、
+      // 前後の基準合わせのみ）/ 対象 = カメラ奥 → x のみ反転（180° 回して見るため左右が入れ替わる）
+      const nearSide = r.camera_near_team === team
+      const p = nearSide
+        ? { x: r.land_x, y: 1 - r.land_y }
+        : { x: 1 - r.land_x, y: r.land_y }
       const dir = deriveOutDirection(p)
       if (dir !== null) {
         outFallback[dir] += 1
