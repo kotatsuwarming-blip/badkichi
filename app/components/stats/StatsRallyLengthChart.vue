@@ -12,6 +12,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { toRallyLengthSeries } from '~/utils/stats-dashboard/to-rally-length-series'
 import { useChartTextColor } from '~/composables/useChartTextColor'
+import { countAxisScale } from '~/utils/shot-stats/chart-axis'
 import type { RallyLengthBin } from '~/types/stats-dashboard'
 
 const props = defineProps<{
@@ -31,6 +32,8 @@ const series = computed(() => toRallyLengthSeries(props.bins))
 
 const option = computed(() => {
   const s = series.value
+  // 両軸を同一分割数に固定してグリッド線を1組に統合（2軸で横線が倍増して見えづらいため）
+  const scale = countAxisScale(Math.max(...s.counts, 0))
   return {
     tooltip: { trigger: 'axis' },
     // チャート全文字をテーマ追従色・標準サイズに（U-06）
@@ -41,8 +44,8 @@ const option = computed(() => {
     // 軸ラベル・軸名はやや大きめで視認性を上げる（U-06）
     xAxis: { type: 'category', data: s.labels, axisLabel: { color: chartText.value, fontSize: 13, fontWeight: 500 } },
     yAxis: [
-      { type: 'value', name: t('stats.rallyLength.count'), min: 0, nameGap: 12, axisLabel: { color: chartText.value, fontSize: 13 }, nameTextStyle: { color: chartText.value, fontSize: 12 } },
-      { type: 'value', name: '%', min: 0, max: 100, nameGap: 12, axisLabel: { color: chartText.value, fontSize: 13 }, nameTextStyle: { color: chartText.value, fontSize: 12 } }
+      { type: 'value', name: t('stats.rallyLength.count'), min: 0, max: scale.max, interval: scale.interval, nameGap: 12, axisLabel: { color: chartText.value, fontSize: 13 }, nameTextStyle: { color: chartText.value, fontSize: 12 } },
+      { type: 'value', name: '%', min: 0, max: 100, interval: 20, splitLine: { show: false }, nameGap: 12, axisLabel: { color: chartText.value, fontSize: 13 }, nameTextStyle: { color: chartText.value, fontSize: 12 } }
     ],
     series: [
       {
