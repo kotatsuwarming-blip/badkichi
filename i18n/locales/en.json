@@ -473,8 +473,9 @@
   },
   "shotStats": {
     "tabs": {
-      "overview": "Overview",
-      "shots": "Shot analysis",
+      "serve": "Serve",
+      "strengths": "Strengths",
+      "weakness": "Weaknesses",
       "rallyflow": "Rally flow"
     },
     "badge": {
@@ -484,7 +485,6 @@
       "handed": "F/B",
       "timed": "Timing"
     },
-    "comingSoon": "Charts for this tab are coming soon",
     "phase": {
       "title": "Score rate by phase",
       "early": "Early",
@@ -513,11 +513,8 @@
     },
     "loading": "Loading…",
     "denominator": "annotated {n} / total {total}",
-    "shotsEmpty": "No annotation data yet (annotate matches at /annotate)",
     "filter": {
       "allPlayers": "All players",
-      "allTypes": "All shot types",
-      "allHands": "Both hands",
       "allSets": "All sets"
     },
     "endings": {
@@ -578,6 +575,16 @@
     "combo": {
       "count": "Count",
       "rate": "Win rate"
+    },
+    "weakness": {
+      "missTitle": "Miss positions",
+      "missNote": "Positions where your shots ended in net/out (player perspective, own side at bottom)",
+      "concededTitle": "Conceded landing spots",
+      "teamNote": "Aggregated per team (in doubles we cannot tell which player should have covered it, so both partners share this map)",
+      "followupNote": "Tracing back 'broken-down' rallies (e.g. weak smash receive leading to the losing shot) is under design"
+    },
+    "strengths": {
+      "note": "Strength analysis (decisive shots) is being reworked. Showing the placement heatmap (3rd shot onward) for now"
     }
   }
 }

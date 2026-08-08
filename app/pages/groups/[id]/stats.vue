@@ -30,10 +30,9 @@ onMounted(() => capture('stats_viewed', { scope: 'group', group_id: groupId }))
 const view = useStatsView({ kind: 'group', groupId })
 const { data: players } = usePlayers()
 
-// 3 タブ（概要 / ショット分析 / ラリー展開, NFR-203・設計2026-08-04）。
-// チャート列のみ切替え、動画・テーブルはタブ横断で保持（v-show, アンマウントしない）
-type StatsTab = 'overview' | 'shots' | 'rallyflow'
-const activeTab = ref<StatsTab>('overview')
+// 4 タブ（サーブ周り / 強み / 弱点 / ラリー展開, 2026-08-08 #8 再編）
+type StatsTab = 'serve' | 'strengths' | 'weakness' | 'rallyflow'
+const activeTab = ref<StatsTab>('serve')
 const coverage = useAnnotationCoverage(() => ({
   p_group_id: groupId,
   p_match_ids: view.includedMatchIds.value
@@ -48,11 +47,13 @@ const shot = useShotStatsView({ kind: 'group', groupId }, {
   entity: () => view.globalFilter.value.entity,
   nameOf: view.nameOf
 })
+// 既定タブ（サーブ周り）が注釈データを使うため、注釈系は初期ロード。ラリー展開のみ遅延
+onMounted(() => {
+  coverage.execute()
+  shot.execute()
+})
 watch(activeTab, (tab) => {
-  // タブ初回アクティブ時に遅延取得（NFR-001）
-  if (tab !== 'overview' && !coverage.loaded.value) coverage.execute()
   if (tab === 'rallyflow' && !flow.loaded.value) flow.execute()
-  if (tab === 'shots' && !shot.loaded.value) shot.execute()
 })
 const playerOptions = computed(() => (players.value ?? []).map(p => ({ id: p.id, name: p.name })))
 
@@ -143,19 +144,27 @@ function backToPair(): void {
     <nav class="stats-tabs">
       <UButton
         size="sm"
-        :variant="activeTab === 'overview' ? 'solid' : 'ghost'"
-        data-testid="tab-overview"
-        @click="activeTab = 'overview'"
+        :variant="activeTab === 'serve' ? 'solid' : 'ghost'"
+        data-testid="tab-serve"
+        @click="activeTab = 'serve'"
       >
-        {{ $t('shotStats.tabs.overview') }}
+        {{ $t('shotStats.tabs.serve') }}
       </UButton>
       <UButton
         size="sm"
-        :variant="activeTab === 'shots' ? 'solid' : 'ghost'"
-        data-testid="tab-shots"
-        @click="activeTab = 'shots'"
+        :variant="activeTab === 'strengths' ? 'solid' : 'ghost'"
+        data-testid="tab-strengths"
+        @click="activeTab = 'strengths'"
       >
-        {{ $t('shotStats.tabs.shots') }}
+        {{ $t('shotStats.tabs.strengths') }}
+      </UButton>
+      <UButton
+        size="sm"
+        :variant="activeTab === 'weakness' ? 'solid' : 'ghost'"
+        data-testid="tab-weakness"
+        @click="activeTab = 'weakness'"
+      >
+        {{ $t('shotStats.tabs.weakness') }}
       </UButton>
       <UButton
         size="sm"
@@ -167,6 +176,26 @@ function backToPair(): void {
       </UButton>
     </nav>
 
+    <div
+      v-show="activeTab !== 'rallyflow'"
+      class="annotation-controls"
+    >
+      <StatsAnnotationBadge
+        v-if="coverage.loaded.value"
+        :summary="coverage.summary.value"
+      />
+      <StatsShotFilterBar
+        v-if="shot.loaded.value"
+        :hitter-ids="shot.hitterIds.value"
+        :set-numbers="shot.knownSetNumbers.value"
+        :player-filter="shot.playerFilter.value"
+        :set-number="shot.setNumber.value"
+        :name-of="view.nameOf"
+        @update:player-filter="shot.playerFilter.value = $event"
+        @update:set-number="shot.setNumber.value = $event"
+      />
+    </div>
+
     <StatsEmptyState v-if="view.isEmpty.value" />
 
     <div
@@ -175,97 +204,9 @@ function backToPair(): void {
     >
       <section class="charts-col">
         <div
-          v-show="activeTab === 'shots'"
+          v-show="activeTab === 'serve'"
           class="tab-panel"
-          data-testid="panel-shots"
-        >
-          <StatsAnnotationBadge
-            v-if="coverage.loaded.value"
-            :summary="coverage.summary.value"
-          />
-          <template v-if="shot.loaded.value && !shot.isEmpty.value">
-            <StatsShotFilterBar
-              :hitter-ids="shot.hitterIds.value"
-              :present-types="shot.presentTypes.value"
-              :set-numbers="shot.knownSetNumbers.value"
-              :player-filter="shot.playerFilter.value"
-              :type-filter="shot.typeFilter.value"
-              :hand-filter="shot.handFilter.value"
-              :set-number="shot.setNumber.value"
-              :name-of="view.nameOf"
-              @update:player-filter="shot.playerFilter.value = $event"
-              @update:type-filter="shot.typeFilter.value = $event"
-              @update:hand-filter="shot.handFilter.value = $event; shot.zoneHand.value = $event"
-              @update:set-number="shot.setNumber.value = $event"
-            />
-            <StatsEndingsChart
-              :entries="shot.endingEntries.value"
-              :ranking="shot.decisiveRanking.value"
-            />
-            <StatsEndingsCourtMap
-              :won="shot.landZonesWon.value"
-              :lost="shot.landZonesLost.value"
-            />
-            <StatsServeTypeChart :rows="shot.filteredServeRows.value" />
-            <StatsReceiveTypeChart :rows="shot.filteredReceiveRows.value" />
-            <StatsShotMixChart :rows="shot.filteredTypeRows.value" />
-            <StatsShotMixScatter :rows="shot.filteredTypeRows.value" />
-            <StatsHandChart :rows="shot.filteredTypeRows.value" />
-            <StatsShotHeatmap
-              :origin-cells="shot.originCells.value"
-              :dest-cells="shot.destCells.value"
-              :selected="shot.selectedOrigin.value"
-              :dest-extras="shot.destExtras.value"
-              :total="shot.heatmapTotal.value"
-              :pointed-total="coverage.summary.value.shots_pointed"
-              @select-origin="shot.selectOrigin"
-            />
-          </template>
-          <p
-            v-else-if="shot.pending.value"
-            class="placeholder"
-          >
-            {{ $t('shotStats.loading') }}
-          </p>
-          <p
-            v-else
-            class="placeholder"
-          >
-            {{ $t('shotStats.shotsEmpty') }}
-          </p>
-        </div>
-        <div
-          v-show="activeTab === 'rallyflow'"
-          class="tab-panel"
-          data-testid="panel-rallyflow"
-        >
-          <!-- Group 横断は J/K のみ（L セット推移は試合単位限定, REQ-017） -->
-          <template v-if="flow.loaded.value && !flow.isEmpty.value">
-            <StatsPhaseRateChart :entries="flow.phaseEntries.value" />
-            <StatsTempoChart
-              :samples="flow.tempo.value.samples"
-              :excluded="flow.tempo.value.excluded"
-              :measure="flow.measure.value"
-              @update:measure="flow.measure.value = $event"
-            />
-          </template>
-          <p
-            v-else-if="flow.pending.value"
-            class="placeholder"
-          >
-            {{ $t('shotStats.loading') }}
-          </p>
-          <p
-            v-else
-            class="placeholder"
-          >
-            {{ $t('shotStats.flow.empty') }}
-          </p>
-        </div>
-        <div
-          v-show="activeTab === 'overview'"
-          class="tab-panel"
-          data-testid="panel-overview"
+          data-testid="panel-serve"
         >
           <template v-if="isEntity">
             <div class="entity-controls">
@@ -315,11 +256,79 @@ function backToPair(): void {
               @select="onOverviewSelect"
             />
           </template>
+          <template v-if="shot.loaded.value">
+            <StatsServeTypeChart :rows="shot.filteredServeRows.value" />
+            <StatsReceiveTypeChart :rows="shot.filteredReceiveRows.value" />
+          </template>
+          <p
+            v-else
+            class="placeholder"
+          >
+            {{ $t('shotStats.loading') }}
+          </p>
+        </div>
+        <div
+          v-show="activeTab === 'strengths'"
+          class="tab-panel"
+          data-testid="panel-strengths"
+        >
+          <p class="placeholder">
+            {{ $t('shotStats.strengths.note') }}
+          </p>
+          <StatsShotHeatmap
+            v-if="shot.loaded.value"
+            :origin-cells="shot.originCells.value"
+            :dest-cells="shot.destCells.value"
+            :selected="shot.selectedOrigin.value"
+            :dest-extras="shot.destExtras.value"
+            :total="shot.heatmapTotal.value"
+            :pointed-total="coverage.summary.value.shots_pointed"
+            @select-origin="shot.selectOrigin"
+          />
+        </div>
+        <div
+          v-show="activeTab === 'weakness'"
+          class="tab-panel"
+          data-testid="panel-weakness"
+        >
+          <StatsWeaknessMaps
+            v-if="shot.loaded.value"
+            :miss-cells="shot.missOriginCells.value"
+            :lost="shot.landZonesLost.value"
+          />
+          <p
+            v-else
+            class="placeholder"
+          >
+            {{ $t('shotStats.loading') }}
+          </p>
+        </div>
+        <div
+          v-show="activeTab === 'rallyflow'"
+          class="tab-panel"
+          data-testid="panel-rallyflow"
+        >
           <StatsRallyLengthChart
             :bins="view.rallyLengthBins.value"
             :selected-keys="view.drilldown.value.shotBinKeys"
             @select-bins="view.setDrillBins"
           />
+          <!-- Group 横断は J/K のみ（L セット推移は試合単位限定, REQ-017） -->
+          <template v-if="flow.loaded.value && !flow.isEmpty.value">
+            <StatsPhaseRateChart :entries="flow.phaseEntries.value" />
+            <StatsTempoChart
+              :samples="flow.tempo.value.samples"
+              :excluded="flow.tempo.value.excluded"
+              :measure="flow.measure.value"
+              @update:measure="flow.measure.value = $event"
+            />
+          </template>
+          <p
+            v-else-if="flow.pending.value"
+            class="placeholder"
+          >
+            {{ $t('shotStats.loading') }}
+          </p>
         </div>
       </section>
 
@@ -359,7 +368,8 @@ function backToPair(): void {
 
 <style scoped>
 .group-stats-page { display: flex; flex-direction: column; gap: 1rem; padding: 1rem; }
-.stats-tabs { display: flex; gap: 0.5rem; align-items: center; }
+.stats-tabs { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.annotation-controls { display: flex; flex-direction: column; gap: 0.5rem; }
 .tab-panel { display: flex; flex-direction: column; gap: 1rem; }
 .placeholder { font-size: 0.875rem; opacity: 0.7; }
 .stats-header { display: flex; align-items: center; gap: 1rem; }

@@ -141,6 +141,11 @@ export function useShotStatsView(
   const destCells = computed<PlacementDestCell[]>(() =>
     buildDestCells(filteredPlacement.value, selectedOrigin.value)
   )
+  /** 弱点分析: ミス（ネット/アウト決着）の打点セル（自陣半面, 2026-08-08 #8 川島アドバイス） */
+  const missOriginCells = computed<PlacementDestCell[]>(() =>
+    buildOriginCells(filteredPlacement.value.filter(r => r.dest_kind === 'net' || r.dest_kind === 'out'))
+  )
+
   /** コート外の行き先（ネット / 左右アウト / バックアウト。寄せずに別枠表示, #4） */
   const destExtras = computed(() => buildDestExtras(filteredPlacement.value, selectedOrigin.value))
   const heatmapTotal = computed(() =>
@@ -179,7 +184,7 @@ export function useShotStatsView(
     // A
     endingEntries, decisiveRanking, landZonesWon, landZonesLost,
     // F
-    selectedOrigin, selectOrigin, originCells, destCells, destExtras, heatmapTotal,
+    selectedOrigin, selectOrigin, originCells, destCells, destExtras, heatmapTotal, missOriginCells,
     isEmpty
   }
 }

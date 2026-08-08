@@ -103,6 +103,7 @@ const shotMock = {
   selectOrigin: vi.fn(),
   originCells: ref([]),
   destCells: ref([]),
+  missOriginCells: ref([]),
   destExtras: ref({
     net: { count: 0, breakdown: [] }, left: { count: 0, breakdown: [] },
     right: { count: 0, breakdown: [] }, back: { count: 0, breakdown: [] }
@@ -132,7 +133,8 @@ const stubs = {
   StatsPhaseRateChart: { props: ['entries'], template: '<div data-testid="phase-chart" />' },
   StatsTempoChart: { props: ['samples', 'excluded', 'measure'], template: '<div data-testid="tempo-chart" />' },
   StatsSetFlowChart: FlowChartStub,
-  StatsShotFilterBar: { props: ['hitterIds', 'presentTypes', 'setNumbers', 'playerFilter', 'typeFilter', 'handFilter', 'setNumber', 'nameOf'], template: '<div data-testid="shot-filter" />' },
+  StatsShotFilterBar: { props: ['hitterIds', 'setNumbers', 'playerFilter', 'setNumber', 'nameOf'], template: '<div data-testid="shot-filter" />' },
+  StatsWeaknessMaps: { props: ['missCells', 'lost'], template: '<div data-testid="weakness-maps" />' },
   StatsEndingsChart: { props: ['entries', 'ranking'], template: '<div data-testid="endings-chart" />' },
   StatsEndingsCourtMap: { props: ['won', 'lost'], template: '<div data-testid="endings-map" />' },
   StatsServeTypeChart: { props: ['rows', 'nameOf'], template: '<div data-testid="serve-chart" />' },
@@ -192,23 +194,22 @@ describe('試合単位 stats ページ', () => {
     expect(paneSeekSpy).toHaveBeenCalledWith(1000) // 3000 - 2000
   })
 
-  it('タブ: ショット分析へ切替で概要パネルが隠れ、注釈率を遅延取得 (TASK-0004)', async () => {
+  it('タブ: 既定はサーブ周り。注釈系は初期ロードされ、タブ切替でパネルが入れ替わる (#8)', async () => {
     coverageExecute.mockClear()
-    coverageMock.loaded.value = false
+    shotExecute.mockClear()
     const w = mountPage()
-    // v-show の inline style で表示状態を判定（happy-dom では isVisible が拾えないため）
+    // 既定タブ（サーブ周り）が注釈データを使うため、注釈系は mount 時に取得
+    expect(coverageExecute).toHaveBeenCalledTimes(1)
+    expect(shotExecute).toHaveBeenCalledTimes(1)
     const hidden = (sel: string) => (w.find(sel).attributes('style') ?? '').includes('display: none')
-    // 初期は概要タブ。他タブのパネルは v-show で非表示
-    expect(hidden('[data-testid="panel-overview"]')).toBe(false)
-    expect(hidden('[data-testid="panel-shots"]')).toBe(true)
-    await w.find('[data-testid="tab-shots"]').trigger('click')
-    expect(hidden('[data-testid="panel-shots"]')).toBe(false)
-    expect(hidden('[data-testid="panel-overview"]')).toBe(true)
+    expect(hidden('[data-testid="panel-serve"]')).toBe(false)
+    expect(hidden('[data-testid="panel-strengths"]')).toBe(true)
+    await w.find('[data-testid="tab-strengths"]').trigger('click')
+    expect(hidden('[data-testid="panel-strengths"]')).toBe(false)
+    expect(hidden('[data-testid="panel-serve"]')).toBe(true)
     // 動画・テーブルはタブ横断で保持（アンマウントされない）
     expect(w.find('[data-testid="pane"]').exists()).toBe(true)
     expect(w.find('[data-testid="table"]').exists()).toBe(true)
-    // 注釈率はタブ初回アクティブ時に遅延取得
-    expect(coverageExecute).toHaveBeenCalledTimes(1)
   })
 
   it('タブ: ラリー展開で J/K/L を表示し、L タップで動画ジャンプ (TASK-0005〜0008 / REQ-019)', async () => {
@@ -232,16 +233,19 @@ describe('試合単位 stats ページ', () => {
     flowMock.setNumbers.value = []
   })
 
-  it('タブ: ショット分析で探針5枚 + フィルタバーを表示 (TASK-0009〜0012)', async () => {
-    shotExecute.mockClear()
+  it('タブ再編 (#8): サーブ周り = 得点率 + サーブ/レシーブ、強み = ヒートマップ、弱点 = 弱点マップ', async () => {
     shotMock.loaded.value = true
     const w = mountPage()
-    await w.find('[data-testid="tab-shots"]').trigger('click')
-    for (const tid of ['shot-filter', 'endings-chart', 'endings-map', 'serve-chart', 'receive-chart', 'mix-chart', 'mix-scatter', 'hand-chart', 'heatmap']) {
+    // サーブ周り（既定）: 得点率チャート + サーブ/レシーブ分析 + 共通フィルタ
+    for (const tid of ['shot-filter', 'rate-chart', 'serve-chart', 'receive-chart']) {
       expect(w.find(`[data-testid="${tid}"]`).exists(), tid).toBe(true)
     }
-    // loaded=true のため execute は呼ばれない
-    expect(shotExecute).not.toHaveBeenCalled()
+    // 削除済みチャートは出ない (#8: 決着/構成比/散布図/F・B)
+    for (const tid of ['endings-chart', 'endings-map', 'mix-chart', 'mix-scatter', 'hand-chart']) {
+      expect(w.find(`[data-testid="${tid}"]`).exists(), tid).toBe(false)
+    }
+    expect(w.find('[data-testid="heatmap"]').exists()).toBe(true) // 強みタブ (v-show)
+    expect(w.find('[data-testid="weakness-maps"]').exists()).toBe(true) // 弱点タブ (v-show)
     shotMock.loaded.value = false
   })
 })
