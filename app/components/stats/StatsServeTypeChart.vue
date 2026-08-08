@@ -9,6 +9,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useChartTextColor } from '~/composables/useChartTextColor'
+import { countAxisScale } from '~/utils/shot-stats/chart-axis'
 import type { ServePosition } from '~/types/stats-dashboard'
 import type { ServeTypeStatRow } from '~/types/shot-stats'
 
@@ -40,6 +41,8 @@ function typeLabel(type: typeof SERVE_TYPES[number]): string {
   return type === null ? t('shotStats.endings.unannotated') : t(`annotation.shotType.${type}`)
 }
 
+const countScale = computed(() => countAxisScale(Math.max(...entries.value.map(e => e.total), 0)))
+
 const option = computed(() => ({
   tooltip: {
     trigger: 'axis',
@@ -57,15 +60,16 @@ const option = computed(() => ({
     data: SERVE_TYPES.map(typeLabel),
     axisLabel: { color: chartText.value, fontSize: 12 }
   },
+  // 両軸を同一分割数に固定してグリッド線を1組に統合（2軸で横線が倍増して見えづらいため）
   yAxis: [
     {
-      // alignTicks: 本数軸と%軸の分割数を揃え、グリッド線を1組に統合（2軸で横線が倍増して見えづらいため）
-      type: 'value', name: t('shotStats.combo.count'), min: 0, nameGap: 12, minInterval: 1, alignTicks: true,
+      type: 'value', name: t('shotStats.combo.count'), min: 0, nameGap: 12,
+      max: countScale.value.max, interval: countScale.value.interval,
       axisLabel: { color: chartText.value, fontSize: 13 },
       nameTextStyle: { color: chartText.value, fontSize: 12 }
     },
     {
-      type: 'value', name: '%', min: 0, max: 100, nameGap: 12, alignTicks: true,
+      type: 'value', name: '%', min: 0, max: 100, nameGap: 12, interval: 20,
       splitLine: { show: false },
       axisLabel: { color: chartText.value, fontSize: 13 },
       nameTextStyle: { color: chartText.value, fontSize: 12 }
