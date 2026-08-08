@@ -786,6 +786,25 @@ export type Database = {
           won: number
         }[]
       }
+      stats_shot_placement: {
+        Args: {
+          p_group_id?: string
+          p_hand?: string
+          p_match_id?: string
+          p_match_ids?: string[]
+          p_set_number?: number
+          p_zones?: number
+        }
+        Returns: {
+          dest_col: number
+          dest_row: number
+          hit_player_id: string
+          origin_col: number
+          origin_row: number
+          shot_type: string
+          shots: number
+        }[]
+      }
       stats_shot_types: {
         Args: {
           p_group_id?: string
