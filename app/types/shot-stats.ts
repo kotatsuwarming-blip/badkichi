@@ -73,10 +73,11 @@ export interface ShotPlacementRow {
   shots: number
 }
 
-/** 球種内訳 */
+/** 球種内訳（miss = ネット/アウトで終わった本数, #7 赤表示用） */
 export interface PlacementBreakdown {
   type: ShotType | null
   count: number
+  miss: number
 }
 
 /** F: 配球先セル（球種内訳つき, ヒアリング2026-08-08） */
@@ -106,12 +107,19 @@ export interface ServeTypeStatRow {
   won: number
 }
 
-/** stats_receive_types の行（grain: レシーバー × 2打目種別 × サーブ位置） */
-export interface ReceiveTypeStatRow {
+/** stats_receive_detail の行（grain: レシーバー × サーブ位置 × サーブ種別 × 返球種別 × コース, #6） */
+export interface ReceiveDetailRow {
   receiver_player_id: string
-  /** 2 打目の注釈（null = 未注釈）。レシーブ不発生のラリーは行自体が無い */
-  shot_type: ShotType | null
   server_position: 'right' | 'left'
+  /** 1 打目の注釈（null = 未注釈） */
+  serve_type: ShotType | null
+  /** 2 打目の注釈（null = 未注釈）。レシーブ不発生のラリーは行自体が無い */
+  receive_type: ShotType | null
+  /** 返球コース: in=相手コート内 / net / out / null=コース不明 */
+  dest_kind: 'in' | 'net' | 'out' | null
+  dest_out: 'left' | 'right' | 'back' | null
+  dest_row: number | null
+  dest_col: number | null
   total: number
   won: number
 }

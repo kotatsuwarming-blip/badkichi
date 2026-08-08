@@ -80,6 +80,8 @@ const shotMock = {
   filteredTypeRows: ref([]),
   serveRows: ref([]),
   receiveRows: ref([]),
+  filteredServeRows: ref([]),
+  filteredReceiveRows: ref([]),
   zoneRows: ref([]),
   endingRows: ref([]),
   endingEntries: ref([]),

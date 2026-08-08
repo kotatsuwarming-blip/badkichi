@@ -13,20 +13,26 @@ import type {
 } from '~/types/shot-stats'
 import type { ShotType } from '~/types/shot-annotation'
 
-function toBreakdown(types: Map<string, number>): PlacementBreakdown[] {
+interface TypeAcc { count: number, miss: number }
+
+function toBreakdown(types: Map<string, TypeAcc>): PlacementBreakdown[] {
   return [...types.entries()]
-    .map(([tkey, count]) => ({ type: tkey === '__null__' ? null : tkey as ShotType, count }))
+    .map(([tkey, acc]) => ({ type: tkey === '__null__' ? null : tkey as ShotType, count: acc.count, miss: acc.miss }))
     .sort((a, b) => b.count - a.count)
 }
 
-function addType(types: Map<string, number>, row: ShotPlacementRow): void {
+function addType(types: Map<string, TypeAcc>, row: ShotPlacementRow): void {
   const tkey = row.shot_type ?? '__null__'
-  types.set(tkey, (types.get(tkey) ?? 0) + row.shots)
+  const acc = types.get(tkey) ?? { count: 0, miss: 0 }
+  acc.count += row.shots
+  // ミス = ネット/アウトで終わった配球（#7 赤表示用）
+  if (row.dest_kind === 'net' || row.dest_kind === 'out') acc.miss += row.shots
+  types.set(tkey, acc)
 }
 
 /** 手前（自陣）セル別の打数 + 球種内訳（選択 UI・ホバー内訳用） */
 export function buildOriginCells(rows: ShotPlacementRow[]): PlacementDestCell[] {
-  const byCell = new Map<string, Map<string, number>>()
+  const byCell = new Map<string, Map<string, TypeAcc>>()
   for (const r of rows) {
     const key = `${r.origin_row}:${r.origin_col}`
     let types = byCell.get(key)
@@ -36,11 +42,11 @@ export function buildOriginCells(rows: ShotPlacementRow[]): PlacementDestCell[] 
     }
     addType(types, r)
   }
-  const totals = [...byCell.values()].map(m => [...m.values()].reduce((s, v) => s + v, 0))
+  const totals = [...byCell.values()].map(m => [...m.values()].reduce((s, v) => s + v.count, 0))
   const max = Math.max(1, ...totals)
   return [...byCell.entries()].map(([key, types]) => {
     const [row, col] = key.split(':').map(Number)
-    const count = [...types.values()].reduce((s, v) => s + v, 0)
+    const count = [...types.values()].reduce((s, v) => s + v.count, 0)
     return { row: row!, col: col!, count, ratio: count / max, breakdown: toBreakdown(types) }
   })
 }
@@ -54,7 +60,7 @@ export function buildDestCells(
   rows: ShotPlacementRow[],
   selected: { row: number, col: number } | null
 ): PlacementDestCell[] {
-  const byCell = new Map<string, Map<string, number>>()
+  const byCell = new Map<string, Map<string, TypeAcc>>()
   for (const r of rows) {
     if (r.dest_kind !== 'in' || r.dest_row === null || r.dest_col === null) continue
     if (!matchesOrigin(r, selected)) continue
@@ -66,11 +72,11 @@ export function buildDestCells(
     }
     addType(types, r)
   }
-  const totals = [...byCell.values()].map(m => [...m.values()].reduce((s, v) => s + v, 0))
+  const totals = [...byCell.values()].map(m => [...m.values()].reduce((s, v) => s + v.count, 0))
   const max = Math.max(1, ...totals)
   return [...byCell.entries()].map(([key, types]) => {
     const [row, col] = key.split(':').map(Number)
-    const count = [...types.values()].reduce((s, v) => s + v, 0)
+    const count = [...types.values()].reduce((s, v) => s + v.count, 0)
     return { row: row!, col: col!, count, ratio: count / max, breakdown: toBreakdown(types) }
   })
 }
@@ -81,18 +87,18 @@ export function buildDestExtras(
   selected: { row: number, col: number } | null
 ): PlacementExtras {
   const maps = {
-    net: new Map<string, number>(),
-    left: new Map<string, number>(),
-    right: new Map<string, number>(),
-    back: new Map<string, number>()
+    net: new Map<string, TypeAcc>(),
+    left: new Map<string, TypeAcc>(),
+    right: new Map<string, TypeAcc>(),
+    back: new Map<string, TypeAcc>()
   }
   for (const r of rows) {
     if (!matchesOrigin(r, selected)) continue
     if (r.dest_kind === 'net') addType(maps.net, r)
     else if (r.dest_kind === 'out' && r.dest_out !== null) addType(maps[r.dest_out], r)
   }
-  const toExtra = (m: Map<string, number>): PlacementExtra => ({
-    count: [...m.values()].reduce((s, v) => s + v, 0),
+  const toExtra = (m: Map<string, TypeAcc>): PlacementExtra => ({
+    count: [...m.values()].reduce((s, v) => s + v.count, 0),
     breakdown: toBreakdown(m)
   })
   return { net: toExtra(maps.net), left: toExtra(maps.left), right: toExtra(maps.right), back: toExtra(maps.back) }
@@ -125,8 +131,10 @@ export function buildOriginProfile(
 ): PlacementBreakdown[] {
   const candidates = zoneCandidates(originRow, zones)
   if (candidates === null) return breakdown
-  const byType = new Map(breakdown.map(b => [b.type ?? '__null__', b.count] as const))
-  const listed: PlacementBreakdown[] = candidates.map(type => ({ type, count: byType.get(type) ?? 0 }))
+  const byType = new Map(breakdown.map(b => [b.type ?? '__null__', b] as const))
+  const listed: PlacementBreakdown[] = candidates.map(type =>
+    byType.get(type) ?? { type, count: 0, miss: 0 }
+  )
   const extras = breakdown
     .filter(b => !candidates.includes(b.type as ShotType))
     .sort((a, b) => b.count - a.count)

@@ -11,7 +11,7 @@ import { computed, ref, watch, type Ref } from 'vue'
 import type { Hand, ShotType } from '~/types/shot-annotation'
 import type { StatsEntity } from '~/types/stats-dashboard'
 import type {
-  PlacementDestCell, RallyEndingRow, ReceiveTypeStatRow, ServeTypeStatRow, ShotPlacementRow,
+  PlacementDestCell, RallyEndingRow, ReceiveDetailRow, ServeTypeStatRow, ShotPlacementRow,
   ShotTypeStatRow, StatsSubject
 } from '~/types/shot-stats'
 import type { StatsViewScope } from '~/composables/useStatsView'
@@ -39,7 +39,7 @@ export function useShotStatsView(
 
   const typeRows = ref<ShotTypeStatRow[]>([])
   const serveRows = ref<ServeTypeStatRow[]>([])
-  const receiveRows = ref<ReceiveTypeStatRow[]>([])
+  const receiveRows = ref<ReceiveDetailRow[]>([])
   const placementRows = ref<ShotPlacementRow[]>([])
   const endingRows = ref<RallyEndingRow[]>([])
   const pending = ref(false)
@@ -62,7 +62,7 @@ export function useShotStatsView(
       const [types, serves, receives, placement, endings] = await Promise.all([
         callStatsRpc<ShotTypeStatRow>(client, 'stats_shot_types', scopeArgs()),
         callStatsRpc<ServeTypeStatRow>(client, 'stats_serve_types', scopeArgs()),
-        callStatsRpc<ReceiveTypeStatRow>(client, 'stats_receive_types', scopeArgs()),
+        callStatsRpc<ReceiveDetailRow>(client, 'stats_receive_detail', scopeArgs()),
         callStatsRpc<ShotPlacementRow>(client, 'stats_shot_placement', { ...scopeArgs(), p_hand: zoneHand.value }),
         callStatsRpc<RallyEndingRow>(client, 'stats_rally_endings', scopeArgs())
       ])
@@ -92,6 +92,18 @@ export function useShotStatsView(
       (playerFilter.value === null || r.hit_player_id === playerFilter.value)
       && (handFilter.value === null || r.hand === handFilter.value)
     )
+  )
+
+  /** C/レシーブ: 打者フィルタで人を絞る（未選択は全員合算, #6） */
+  const filteredServeRows = computed(() =>
+    playerFilter.value === null
+      ? serveRows.value
+      : serveRows.value.filter(r => r.server_player_id === playerFilter.value)
+  )
+  const filteredReceiveRows = computed(() =>
+    playerFilter.value === null
+      ? receiveRows.value
+      : receiveRows.value.filter(r => r.receiver_player_id === playerFilter.value)
   )
 
   /** 打者候補（フィルタ UI 用。注釈に登場した選手） */
@@ -163,7 +175,7 @@ export function useShotStatsView(
     // フィルタ
     setNumber, zoneHand, playerFilter, typeFilter, handFilter, hitterIds, presentTypes, knownSetNumbers,
     // 生 grain（チャートコンポーネント側で導出）
-    typeRows, filteredTypeRows, serveRows, receiveRows, placementRows, endingRows,
+    typeRows, filteredTypeRows, serveRows, receiveRows, filteredServeRows, filteredReceiveRows, placementRows, endingRows,
     // A
     endingEntries, decisiveRanking, landZonesWon, landZonesLost,
     // F

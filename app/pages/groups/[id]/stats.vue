@@ -206,14 +206,8 @@ function backToPair(): void {
               :won="shot.landZonesWon.value"
               :lost="shot.landZonesLost.value"
             />
-            <StatsServeTypeChart
-              :rows="shot.serveRows.value"
-              :name-of="view.nameOf"
-            />
-            <StatsReceiveTypeChart
-              :rows="shot.receiveRows.value"
-              :name-of="view.nameOf"
-            />
+            <StatsServeTypeChart :rows="shot.filteredServeRows.value" />
+            <StatsReceiveTypeChart :rows="shot.filteredReceiveRows.value" />
             <StatsShotMixChart :rows="shot.filteredTypeRows.value" />
             <StatsShotMixScatter :rows="shot.filteredTypeRows.value" />
             <StatsHandChart :rows="shot.filteredTypeRows.value" />

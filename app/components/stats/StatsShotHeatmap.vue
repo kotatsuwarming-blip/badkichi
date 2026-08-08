@@ -317,12 +317,22 @@ function originTitle(row: number, col: number): string {
             <span class="profile-bar-track">
               <span
                 class="profile-bar"
-                :style="{ width: `${(entry.count / profileMax) * 100}%` }"
+                :style="{ width: `${((entry.count - entry.miss) / profileMax) * 100}%` }"
+              />
+              <span
+                v-if="entry.miss > 0"
+                class="profile-bar profile-bar-miss"
+                :style="{ width: `${(entry.miss / profileMax) * 100}%` }"
+                :data-testid="`profile-miss-${entry.type ?? 'unannotated'}`"
               />
             </span>
             <span class="profile-count">{{ entry.count }}</span>
           </li>
         </ul>
+        <p class="profile-legend">
+          <span class="legend-swatch legend-ok" /> {{ $t('shotStats.heatmap.legendOk') }}
+          <span class="legend-swatch legend-miss" /> {{ $t('shotStats.heatmap.legendMiss') }}
+        </p>
         <p
           v-if="isMiddleRow"
           class="profile-note"
@@ -350,8 +360,13 @@ function originTitle(row: number, col: number): string {
 .profile-row { display: grid; grid-template-columns: 7em 1fr 2.5em; align-items: center; gap: 0.5rem; font-size: 0.8125rem; }
 .profile-row.is-zero { opacity: 0.45; }
 .profile-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.profile-bar-track { height: 0.625rem; border-radius: 9999px; background: rgba(148, 163, 184, 0.18); overflow: hidden; }
-.profile-bar { display: block; height: 100%; border-radius: 9999px; background: rgba(59, 130, 246, 0.75); }
+.profile-bar-track { display: flex; height: 0.625rem; border-radius: 9999px; background: rgba(148, 163, 184, 0.18); overflow: hidden; }
+.profile-bar { display: block; height: 100%; background: rgba(59, 130, 246, 0.75); }
+.profile-bar-miss { background: rgba(239, 68, 68, 0.85); }
+.profile-legend { display: flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; opacity: 0.75; }
+.legend-swatch { display: inline-block; width: 0.75rem; height: 0.5rem; border-radius: 2px; }
+.legend-ok { background: rgba(59, 130, 246, 0.75); }
+.legend-miss { background: rgba(239, 68, 68, 0.85); }
 .profile-count { text-align: right; font-variant-numeric: tabular-nums; }
 .profile-note { font-size: 0.75rem; opacity: 0.6; }
 .origin-cell { cursor: pointer; }
