@@ -11,14 +11,20 @@ vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k: string, p?: Record<string,
 // eslint-disable-next-line import/first
 import StatsShotHeatmap from '~/components/stats/StatsShotHeatmap.vue'
 // eslint-disable-next-line import/first
-import type { PlacementDestCell, ZoneCell } from '~/types/shot-stats'
+import type { PlacementDestCell, PlacementExtras } from '~/types/shot-stats'
 
 const global = { mocks: { $t: (k: string, p?: Record<string, unknown>) => p ? `${k}:${JSON.stringify(p)}` : k } }
 
-const originCells: ZoneCell[] = [
-  { row: 2, col: 0, count: 4, ratio: 1 },
-  { row: 0, col: 2, count: 2, ratio: 0.5 }
+const originCells: PlacementDestCell[] = [
+  { row: 2, col: 0, count: 4, ratio: 1, breakdown: [{ type: 'smash', count: 3 }, { type: 'hairpin', count: 1 }] },
+  { row: 0, col: 2, count: 2, ratio: 0.5, breakdown: [{ type: 'clear_high', count: 2 }] }
 ]
+const destExtras: PlacementExtras = {
+  net: { count: 2, breakdown: [{ type: 'hairpin', count: 2 }] },
+  left: { count: 1, breakdown: [{ type: 'smash', count: 1 }] },
+  right: { count: 0, breakdown: [] },
+  back: { count: 0, breakdown: [] }
+}
 const destCells: PlacementDestCell[] = [
   { row: 2, col: 1, count: 5, ratio: 1, breakdown: [{ type: 'smash', count: 3 }, { type: 'clear_high', count: 2 }] },
   { row: 0, col: 0, count: 1, ratio: 0.2, breakdown: [{ type: 'hairpin', count: 1 }] }
@@ -26,7 +32,7 @@ const destCells: PlacementDestCell[] = [
 
 function mountMap(selected: { row: number, col: number } | null = null) {
   return mount(StatsShotHeatmap, {
-    props: { originCells, destCells, selected, total: 5, pointedTotal: 9 },
+    props: { originCells, destCells, destExtras, selected, total: 8, pointedTotal: 9 },
     global
   })
 }
@@ -65,6 +71,25 @@ describe('StatsShotHeatmap', () => {
     const w = mountMap()
     await w.find('[data-testid="origin-2-0"]').trigger('click')
     expect(w.emitted('selectOrigin')![0][0]).toEqual({ row: 2, col: 0 })
+  })
+
+  it('手前セルのホバーで球種内訳が出る (#4)', () => {
+    const w = mountMap()
+    const title = w.find('[data-testid="origin-2-0"]').find('title').text()
+    expect(title).toContain('annotation.shotType.smash 3')
+    expect(title).toContain('annotation.shotType.hairpin 1')
+  })
+
+  it('ネット/アウトはコート外に別枠表示され、ホバーで内訳が出る (#4)', () => {
+    const w = mountMap()
+    const net = w.find('[data-testid="extra-net"]')
+    expect(net.exists()).toBe(true)
+    expect(net.text()).toContain('2')
+    expect(net.find('title').text()).toContain('annotation.shotType.hairpin 2')
+    expect(w.find('[data-testid="extra-left"]').text()).toContain('1')
+    // 0 件の方向は表示しない
+    expect(w.find('[data-testid="extra-right"]').exists()).toBe(false)
+    expect(w.find('[data-testid="extra-back"]').exists()).toBe(false)
   })
 
   it('未選択時は選択を促す文言、選択時は解除の案内', async () => {

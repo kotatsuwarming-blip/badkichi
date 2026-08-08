@@ -151,7 +151,8 @@ describe.skipIf(skip)('shot-stats 集計 RPC 統合テスト', () => {
       endReason: 'net',
       shots: [
         { hitPlayerId: p[0], shotType: 'serve_short', videoMs: 1000 },
-        { hitPlayerId: p[2], shotType: 'hairpin', videoMs: null }
+        // 打点あり + ネット決着 → placement で dest_kind='net' になる (#4)
+        { hitPlayerId: p[2], shotType: 'hairpin', hitX: 0.6, hitY: 0.7, videoMs: null }
       ]
     })
     // R3: floor × 最終打者 = 敗者 (out 相当の自ミス)。land は x 範囲外 (side out)。クランプ検証の打点つき
@@ -196,7 +197,7 @@ describe.skipIf(skip)('shot-stats 集計 RPC 統合テスト', () => {
     expect(Number(row.rallies_ended)).toBe(4)
     expect(Number(row.shots_total)).toBe(9) // 3+2+3+1
     expect(Number(row.shots_typed)).toBe(8) // R1 s2 のみ未注釈
-    expect(Number(row.shots_pointed)).toBe(3) // R1 s2/s3, R3 s3
+    expect(Number(row.shots_pointed)).toBe(4) // R1 s2/s3, R2 s2, R3 s3
     expect(Number(row.shots_handed)).toBe(1) // R1 s3 forehand
     expect(Number(row.shots_attributed)).toBe(9)
     expect(Number(row.rallies_fully_timed)).toBe(3) // R1,R3,R6 (R2 は s2 時刻なし)
@@ -290,24 +291,10 @@ describe.skipIf(skip)('shot-stats 集計 RPC 統合テスト', () => {
 
   // ---- stats_shot_zones ----
 
-  it('REQ-105/EDGE-101: 選手視点ミラーとクランプ算入 (3×3 = 6行×3列)', async () => {
-    const { data, error } = await userAClient.rpc('stats_shot_zones', { p_match_id: matchId })
-    expect(error).toBeNull()
-    const rows = data as Array<Record<string, number | string | null>>
+  // 注: stats_shot_zones は placement へ置換済み (アプリ未使用・旧向き規則) のためテスト撤去 (2026-08-08)
 
-    // p2 (チーム B) の打点 (0.2, 0.3) → ミラーで (0.8, 0.7) → col floor(0.8*3)=2, row floor(0.7*6)=4
-    const p2cell = rows.find(r => r.hit_player_id === p[2])!
-    expect(Number(p2cell.zone_row)).toBe(4)
-    expect(Number(p2cell.zone_col)).toBe(2)
-
-    // p1 (チーム A) の打点 (0.5, 1.05) → ミラーなし・y はクランプ → row 5 (最終行), col 1
-    const p1cell = rows.find(r => r.hit_player_id === p[1])!
-    expect(Number(p1cell.zone_row)).toBe(5)
-    expect(Number(p1cell.zone_col)).toBe(1)
-  })
-
-  it('REQ-004: p_hand でヒートマップを絞り込める', async () => {
-    const { data } = await userAClient.rpc('stats_shot_zones', { p_match_id: matchId, p_hand: 'forehand' })
+  it('REQ-004: p_hand で配球ペアを絞り込める', async () => {
+    const { data } = await userAClient.rpc('stats_shot_placement', { p_match_id: matchId, p_hand: 'forehand' })
     const rows = data as Array<Record<string, number | string | null>>
     // forehand + 打点ありは R1 s3 (p0 smash) のみ
     expect(rows.length).toBe(1)
@@ -346,21 +333,33 @@ describe.skipIf(skip)('shot-stats 集計 RPC 統合テスト', () => {
 
   // ---- stats_shot_placement ----
 
-  it('配球ペア: origin=打点セル(自陣半面) / dest=次接触 or 落下点(相手半面) をミラー付きで返す', async () => {
+  it('配球ペア: コート内は origin/dest セル、ネット・アウトは dest_kind で区別して返す (#4)', async () => {
     const { data, error } = await userAClient.rpc('stats_shot_placement', { p_match_id: matchId })
     expect(error).toBeNull()
     const rows = data as Array<Record<string, number | string | null>>
-    // R1 s3 (p0 smash, 打点 0.4/0.75): origin = 自陣ネット側 (2,1)。最終打 → land (0.5,0.9) = 相手バック中央 (2,1)
+    // R1 s3 (p0 smash, 打点 0.4/0.75, cam=B・チームA → x のみ反転): origin = 自陣ネット側 (2,1)。
+    // 最終打 → land (0.5,0.9) コート内 = 相手バック中央 (2,1)
     const smash = rows.find(r => r.hit_player_id === p[0] && r.shot_type === 'smash')!
+    expect(smash.dest_kind).toBe('in')
     expect(Number(smash.origin_row)).toBe(2)
     expect(Number(smash.origin_col)).toBe(1)
     expect(Number(smash.dest_row)).toBe(2)
     expect(Number(smash.dest_col)).toBe(1)
     expect(Number(smash.shots)).toBe(1)
-    // R1 s2 (p2, 種別未注釈, 0.2/0.3): B 視点ミラー。dest = 次接触 s3 (0.4/0.75) → ミラー (0.6/0.25) → 相手ネット側 (0,1)
+    // R1 s2 (p2, 種別未注釈, cam=B・チームB → y のみ反転): dest = 次接触 s3 → 相手ネット側 (0,1)
     const p2row = rows.find(r => r.hit_player_id === p[2] && r.shot_type === null)!
+    expect(p2row.dest_kind).toBe('in')
     expect(Number(p2row.dest_row)).toBe(0)
     expect(Number(p2row.dest_col)).toBe(1)
+    // R3 s3 (p1 smash): floor × land (1.2, 0.5) 範囲外 → x 反転で (-0.2, 0.5) = 左アウト。寄せない (#4)
+    const outRow = rows.find(r => r.hit_player_id === p[1] && r.shot_type === 'smash')!
+    expect(outRow.dest_kind).toBe('out')
+    expect(outRow.dest_out).toBe('left')
+    expect(outRow.dest_row).toBeNull()
+    // R2 s2 (p2 hairpin): ネット決着の最終打 → dest_kind='net' (従来は集計から消えていた)
+    const netRow = rows.find(r => r.hit_player_id === p[2] && r.shot_type === 'hairpin')!
+    expect(netRow.dest_kind).toBe('net')
+    expect(netRow.dest_row).toBeNull()
   })
 
   // ---- stats_serve_types ----

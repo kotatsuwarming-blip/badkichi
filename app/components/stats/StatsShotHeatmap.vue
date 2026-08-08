@@ -1,20 +1,22 @@
 <script setup lang="ts">
 /**
- * StatsShotHeatmap.vue — F 配球ヒートマップ（REQ-011 改訂, ヒアリング2026-08-08）
+ * StatsShotHeatmap.vue — F 配球ヒートマップ（REQ-011 改訂, ヒアリング2026-08-08 #2〜#4）
  *
  * 手前（自陣）3×3 のセルをタップで選択 → そのセルから打ったショットの配球先が
- * 奥（相手）3×3 に本数で表示される。数字ホバーで球種内訳（<title> ツールチップ）。
- * 未選択時は全セル合計 + 選択を促す文言。同一セル再タップで解除。
- * 座標は選手視点固定（下 = 自陣, REQ-105）。
+ * 奥（相手）3×3 + コート外（ネット / 左右アウト / バックアウト）に本数で表示される。
+ * 手前・奥・コート外いずれもホバーで球種内訳（<title> ツールチップ, #4）。
+ * ミスの行き先は寄せずに別枠表示（#4）。未選択時は全体合計 + 選択を促す文言。
+ * 座標は選手視点固定（下 = 自陣, REQ-105 カメラ基準正規化）。
  */
 import { useI18n } from 'vue-i18n'
-import type { PlacementDestCell, ZoneCell } from '~/types/shot-stats'
+import type { PlacementBreakdown, PlacementDestCell, PlacementExtras } from '~/types/shot-stats'
 
 const props = withDefaults(defineProps<{
-  originCells: ZoneCell[]
+  originCells: PlacementDestCell[]
   destCells: PlacementDestCell[]
+  destExtras: PlacementExtras
   selected: { row: number, col: number } | null
-  /** 表示中の配球総数（母数併記, NFR-201） */
+  /** 表示中の配球総数（コート内 + ネット + アウト。母数併記, NFR-201） */
   total: number
   /** スコープ全体の打点注釈数（分母） */
   pointedTotal: number
@@ -28,6 +30,10 @@ const { t } = useI18n()
 const W = 610
 const H = 1340
 const NET = H / 2
+// コート外表示用の余白（左右 = サイドアウト / 上 = バックアウト, #4）
+const MX = 210
+const MT = 100
+const MB = 16
 
 function cellH(): number {
   return H / (props.zones * 2)
@@ -43,7 +49,7 @@ function destY(row: number): number {
   return NET - (row + 1) * cellH()
 }
 
-function originCellAt(row: number, col: number): ZoneCell | null {
+function originCellAt(row: number, col: number): PlacementDestCell | null {
   return props.originCells.find(c => c.row === row && c.col === col) ?? null
 }
 
@@ -51,11 +57,17 @@ function isSelected(row: number, col: number): boolean {
   return props.selected?.row === row && props.selected?.col === col
 }
 
-/** 球種内訳ツールチップ文字列（ホバー表示, ヒアリング2026-08-08） */
-function breakdownText(cell: PlacementDestCell): string {
-  return cell.breakdown
+/** 球種内訳ツールチップ文字列（ホバー表示, #4） */
+function breakdownText(breakdown: PlacementBreakdown[]): string {
+  return breakdown
     .map(b => `${b.type === null ? t('shotStats.endings.unannotated') : t(`annotation.shotType.${b.type}`)} ${b.count}`)
     .join(' / ')
+}
+
+function originTitle(row: number, col: number): string {
+  const cell = originCellAt(row, col)
+  const head = t('shotStats.heatmap.originTip', { n: cell?.count ?? 0 })
+  return cell && cell.breakdown.length > 0 ? `${head}: ${breakdownText(cell.breakdown)}` : head
 }
 </script>
 
@@ -80,7 +92,7 @@ function breakdownText(cell: PlacementDestCell): string {
     </p>
     <svg
       class="court"
-      :viewBox="`-8 -8 ${W + 16} ${H + 16}`"
+      :viewBox="`${-MX} ${-MT} ${W + MX * 2} ${H + MT + MB}`"
       role="img"
       data-testid="placement-court"
     >
@@ -97,7 +109,7 @@ function breakdownText(cell: PlacementDestCell): string {
           :fill="`rgba(59, 130, 246, ${0.1 + cell.ratio * 0.55})`"
           :data-testid="`dest-${cell.row}-${cell.col}`"
         >
-          <title>{{ breakdownText(cell) }}</title>
+          <title>{{ breakdownText(cell.breakdown) }}</title>
         </rect>
         <text
           :x="(W / zones) * cell.col + (W / zones) / 2"
@@ -110,7 +122,57 @@ function breakdownText(cell: PlacementDestCell): string {
           pointer-events="none"
         >{{ cell.count }}</text>
       </g>
-      <!-- 手前（自陣）半面: 選択可能セル（打った本数の数字 + ヒート + 選択枠） -->
+      <!-- コート外の行き先（ネット / 左右アウト / バックアウト。#4: 寄せずに表示） -->
+      <g
+        font-size="40"
+        fill="currentColor"
+      >
+        <text
+          v-if="destExtras.back.count > 0"
+          :x="W / 2"
+          :y="-MT / 2"
+          text-anchor="middle"
+          dominant-baseline="central"
+          data-testid="extra-back"
+        >
+          {{ $t('shotStats.heatmap.outBack') }} {{ destExtras.back.count }}
+          <title>{{ breakdownText(destExtras.back.breakdown) }}</title>
+        </text>
+        <text
+          v-if="destExtras.left.count > 0"
+          :x="-16"
+          :y="H * 0.22"
+          text-anchor="end"
+          dominant-baseline="central"
+          data-testid="extra-left"
+        >
+          {{ $t('shotStats.heatmap.outLeft') }} {{ destExtras.left.count }}
+          <title>{{ breakdownText(destExtras.left.breakdown) }}</title>
+        </text>
+        <text
+          v-if="destExtras.right.count > 0"
+          :x="W + 16"
+          :y="H * 0.22"
+          text-anchor="start"
+          dominant-baseline="central"
+          data-testid="extra-right"
+        >
+          {{ $t('shotStats.heatmap.outRight') }} {{ destExtras.right.count }}
+          <title>{{ breakdownText(destExtras.right.breakdown) }}</title>
+        </text>
+        <text
+          v-if="destExtras.net.count > 0"
+          :x="W + 16"
+          :y="NET"
+          text-anchor="start"
+          dominant-baseline="central"
+          data-testid="extra-net"
+        >
+          {{ $t('shotStats.heatmap.net') }} {{ destExtras.net.count }}
+          <title>{{ breakdownText(destExtras.net.breakdown) }}</title>
+        </text>
+      </g>
+      <!-- 手前（自陣）半面: 選択可能セル（打った本数 + ヒート + 選択枠） -->
       <g
         v-for="row in zones"
         :key="`or-${row}`"
@@ -133,7 +195,7 @@ function breakdownText(cell: PlacementDestCell): string {
             :data-testid="`origin-${row - 1}-${col - 1}`"
             @click="emit('selectOrigin', { row: row - 1, col: col - 1 })"
           >
-            <title>{{ $t('shotStats.heatmap.originTip', { n: originCellAt(row - 1, col - 1)?.count ?? 0 }) }}</title>
+            <title>{{ originTitle(row - 1, col - 1) }}</title>
           </rect>
           <!-- そのゾーンから打った本数（0 は非表示。奥の配球数と区別するためやや控えめ） -->
           <text
@@ -224,7 +286,7 @@ function breakdownText(cell: PlacementDestCell): string {
 .chart-title { font-size: 0.875rem; font-weight: 600; }
 .denominator { font-size: 0.75rem; opacity: 0.7; }
 .heatmap-state { font-size: 0.8125rem; font-weight: 500; }
-.court { width: 100%; max-width: 280px; height: auto; display: block; }
+.court { width: 100%; max-width: 340px; height: auto; display: block; }
 .origin-cell { cursor: pointer; }
 .hint { font-size: 0.75rem; opacity: 0.6; }
 </style>
