@@ -61,7 +61,7 @@ const option = computed(() => {
     xAxis: {
       type: 'value',
       name: unitLabel.value,
-      nameGap: 24,
+      nameGap: 30,
       nameLocation: 'middle',
       axisLabel: { color: chartText.value, fontSize: 13 },
       nameTextStyle: { color: chartText.value, fontSize: 12 }

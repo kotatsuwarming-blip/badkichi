@@ -11,11 +11,13 @@ import { computed, ref, watch, type Ref } from 'vue'
 import type { Hand, ShotType } from '~/types/shot-annotation'
 import type { StatsEntity } from '~/types/stats-dashboard'
 import type {
-  RallyEndingRow, ServeTypeStatRow, ShotTypeStatRow, ShotZoneRow, StatsSubject, ZoneCell
+  PlacementDestCell, RallyEndingRow, ServeTypeStatRow, ShotPlacementRow,
+  ShotTypeStatRow, StatsSubject, ZoneCell
 } from '~/types/shot-stats'
 import type { StatsViewScope } from '~/composables/useStatsView'
 import { callStatsRpc } from '~/utils/stats-dashboard/stats-rpc'
 import { buildDecisiveRanking, buildEndingEntries, buildLandZones } from '~/utils/shot-stats/endings'
+import { buildDestCells, buildOriginCells } from '~/utils/shot-stats/placement'
 
 export function useShotStatsView(
   scope: StatsViewScope,
@@ -37,7 +39,7 @@ export function useShotStatsView(
 
   const typeRows = ref<ShotTypeStatRow[]>([])
   const serveRows = ref<ServeTypeStatRow[]>([])
-  const zoneRows = ref<ShotZoneRow[]>([])
+  const placementRows = ref<ShotPlacementRow[]>([])
   const endingRows = ref<RallyEndingRow[]>([])
   const pending = ref(false)
   const loaded = ref(false)
@@ -56,15 +58,15 @@ export function useShotStatsView(
     pending.value = true
     error.value = null
     try {
-      const [types, serves, zones, endings] = await Promise.all([
+      const [types, serves, placement, endings] = await Promise.all([
         callStatsRpc<ShotTypeStatRow>(client, 'stats_shot_types', scopeArgs()),
         callStatsRpc<ServeTypeStatRow>(client, 'stats_serve_types', scopeArgs()),
-        callStatsRpc<ShotZoneRow>(client, 'stats_shot_zones', { ...scopeArgs(), p_hand: zoneHand.value }),
+        callStatsRpc<ShotPlacementRow>(client, 'stats_shot_placement', { ...scopeArgs(), p_hand: zoneHand.value }),
         callStatsRpc<RallyEndingRow>(client, 'stats_rally_endings', scopeArgs())
       ])
       typeRows.value = types
       serveRows.value = serves
-      zoneRows.value = zones
+      placementRows.value = placement
       endingRows.value = endings
       loaded.value = true
     } catch (e) {
@@ -106,22 +108,33 @@ export function useShotStatsView(
   const landZonesWon = computed(() => buildLandZones(endingRows.value, subject.value, 'won'))
   const landZonesLost = computed(() => buildLandZones(endingRows.value, subject.value, 'lost'))
 
-  // ---- F: 配球ヒートマップ（打者・球種のクライアント絞り込み → セル集計） ----
-  const heatmapCells = computed<ZoneCell[]>(() => {
-    const counts = new Map<string, number>()
-    for (const r of zoneRows.value) {
-      if (playerFilter.value !== null && r.hit_player_id !== playerFilter.value) continue
-      if (typeFilter.value !== null && r.shot_type !== typeFilter.value) continue
-      const key = `${r.zone_row}:${r.zone_col}`
-      counts.set(key, (counts.get(key) ?? 0) + r.shots)
-    }
-    const max = Math.max(1, ...counts.values())
-    return [...counts.entries()].map(([key, count]) => {
-      const [row, col] = key.split(':').map(Number)
-      return { row: row!, col: col!, count, ratio: count / max }
-    })
-  })
-  const heatmapTotal = computed(() => heatmapCells.value.reduce((s, c) => s + c.count, 0))
+  // ---- F: 配球ヒートマップ（手前セル選択 → 配球先, ヒアリング2026-08-08） ----
+  /** 選択中の手前（自陣）セル。null = 未選択（全セル合計を表示） */
+  const selectedOrigin = ref<{ row: number, col: number } | null>(null)
+
+  const filteredPlacement = computed(() =>
+    placementRows.value.filter(r =>
+      (playerFilter.value === null || r.hit_player_id === playerFilter.value)
+      && (typeFilter.value === null || r.shot_type === typeFilter.value)
+    )
+  )
+
+  /** 手前（自陣）3×3: 各セルから打った本数（選択 UI + 薄いヒート表示用） */
+  const originCells = computed<ZoneCell[]>(() => buildOriginCells(filteredPlacement.value))
+
+  /** 奥（相手）3×3: 配球先の本数 + 球種内訳（選択セル起点。未選択は全体合計） */
+  const destCells = computed<PlacementDestCell[]>(() =>
+    buildDestCells(filteredPlacement.value, selectedOrigin.value)
+  )
+  const heatmapTotal = computed(() => destCells.value.reduce((s, c) => s + c.count, 0))
+
+  function selectOrigin(cell: { row: number, col: number } | null): void {
+    // 同一セル再選択で解除
+    selectedOrigin.value
+      = cell !== null && selectedOrigin.value?.row === cell.row && selectedOrigin.value?.col === cell.col
+        ? null
+        : cell
+  }
 
   /** セットフィルタ候補（決着行から導出。set 絞り込み中も全候補を保てるよう保持） */
   const knownSetNumbers = ref<number[]>([])
@@ -141,11 +154,11 @@ export function useShotStatsView(
     // フィルタ
     setNumber, zoneHand, playerFilter, typeFilter, handFilter, hitterIds, presentTypes, knownSetNumbers,
     // 生 grain（チャートコンポーネント側で導出）
-    typeRows, filteredTypeRows, serveRows, zoneRows, endingRows,
+    typeRows, filteredTypeRows, serveRows, placementRows, endingRows,
     // A
     endingEntries, decisiveRanking, landZonesWon, landZonesLost,
     // F
-    heatmapCells, heatmapTotal,
+    selectedOrigin, selectOrigin, originCells, destCells, heatmapTotal,
     isEmpty
   }
 }

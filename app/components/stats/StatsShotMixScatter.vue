@@ -73,6 +73,7 @@ const option = computed(() => ({
   },
   series: [{
     type: 'scatter',
+    labelLayout: { hideOverlap: true },
     symbolSize: 14,
     data: points.value.filter(p => p.rate !== null).map(p => [
       Math.round(p.share * 10) / 10, Math.round(p.rate! * 10) / 10

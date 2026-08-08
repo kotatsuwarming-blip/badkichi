@@ -103,6 +103,13 @@
   M2（ラリー展開タブ完成）で先行 dev 検証可。実装は PR #50 マージ後に `feat/shot-stats` を
   main から切って `/kairo-implement` で着手。
 
+- **F 配球ヒートマップ改訂（2026-08-08 dev 検証フィードバック）**: 打点単独表示 → **手前3×3選択 →
+  奥3×3に配球先の本数（ホバーで球種内訳）**へ変更。未選択時は全体合計 + 選択促し文言。
+  destination = 次ショットの打点（相手接触点）、最終打は落下点。新 RPC stats_shot_placement を
+  additive 追加（stats_shot_zones は DB に残るが未使用）。REQ-011 の実装形はこちらが正。
+- チャートの文字重なり修正（同フィードバック）: 回転x軸ラベルと凡例の衝突回避（凡例を上部/スクロール化）、
+  散布図ラベルの自動間引き（labelLayout.hideOverlap）。
+
 ## 8. 関連ファイル
 
 - ADR: `docs/decisions/017-*.md` / `018-*.md`

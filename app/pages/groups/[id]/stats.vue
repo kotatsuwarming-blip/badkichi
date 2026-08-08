@@ -214,9 +214,12 @@ function backToPair(): void {
             <StatsShotMixScatter :rows="shot.filteredTypeRows.value" />
             <StatsHandChart :rows="shot.filteredTypeRows.value" />
             <StatsShotHeatmap
-              :cells="shot.heatmapCells.value"
+              :origin-cells="shot.originCells.value"
+              :dest-cells="shot.destCells.value"
+              :selected="shot.selectedOrigin.value"
               :total="shot.heatmapTotal.value"
               :pointed-total="coverage.summary.value.shots_pointed"
+              @select-origin="shot.selectOrigin"
             />
           </template>
           <p

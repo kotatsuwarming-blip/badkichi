@@ -46,7 +46,7 @@ const option = computed(() => {
         }).join('<br/>')
     },
     textStyle: { color: chartText.value, fontSize: 13 },
-    legend: { bottom: 0, textStyle: { color: chartText.value, fontSize: 13 } },
+    legend: { bottom: 0, type: 'scroll', textStyle: { color: chartText.value, fontSize: 13 } },
     grid: { left: 48, right: 16, top: 28, bottom: 44 },
     xAxis: { type: 'category', data: labels, axisLabel: { color: chartText.value, fontSize: 13, fontWeight: 500 } },
     yAxis: {

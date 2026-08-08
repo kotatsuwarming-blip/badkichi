@@ -59,8 +59,8 @@ function pct(n: number, d: number): string {
 const option = computed(() => ({
   tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
   textStyle: { color: chartText.value, fontSize: 13 },
-  legend: { bottom: 0, textStyle: { color: chartText.value, fontSize: 12 } },
-  grid: { left: 48, right: 16, top: 20, bottom: 70 },
+  legend: { top: 0, type: 'scroll', textStyle: { color: chartText.value, fontSize: 12 } },
+  grid: { left: 48, right: 16, top: 36, bottom: 76 },
   xAxis: {
     type: 'category',
     data: byType.value.map(a => t(`annotation.shotType.${a.type}`)),
