@@ -77,9 +77,11 @@ export function useStatsView(scope: StatsViewScope) {
     return { kind: 'all' }
   })
 
-  // 対象試合 ID（Group のみ。match scope は p_match_id を使うため null）
+  // 対象試合 ID（Group のみ。match scope は p_match_id を使うため null）。
+  // 試合一覧が未ロードの間も null（=絞り込みなし）— SSR/初回で [] を渡すと全件除外になるため
   const includedMatchIds = computed<string[] | null>(() => {
     if (scope.kind !== 'group') return null
+    if (!matchesComposable!.data.value) return null
     return resolveIncludedMatchIds(
       matchesMeta.value, globalFilter.value.dateFrom, globalFilter.value.dateTo, globalFilter.value.excludedMatchIds
     )
