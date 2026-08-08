@@ -20,10 +20,15 @@ const matchData = ref<unknown>({
 })
 
 const view = {
-  globalFilter: ref({ entity: { kind: 'all' as const }, dateFrom: null, dateTo: null, excludedMatchIds: [] }),
+  globalFilter: ref({
+    subjectMode: 'player' as 'player' | 'pair', playerId: null, pair1Id: null, pair2Id: null,
+    setNumber: null, dateFrom: null, dateTo: null, excludedMatchIds: [] as string[]
+  }),
+  entity: ref<{ kind: string, playerId?: string }>({ kind: 'all' }),
   drilldown: ref({ role: null, position: null, shotBinKeys: [] as string[] }),
   matchesMeta: ref([]),
   includedMatchIds: ref<string[] | null>(null),
+  knownSetNumbers: ref<number[]>([1, 2]),
   namesMap: ref<Record<string, string>>({ p0: '田中' }),
   overview: ref<unknown>({
     playerRates: [{ playerId: 'p0', playerName: '田中', serve: { rate: 0.5, denominator: 2, numerator: 1 }, receive: { rate: null, denominator: 0, numerator: 0 } }],
@@ -35,7 +40,8 @@ const view = {
   tableRows: ref<unknown>([{ rally_id: 'r1', video_start_timestamp_ms: 3000 }]),
   entityRows: ref([]),
   isEmpty: ref(false),
-  setEntity: vi.fn(), setDrillPosition: vi.fn(), setDrillMember: vi.fn(), setDrillBins: vi.fn()
+  setEntity: vi.fn(), setSubjectMode: vi.fn(), setPlayer: vi.fn(), setPair1: vi.fn(), setPair2: vi.fn(), setSetNumber: vi.fn(),
+  setDrillPosition: vi.fn(), setDrillMember: vi.fn(), setDrillBins: vi.fn()
 }
 
 vi.mock('~/composables/useMatchForRecording', () => ({ useMatchForRecording: () => ({ data: matchData, refresh: vi.fn() }) }))
@@ -122,7 +128,7 @@ const RallyTableStub = { props: ['rows', 'names'], emits: ['select'], template: 
 const FlowChartStub = { props: ['points'], emits: ['select'], template: '<div data-testid="flow-chart" />' }
 const stubs = {
   UButton: { props: ['to'], template: '<button @click="$emit(\'click\')"><slot /></button>' },
-  StatsGlobalFilterBar: { props: ['players', 'matchesMeta', 'globalFilter', 'includedMatchIds', 'showPeriod'], template: '<div data-testid="filter-bar" />' },
+  StatsGlobalFilterBar: { props: ['players', 'matchesMeta', 'globalFilter', 'includedMatchIds', 'setNumbers', 'showPeriod'], template: '<div data-testid="filter-bar" />' },
   StatsEmptyState: { template: '<div data-testid="empty" />' },
   StatsRateChart: RateChartStub,
   StatsPositionToggle: { props: ['position'], template: '<div data-testid="position-toggle" />' },
@@ -151,7 +157,7 @@ function mountPage() {
 
 describe('試合単位 stats ページ', () => {
   it('全体モードでは得点率チャート + テーブルに行を渡す', () => {
-    view.globalFilter.value.entity = { kind: 'all' }
+    view.entity.value = { kind: 'all' }
     view.isEmpty.value = false
     const w = mountPage()
     expect(w.find('[data-testid="empty"]').exists()).toBe(false)
@@ -159,22 +165,21 @@ describe('試合単位 stats ページ', () => {
     expect(w.findComponent(RallyTableStub).props('rows')).toHaveLength(1)
   })
 
-  it('モード切替で entries がペアに変わる', async () => {
-    view.globalFilter.value.entity = { kind: 'all' }
+  it('グローバルの対象モードに応じて overview の mode が変わる', () => {
+    view.entity.value = { kind: 'all' }
+    view.globalFilter.value.subjectMode = 'pair'
     const w = mountPage()
-    expect(w.findComponent(RateChartStub).props('mode')).toBe('player')
-    await w.find('[data-testid="mode-pair"]').trigger('click')
     expect(w.findComponent(RateChartStub).props('mode')).toBe('pair')
+    view.globalFilter.value.subjectMode = 'player'
   })
 
   it('選手選択時はポジション選択 + 得点率グラフ(棒)を表示', () => {
-    view.globalFilter.value.entity = { kind: 'player', playerId: 'p0' }
+    view.entity.value = { kind: 'player', playerId: 'p0' }
     view.entityRates.value = [{ playerId: 'p0', playerName: '田中', serve: { rate: 0.5, denominator: 2, numerator: 1 }, receive: { rate: null, denominator: 0, numerator: 0 } }]
     const w = mountPage()
     expect(w.find('[data-testid="position-toggle"]').exists()).toBe(true)
     expect(w.find('[data-testid="rate-chart"]').exists()).toBe(true)
-    expect(w.find('[data-testid="mode-player"]').exists()).toBe(false) // 全体用トグルは出ない
-    view.globalFilter.value.entity = { kind: 'all' }
+    view.entity.value = { kind: 'all' }
     view.entityRates.value = []
   })
 
@@ -187,7 +192,7 @@ describe('試合単位 stats ページ', () => {
 
   it('結合: ラリー行選択で 2 秒前から再生 (受け入れ2026-06-09)', async () => {
     paneSeekSpy.mockClear()
-    view.globalFilter.value.entity = { kind: 'all' }
+    view.entity.value = { kind: 'all' }
     const w = mountPage()
     w.findComponent(RallyTableStub).vm.$emit('select', { rally_id: 'r1', video_start_timestamp_ms: 3000 })
     await w.vm.$nextTick()
@@ -233,19 +238,21 @@ describe('試合単位 stats ページ', () => {
     flowMock.setNumbers.value = []
   })
 
-  it('タブ再編 (#8): サーブ周り = 得点率 + サーブ/レシーブ、強み = ヒートマップ、弱点 = 弱点マップ', async () => {
+  it('タブ再編 (#8/フィルタ再編): サーブ周り = 得点率 + サーブ/レシーブ、弱点 = 弱点マップ、ヒートマップはラリー展開へ', async () => {
     shotMock.loaded.value = true
     const w = mountPage()
-    // サーブ周り（既定）: 得点率チャート + サーブ/レシーブ分析 + 共通フィルタ
-    for (const tid of ['shot-filter', 'rate-chart', 'serve-chart', 'receive-chart']) {
+    // サーブ周り（既定）: 得点率チャート + サーブ/レシーブ分析
+    for (const tid of ['rate-chart', 'serve-chart', 'receive-chart']) {
       expect(w.find(`[data-testid="${tid}"]`).exists(), tid).toBe(true)
     }
-    // 削除済みチャートは出ない (#8: 決着/構成比/散布図/F・B)
-    for (const tid of ['endings-chart', 'endings-map', 'mix-chart', 'mix-scatter', 'hand-chart']) {
+    // 削除済みチャート・旧ショットフィルタバーは出ない
+    for (const tid of ['endings-chart', 'endings-map', 'mix-chart', 'mix-scatter', 'hand-chart', 'shot-filter']) {
       expect(w.find(`[data-testid="${tid}"]`).exists(), tid).toBe(false)
     }
-    expect(w.find('[data-testid="heatmap"]').exists()).toBe(true) // 強みタブ (v-show)
     expect(w.find('[data-testid="weakness-maps"]').exists()).toBe(true) // 弱点タブ (v-show)
+    // ヒートマップはラリー展開タブ内 (v-show, 2026-08-08 フィルタ再編)
+    const rallyflow = w.find('[data-testid="panel-rallyflow"]')
+    expect(rallyflow.find('[data-testid="heatmap"]').exists()).toBe(true)
     shotMock.loaded.value = false
   })
 })

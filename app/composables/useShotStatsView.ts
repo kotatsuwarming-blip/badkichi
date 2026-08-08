@@ -23,6 +23,8 @@ export function useShotStatsView(
   scope: StatsViewScope,
   opts: {
     includedMatchIds: Ref<string[] | null>
+    /** セット絞り込み（グローバルフィルタ共有, 2026-08-08 再編）。RPC パラメータ */
+    setNumber: Ref<number | null>
     entity: () => StatsEntity
     nameOf: (id: string) => string
   }
@@ -30,12 +32,18 @@ export function useShotStatsView(
   const client = useSupabaseClient()
 
   // RPC パラメータ側フィルタ（変更時に再取得）
-  const setNumber = ref<number | null>(null)
   const zoneHand = ref<Hand | null>(null)
   // クライアント側フィルタ（即時反映）
-  const playerFilter = ref<string | null>(null) // 打者
   const typeFilter = ref<ShotType | null>(null) // 球種（F/D 対象）
   const handFilter = ref<Hand | null>(null) // C/D/G 用（grain 内絞り込み）
+
+  /** 対象選手（グローバル対象フィルタ由来）。null = 全員。ペアは両選手 */
+  const subjectPlayerIds = computed<string[] | null>(() => {
+    const e = opts.entity()
+    if (e.kind === 'player') return [e.playerId]
+    if (e.kind === 'pair') return [e.player1Id, e.player2Id]
+    return null
+  })
 
   const typeRows = ref<ShotTypeStatRow[]>([])
   const serveRows = ref<ServeTypeStatRow[]>([])
@@ -50,7 +58,7 @@ export function useShotStatsView(
     const base: Record<string, unknown> = scope.kind === 'match'
       ? { p_match_id: scope.matchId }
       : { p_group_id: scope.groupId, p_match_ids: opts.includedMatchIds.value }
-    base.p_set_number = setNumber.value
+    base.p_set_number = opts.setNumber.value
     return base
   }
 
@@ -86,36 +94,30 @@ export function useShotStatsView(
   }
 
   // パラメータ側フィルタ・対象試合の変更は取得開始済み（初回ロード中含む）なら追従再取得
-  watch([opts.includedMatchIds, setNumber, zoneHand], () => {
+  watch([opts.includedMatchIds, opts.setNumber, zoneHand], () => {
     if (loaded.value || pending.value) execute()
   })
 
   const subject = computed<StatsSubject>(() => opts.entity() as StatsSubject)
 
-  /** C/D/G の対象行（打者・hand のクライアント絞り込み） */
+  /** C/D/G の対象行（対象選手・hand のクライアント絞り込み） */
   const filteredTypeRows = computed(() =>
     typeRows.value.filter(r =>
-      (playerFilter.value === null || r.hit_player_id === playerFilter.value)
+      (subjectPlayerIds.value === null || (r.hit_player_id !== null && subjectPlayerIds.value.includes(r.hit_player_id)))
       && (handFilter.value === null || r.hand === handFilter.value)
     )
   )
 
-  /** C/レシーブ: 打者フィルタで人を絞る（未選択は全員合算, #6） */
+  /** C/レシーブ: グローバル対象フィルタで人を絞る（未選択は全員合算, 2026-08-08 再編） */
   const filteredServeRows = computed(() =>
-    playerFilter.value === null
+    subjectPlayerIds.value === null
       ? serveRows.value
-      : serveRows.value.filter(r => r.server_player_id === playerFilter.value)
+      : serveRows.value.filter(r => r.server_player_id !== null && subjectPlayerIds.value!.includes(r.server_player_id))
   )
   const filteredReceiveRows = computed(() =>
-    playerFilter.value === null
+    subjectPlayerIds.value === null
       ? receiveRows.value
-      : receiveRows.value.filter(r => r.receiver_player_id === playerFilter.value)
-  )
-
-  /** 打者候補（フィルタ UI 用。注釈に登場した選手） */
-  const hitterIds = computed(() =>
-    [...new Set(typeRows.value.map(r => r.hit_player_id).filter((v): v is string => v !== null))]
-      .sort((a, b) => opts.nameOf(a).localeCompare(opts.nameOf(b), 'ja'))
+      : receiveRows.value.filter(r => r.receiver_player_id !== null && subjectPlayerIds.value!.includes(r.receiver_player_id))
   )
 
   /** 出現球種（フィルタ UI 用） */
@@ -135,7 +137,7 @@ export function useShotStatsView(
 
   const filteredPlacement = computed(() =>
     placementRows.value.filter(r =>
-      (playerFilter.value === null || r.hit_player_id === playerFilter.value)
+      (subjectPlayerIds.value === null || (r.hit_player_id !== null && subjectPlayerIds.value.includes(r.hit_player_id)))
       && (typeFilter.value === null || r.shot_type === typeFilter.value)
     )
   )
@@ -168,14 +170,6 @@ export function useShotStatsView(
         : cell
   }
 
-  /** セットフィルタ候補（決着行から導出。set 絞り込み中も全候補を保てるよう保持） */
-  const knownSetNumbers = ref<number[]>([])
-  watch(endingRows, (rows) => {
-    const nums = [...new Set(rows.map(r => r.set_number))]
-    for (const n of nums) if (!knownSetNumbers.value.includes(n)) knownSetNumbers.value.push(n)
-    knownSetNumbers.value.sort((a, b) => a - b)
-  })
-
   const isEmpty = computed(() =>
     loaded.value && typeRows.value.length === 0 && endingRows.value.length === 0
   )
@@ -183,8 +177,8 @@ export function useShotStatsView(
   return {
     // 状態
     pending, loaded, error, execute, subject,
-    // フィルタ
-    setNumber, zoneHand, playerFilter, typeFilter, handFilter, hitterIds, presentTypes, knownSetNumbers,
+    // フィルタ（対象・セットはグローバルフィルタ由来, 2026-08-08 再編）
+    zoneHand, typeFilter, handFilter, subjectPlayerIds, presentTypes,
     // 生 grain（チャートコンポーネント側で導出）
     typeRows, filteredTypeRows, serveRows, receiveRows, filteredServeRows, filteredReceiveRows, placementRows, endingRows,
     // A

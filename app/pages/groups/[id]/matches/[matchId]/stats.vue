@@ -40,14 +40,17 @@ const view = useStatsView({ kind: 'match', matchId, groupId })
 type StatsTab = 'serve' | 'strengths' | 'weakness' | 'rallyflow'
 const activeTab = ref<StatsTab>('serve')
 const coverage = useAnnotationCoverage(() => ({ p_match_id: matchId }))
+const globalSetNumber = computed(() => view.globalFilter.value.setNumber)
 const flow = useRallyFlowView({ kind: 'match', matchId, groupId }, {
   includedMatchIds: view.includedMatchIds,
-  entity: () => view.globalFilter.value.entity,
+  setNumber: globalSetNumber,
+  entity: () => view.entity.value,
   nameOf: view.nameOf
 })
 const shot = useShotStatsView({ kind: 'match', matchId, groupId }, {
   includedMatchIds: view.includedMatchIds,
-  entity: () => view.globalFilter.value.entity,
+  setNumber: globalSetNumber,
+  entity: () => view.entity.value,
   nameOf: view.nameOf
 })
 // 既定タブ（サーブ周り）が注釈データを使うため、注釈系は初期ロード。ラリー展開のみ遅延
@@ -81,11 +84,12 @@ function onSelectWormPoint(point: WormPoint): void {
 // 対象選択用の選手一覧（この試合の 4 選手）
 const players = computed(() => (match.value?.roster ?? []).map(r => ({ id: r.playerId, name: r.name })))
 
-const overviewMode = ref<'player' | 'pair'>('player')
 const overviewEntries = computed<(PlayerRate | PairRate)[]>(() =>
-  overviewMode.value === 'pair' ? (view.overview.value?.pairRates ?? []) : (view.overview.value?.playerRates ?? [])
+  view.globalFilter.value.subjectMode === 'pair'
+    ? (view.overview.value?.pairRates ?? [])
+    : (view.overview.value?.playerRates ?? [])
 )
-const isEntity = computed(() => view.globalFilter.value.entity.kind !== 'all')
+const isEntity = computed(() => view.entity.value.kind !== 'all')
 
 // 動画ソース（youtube 即時 / local 再選択）
 const videoSource = ref<VideoSource | null>(null)
@@ -113,7 +117,7 @@ function onOverviewSelect(payload: { playerId?: string, pair?: { player1Id: stri
 
 // 選手/ペアの棒クリック → ペア(未フォーカス)なら個人へドリルダウン、それ以外は役割ドリルダウン
 function onEntitySelect(payload: { playerId?: string, role: StatsRole }): void {
-  const e = view.globalFilter.value.entity
+  const e = view.entity.value
   if (e.kind === 'pair' && !view.drilldown.value.memberId && payload.playerId) {
     view.setDrillMember(payload.playerId)
   } else {
@@ -154,8 +158,13 @@ function backToPair(): void {
       :matches-meta="[]"
       :global-filter="view.globalFilter.value"
       :included-match-ids="view.includedMatchIds.value"
+      :set-numbers="view.knownSetNumbers.value"
       :show-period="false"
-      @set-entity="view.setEntity"
+      @set-subject-mode="view.setSubjectMode"
+      @set-player="view.setPlayer"
+      @set-pair1="view.setPair1"
+      @set-pair2="view.setPair2"
+      @set-set-number="view.setSetNumber"
     />
 
     <nav class="stats-tabs">
@@ -193,25 +202,10 @@ function backToPair(): void {
       </UButton>
     </nav>
 
-    <div
-      v-show="activeTab !== 'rallyflow'"
-      class="annotation-controls"
-    >
-      <StatsAnnotationBadge
-        v-if="coverage.loaded.value"
-        :summary="coverage.summary.value"
-      />
-      <StatsShotFilterBar
-        v-if="shot.loaded.value"
-        :hitter-ids="shot.hitterIds.value"
-        :set-numbers="shot.knownSetNumbers.value"
-        :player-filter="shot.playerFilter.value"
-        :set-number="shot.setNumber.value"
-        :name-of="view.nameOf"
-        @update:player-filter="shot.playerFilter.value = $event"
-        @update:set-number="shot.setNumber.value = $event"
-      />
-    </div>
+    <StatsAnnotationBadge
+      v-if="coverage.loaded.value"
+      :summary="coverage.summary.value"
+    />
 
     <StatsEmptyState v-if="view.isEmpty.value" />
 
@@ -249,27 +243,9 @@ function backToPair(): void {
             />
           </template>
           <template v-else>
-            <div class="mode-toggle">
-              <UButton
-                size="xs"
-                :variant="overviewMode === 'player' ? 'solid' : 'ghost'"
-                data-testid="mode-player"
-                @click="overviewMode = 'player'"
-              >
-                {{ $t('stats.mode.player') }}
-              </UButton>
-              <UButton
-                size="xs"
-                :variant="overviewMode === 'pair' ? 'solid' : 'ghost'"
-                data-testid="mode-pair"
-                @click="overviewMode = 'pair'"
-              >
-                {{ $t('stats.mode.pair') }}
-              </UButton>
-            </div>
             <StatsRateChart
               :entries="overviewEntries"
-              :mode="overviewMode"
+              :mode="view.globalFilter.value.subjectMode"
               @select="onOverviewSelect"
             />
           </template>
@@ -292,16 +268,6 @@ function backToPair(): void {
           <p class="placeholder">
             {{ $t('shotStats.strengths.note') }}
           </p>
-          <StatsShotHeatmap
-            v-if="shot.loaded.value"
-            :origin-cells="shot.originCells.value"
-            :dest-cells="shot.destCells.value"
-            :selected="shot.selectedOrigin.value"
-            :dest-extras="shot.destExtras.value"
-            :total="shot.heatmapTotal.value"
-            :pointed-total="coverage.summary.value.shots_pointed"
-            @select-origin="shot.selectOrigin"
-          />
         </div>
         <div
           v-show="activeTab === 'weakness'"
@@ -329,6 +295,17 @@ function backToPair(): void {
             :bins="view.rallyLengthBins.value"
             :selected-keys="view.drilldown.value.shotBinKeys"
             @select-bins="view.setDrillBins"
+          />
+          <!-- 配球ヒートマップ（3打目以降 = ラリー分析のためラリー展開へ, 2026-08-08 再編） -->
+          <StatsShotHeatmap
+            v-if="shot.loaded.value"
+            :origin-cells="shot.originCells.value"
+            :dest-cells="shot.destCells.value"
+            :selected="shot.selectedOrigin.value"
+            :dest-extras="shot.destExtras.value"
+            :total="shot.heatmapTotal.value"
+            :pointed-total="coverage.summary.value.shots_pointed"
+            @select-origin="shot.selectOrigin"
           />
           <template v-if="flow.loaded.value && !flow.isEmpty.value">
             <StatsPhaseRateChart :entries="flow.phaseEntries.value" />
@@ -402,14 +379,12 @@ function backToPair(): void {
 <style scoped>
 .stats-page { display: flex; flex-direction: column; gap: 1rem; padding: 1rem; }
 .stats-tabs { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-.annotation-controls { display: flex; flex-direction: column; gap: 0.5rem; }
 .tab-panel { display: flex; flex-direction: column; gap: 1rem; }
 .placeholder { font-size: 0.875rem; opacity: 0.7; }
 .set-toggle { display: flex; gap: 0.25rem; align-items: center; flex-wrap: wrap; }
 .stats-header { display: flex; align-items: center; gap: 1rem; }
 .match-name { font-weight: 600; }
 .record-btn { margin-left: auto; }
-.mode-toggle { display: flex; gap: 0.5rem; align-items: center; }
 .entity-controls { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
 .charts-col, .video-col, .table-col { display: flex; flex-direction: column; gap: 1rem; }
 .source-picker { display: flex; flex-direction: column; gap: 0.5rem; }

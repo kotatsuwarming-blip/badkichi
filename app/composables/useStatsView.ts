@@ -11,7 +11,7 @@
  * スタイル: セミコロンなし / no comma dangle
  */
 
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { buildAggregate } from '~/utils/stats-dashboard/build-aggregate'
 import { callStatsRpc } from '~/utils/stats-dashboard/stats-rpc'
 import { computeSubjectRates } from '~/utils/stats-dashboard/compute-subject-rates'
@@ -34,7 +34,8 @@ import type {
   StatsEntity,
   StatsGlobalFilter,
   StatsOverview,
-  StatsRole
+  StatsRole,
+  SubjectMode
 } from '~/types/stats-dashboard'
 
 export type StatsViewScope
@@ -60,8 +61,21 @@ export function useStatsView(scope: StatsViewScope) {
     return (matchesComposable!.data.value ?? []).map(m => ({ id: m.id, name: m.name ?? '', matchDate: m.matchDate }))
   })
 
-  const globalFilter = ref<StatsGlobalFilter>({ entity: { kind: 'all' }, dateFrom: null, dateTo: null, excludedMatchIds: [] })
+  const globalFilter = ref<StatsGlobalFilter>({
+    subjectMode: 'player', playerId: null, pair1Id: null, pair2Id: null,
+    setNumber: null, dateFrom: null, dateTo: null, excludedMatchIds: []
+  })
   const drilldown = ref<StatsDrilldown>({ role: null, position: null, memberId: null, shotBinKeys: [] })
+
+  // 対象（選手/ペア）はモード+選択から導出。未完（未選択・同一選手ペア）は全員比較
+  const entity = computed<StatsEntity>(() => {
+    const f = globalFilter.value
+    if (f.subjectMode === 'player' && f.playerId !== null) return { kind: 'player', playerId: f.playerId }
+    if (f.subjectMode === 'pair' && f.pair1Id !== null && f.pair2Id !== null && f.pair1Id !== f.pair2Id) {
+      return { kind: 'pair', player1Id: f.pair1Id, player2Id: f.pair2Id }
+    }
+    return { kind: 'all' }
+  })
 
   // 対象試合 ID（Group のみ。match scope は p_match_id を使うため null）
   const includedMatchIds = computed<string[] | null>(() => {
@@ -72,15 +86,18 @@ export function useStatsView(scope: StatsViewScope) {
   })
 
   const memberIds = computed<string[]>(() => {
-    const e = globalFilter.value.entity
+    const e = entity.value
     if (e.kind === 'player') return [e.playerId]
     if (e.kind === 'pair') return [e.player1Id, e.player2Id]
     return []
   })
 
   function scopeArgs(): Record<string, unknown> {
-    if (scope.kind === 'match') return { p_match_id: scope.matchId }
-    return { p_group_id: scope.groupId, p_match_ids: includedMatchIds.value }
+    const base: Record<string, unknown> = scope.kind === 'match'
+      ? { p_match_id: scope.matchId }
+      : { p_group_id: scope.groupId, p_match_ids: includedMatchIds.value }
+    base.p_set_number = globalFilter.value.setNumber
+    return base
   }
 
   // データ取得（entity と対象試合の変化で再取得。ドリルダウンはクライアント側のため再取得しない）
@@ -88,7 +105,7 @@ export function useStatsView(scope: StatsViewScope) {
   const { data: raw, pending, error, refresh } = useAsyncData(
     fetchKey,
     async () => {
-      const e = globalFilter.value.entity
+      const e = entity.value
       if (e.kind === 'all') {
         // 全体でもラリーを取得し、テーブル（再生候補）を出す（U-05: フィルタ前提の発見性を解消）
         const [pr, pair, len, rows] = await Promise.all([
@@ -108,8 +125,17 @@ export function useStatsView(scope: StatsViewScope) {
       const rows = await callStatsRpc<RallyRow>(client, 'stats_rallies', args)
       return { mode: 'entity' as const, rows }
     },
-    { watch: [includedMatchIds, () => globalFilter.value.entity] }
+    { watch: [includedMatchIds, entity, () => globalFilter.value.setNumber] }
   )
+
+  // セットフィルタ候補（取得済み行から累積。絞り込み中も全候補を保持）
+  const knownSetNumbers = ref<number[]>([])
+  watch(raw, (v) => {
+    if (!v) return
+    const nums = [...new Set(v.rows.map(r => r.set_number))]
+    for (const n of nums) if (!knownSetNumbers.value.includes(n)) knownSetNumbers.value.push(n)
+    knownSetNumbers.value.sort((a, b) => a - b)
+  }, { immediate: true })
 
   // ---- 導出（ドリルダウンはクライアント側で即時反映） ----
   const overview = computed<StatsOverview | null>(() =>
@@ -119,7 +145,7 @@ export function useStatsView(scope: StatsViewScope) {
 
   // 選手/ペアのグラフ対象（ペアは両名、個人ドリルダウン時はその1名）
   const subjectIds = computed<string[]>(() => {
-    const e = globalFilter.value.entity
+    const e = entity.value
     if (e.kind === 'player') return [e.playerId]
     if (e.kind === 'pair') return drilldown.value.memberId ? [drilldown.value.memberId] : [e.player1Id, e.player2Id]
     return []
@@ -160,9 +186,42 @@ export function useStatsView(scope: StatsViewScope) {
   function resetDrilldown(): void {
     drilldown.value = { role: null, position: null, memberId: null, shotBinKeys: [] }
   }
-  function setEntity(entity: StatsEntity): void {
-    globalFilter.value.entity = entity
+  /** チャートクリック等からの対象設定（モード+選択へ分解して反映） */
+  function setEntity(e: StatsEntity): void {
+    const f = globalFilter.value
+    if (e.kind === 'player') {
+      f.subjectMode = 'player'
+      f.playerId = e.playerId
+    } else if (e.kind === 'pair') {
+      f.subjectMode = 'pair'
+      f.pair1Id = e.player1Id
+      f.pair2Id = e.player2Id
+    } else if (f.subjectMode === 'player') {
+      f.playerId = null
+    } else {
+      f.pair1Id = null
+      f.pair2Id = null
+    }
     resetDrilldown()
+  }
+  function setSubjectMode(mode: SubjectMode): void {
+    globalFilter.value.subjectMode = mode
+    resetDrilldown()
+  }
+  function setPlayer(id: string | null): void {
+    globalFilter.value.playerId = id
+    resetDrilldown()
+  }
+  function setPair1(id: string | null): void {
+    globalFilter.value.pair1Id = id
+    resetDrilldown()
+  }
+  function setPair2(id: string | null): void {
+    globalFilter.value.pair2Id = id
+    resetDrilldown()
+  }
+  function setSetNumber(n: number | null): void {
+    globalFilter.value.setNumber = n
   }
   function setDateRange(from: string | null, to: string | null): void {
     globalFilter.value.dateFrom = from
@@ -187,8 +246,9 @@ export function useStatsView(scope: StatsViewScope) {
   }
 
   return {
-    globalFilter, drilldown, matchesMeta, includedMatchIds, namesMap, nameOf, memberIds, subjectIds,
+    globalFilter, entity, drilldown, matchesMeta, includedMatchIds, knownSetNumbers, namesMap, nameOf, memberIds, subjectIds,
     overview, entityRates, rallyLengthBins, tableRows, entityRows, isEmpty, pending, error, refresh,
-    setEntity, setDateRange, toggleMatchExclusion, setDrillRole, setDrillPosition, setDrillMember, setDrillBins, resetDrilldown
+    setEntity, setSubjectMode, setPlayer, setPair1, setPair2, setSetNumber,
+    setDateRange, toggleMatchExclusion, setDrillRole, setDrillPosition, setDrillMember, setDrillBins, resetDrilldown
   }
 }
