@@ -31,6 +31,9 @@ const CROSS_SYMBOL = 'path://M50,35 L85,0 L100,15 L65,50 L100,85 L85,100 L50,65 
 /** 視点なし（entity=all）は won=null の単一系列 */
 const neutral = computed(() => props.samples.every(s => s.won === null))
 
+/** 精密（注釈時刻）/ 近似（ライブ押下時刻）の内訳（注記用, 2026-08-12） */
+const preciseCount = computed(() => props.samples.filter(s => s.precise).length)
+
 /** data = [x(全体平均), y(終盤4打), rallyId] */
 function pointsOf(kind: 'won' | 'lost' | 'all'): [number, number, string][] {
   return props.samples
@@ -131,7 +134,7 @@ defineExpose({ onPointClick })
       class="tempo-note"
       data-testid="tempo-note"
     >
-      {{ $t('shotStats.tempo.note', { n: samples.length, excluded }) }}
+      {{ $t('shotStats.tempo.note', { precise: preciseCount, approx: samples.length - preciseCount, excluded }) }}
     </p>
   </div>
 </template>

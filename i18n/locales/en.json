@@ -499,7 +499,7 @@
       "won": "Won rallies",
       "lost": "Lost rallies",
       "all": "All rallies",
-      "note": "Approximate values from tap timestamps. Rallies with 4+ shots and all shots timed ({n} shown / {excluded} excluded). Below the diagonal = faster finish. Tap a point to replay"
+      "note": "Tempo is per rally, including opponent and partner shots. Rallies with annotated shot times use them ({precise} precise); others use live tap times ({approx} approximate). Rallies need 4+ shots with all shots timed ({excluded} excluded). Below the diagonal = faster finish. Tap a point to replay"
     },
     "flow": {
       "title": "Set momentum",
