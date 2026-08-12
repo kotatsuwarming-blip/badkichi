@@ -762,6 +762,7 @@ export type Database = {
         Returns: {
           duration_ms: number
           last3_avg_interval_ms: number
+          last4_avg_interval_ms: number
           match_id: string
           point_winner: string
           rally_id: string
