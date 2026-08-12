@@ -18,8 +18,8 @@ const VChart = { props: ['option'], template: '<div data-testid="vchart" />' }
 const global = { mocks: { $t: (k: string, p?: Record<string, unknown>) => p ? `${k}:${JSON.stringify(p)}` : k }, stubs: { ClientOnly, VChart } }
 
 const samples: TempoSample[] = [
-  { rallyId: 'r1', won: true, avgIntervalSec: 1.0, last4IntervalSec: 0.6, videoStartMs: 5000 },
-  { rallyId: 'r2', won: false, avgIntervalSec: 0.8, last4IntervalSec: 1.1, videoStartMs: null }
+  { rallyId: 'r1', won: true, avgIntervalSec: 1.0, last4IntervalSec: 0.6, videoStartMs: 5000, precise: true },
+  { rallyId: 'r2', won: false, avgIntervalSec: 0.8, last4IntervalSec: 1.1, videoStartMs: null, precise: false }
 ]
 
 interface ScatterSeries { type: string, name?: string, symbol?: string, data: [number, number, string][] }
@@ -71,7 +71,8 @@ describe('StatsTempoChart', () => {
     const w = mount(StatsTempoChart, { props: { samples, excluded: 3 }, global })
     const note = w.find('[data-testid="tempo-note"]').text()
     expect(note).toContain('shotStats.tempo.note')
-    expect(note).toContain('"n":2')
+    expect(note).toContain('"precise":1')
+    expect(note).toContain('"approx":1')
     expect(note).toContain('"excluded":3')
   })
 })

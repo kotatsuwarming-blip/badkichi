@@ -11,7 +11,7 @@ function rally(partial: Partial<FlowRally>): FlowRally {
     rallyId: 'r', matchId: 'm', setNumber: 1, rallyNumber: 1,
     servingTeam: 'A', pointWinner: 'A', scoreA: 0, scoreB: 0,
     videoStartMs: 1000, shotCount: 11, timedCount: 11, durationMs: 10000,
-    last3Ms: 500, last4Ms: 600, videoSourceType: 'youtube', videoSourceUrl: 'u',
+    last3Ms: 500, last4Ms: 600, isPrecise: false, videoSourceType: 'youtube', videoSourceUrl: 'u',
     teamA: ['p0', 'p1'], teamB: ['p2', 'p3'], ...partial
   }
 }

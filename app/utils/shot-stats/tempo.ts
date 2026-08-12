@@ -41,7 +41,8 @@ export function toTempoSamples(
       won: team === null ? null : r.pointWinner === team,
       avgIntervalSec: (r.durationMs! / 1000) / (r.shotCount - 1),
       last4IntervalSec: r.last4Ms! / 1000,
-      videoStartMs: r.videoStartMs
+      videoStartMs: r.videoStartMs,
+      precise: r.isPrecise
     })
   }
   return { samples, excluded }

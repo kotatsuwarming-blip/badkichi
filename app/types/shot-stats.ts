@@ -161,6 +161,7 @@ export interface RallyTempoRow {
   duration_ms: number | null
   last3_avg_interval_ms: number | null
   last4_avg_interval_ms: number | null
+  is_precise: boolean
   team_a_player1_id: string
   team_a_player2_id: string
   team_b_player1_id: string
@@ -256,6 +257,8 @@ export interface TempoSample {
   last4IntervalSec: number
   /** 動画ジャンプ用（サーブの押下時刻。null = 動画なし） */
   videoStartMs: number | null
+  /** 注釈時刻（打点パス）ベースか（false = ライブ押下時刻の近似, 2026-08-12） */
+  precise: boolean
 }
 
 /**
@@ -277,6 +280,8 @@ export interface FlowRally {
   durationMs: number | null
   last3Ms: number | null
   last4Ms: number | null
+  /** テンポ時刻が注釈時刻（打点パス）ベースか（ラリー単位フォールバック, 2026-08-12） */
+  isPrecise: boolean
   videoSourceType: 'youtube' | 'local'
   videoSourceUrl: string
   teamA: [string, string]
