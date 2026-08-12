@@ -1,19 +1,22 @@
 /**
- * tempo — K 展開スピードの純関数（TASK-0007 / REQ-015/016/106）
+ * tempo — K 展開スピードの純関数（TASK-0007 / REQ-015/016/106 + 改修2026-08-12）
  *
+ * 2 軸散布図用: x = ラリー全体の平均ショット間隔 / y = 終盤 4 打の平均間隔（いずれも秒/打）。
  * 適格ラリー = ラリー内の全ショットに打点時刻がある（1 本でも欠損なら除外・ユーザ指定
- * 2026-08-03）かつ ショット 2 本以上 かつ ラリー時間 > 0（EDGE-104）。
- * 終盤テンポ（ラスト 3 打の 2 間隔平均）は 3 本以上のみ。
+ * 2026-08-03）かつ ショット 4 本以上（終盤 4 打を取るため・ヒアリング2026-08-12）
+ * かつ ラリー時間 > 0（EDGE-104）。
  */
-import type { FlowRally, StatsSubject, TempoMeasure, TempoSample } from '~/types/shot-stats'
+import type { FlowRally, StatsSubject, TempoSample } from '~/types/shot-stats'
 import { subjectTeamOf } from '~/utils/shot-stats/flow'
 
-/** 平均テンポの適格判定（REQ-106） */
+/** テンポ集計の適格判定（REQ-106 + 4打以上・ヒアリング2026-08-12） */
 export function isTempoEligible(rally: FlowRally): boolean {
   return rally.timedCount === rally.shotCount
-    && rally.shotCount >= 2
+    && rally.shotCount >= 4
     && rally.durationMs !== null
     && rally.durationMs > 0
+    && rally.last4Ms !== null
+    && rally.last4Ms > 0
 }
 
 /**
@@ -36,15 +39,10 @@ export function toTempoSamples(
     samples.push({
       rallyId: r.rallyId,
       won: team === null ? null : r.pointWinner === team,
-      avgShotsPerSec: (r.shotCount - 1) / (r.durationMs! / 1000),
-      last3IntervalMs: r.last3Ms !== null && r.last3Ms > 0 ? r.last3Ms : null
+      avgIntervalSec: (r.durationMs! / 1000) / (r.shotCount - 1),
+      last4IntervalSec: r.last4Ms! / 1000,
+      videoStartMs: r.videoStartMs
     })
   }
   return { samples, excluded }
-}
-
-/** measure に応じたテンポ値（avg: 打/秒（大きい=速い） / last3: 秒（小さい=速い）） */
-export function tempoValueOf(sample: TempoSample, measure: TempoMeasure): number | null {
-  if (measure === 'avg') return sample.avgShotsPerSec
-  return sample.last3IntervalMs !== null ? sample.last3IntervalMs / 1000 : null
 }

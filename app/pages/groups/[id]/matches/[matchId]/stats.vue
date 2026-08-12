@@ -81,6 +81,13 @@ function onSelectWormPoint(point: WormPoint): void {
   videoPane.value?.seekToMs(Math.max(0, point.videoStartMs - SEEK_LEAD_MS))
 }
 
+/** テンポ散布図の点タップ → 2 秒前から再生（REQ-019 準拠） */
+function onSelectTempoRally(rallyId: string): void {
+  const r = flow.rows.value.find(x => x.rallyId === rallyId)
+  if (!r || r.videoStartMs === null) return
+  videoPane.value?.seekToMs(Math.max(0, r.videoStartMs - SEEK_LEAD_MS))
+}
+
 // 対象選択用の選手一覧（この試合の 4 選手）
 const players = computed(() => (match.value?.roster ?? []).map(r => ({ id: r.playerId, name: r.name })))
 
@@ -312,8 +319,7 @@ function backToPair(): void {
             <StatsTempoChart
               :samples="flow.tempo.value.samples"
               :excluded="flow.tempo.value.excluded"
-              :measure="flow.measure.value"
-              @update:measure="flow.measure.value = $event"
+              @select="onSelectTempoRally"
             />
             <div
               v-if="flow.setNumbers.value.length > 0"

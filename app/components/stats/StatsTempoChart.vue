@@ -1,132 +1,144 @@
 <script setup lang="ts">
 /**
- * StatsTempoChart.vue — K 展開スピード分布（REQ-015/016/106/107, TASK-0007）
+ * StatsTempoChart.vue — K 展開スピード 2 軸散布図（REQ-015/016/106/107 + 改修2026-08-12）
  *
- * テンポを連続値のまま散布図（ストリッププロット）で表示し、得点/失点ラリーを
- * 縦位置と色で重ねて比較する（ビン分けしない, ヒアリング2026-08-03）。
- * measure トグル: 平均テンポ（打/秒・大きいほど速い）⇄ 終盤テンポ（秒・小さいほど速い）。
+ * x = ラリー全体の平均ショット間隔 / y = 終盤 4 打の平均間隔（いずれも秒/打・小さいほど速い）。
+ * 対象 = 4 打以上・全打点時刻ありのラリー。得点 = 青丸 / 失点 = 赤バツ（色+形の二重符号化）。
+ * y=x の対角補助線より下 = 終盤に加速したラリー。点タップで動画ジャンプ（select emit）。
  * 押下時刻ベースの近似である旨を常設表示（REQ-107）。
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useChartTextColor } from '~/composables/useChartTextColor'
-import { tempoValueOf } from '~/utils/shot-stats/tempo'
-import type { TempoMeasure, TempoSample } from '~/types/shot-stats'
+import type { TempoSample } from '~/types/shot-stats'
 
 const props = defineProps<{
   samples: TempoSample[]
   /** 対象外になった確定ラリー数（母数併記, REQ-106） */
   excluded: number
-  measure: TempoMeasure
 }>()
 
-const emit = defineEmits<{ 'update:measure': [measure: TempoMeasure] }>()
+const emit = defineEmits<{ select: [rallyId: string] }>()
 
 const { t } = useI18n()
 const chartText = useChartTextColor()
 
+const WON_COLOR = '#3b82f6'
+const LOST_COLOR = '#ef4444'
+/** バツ印（塗りつぶし X 形。色だけに頼らない二重符号化） */
+const CROSS_SYMBOL = 'path://M50,35 L85,0 L100,15 L65,50 L100,85 L85,100 L50,65 L15,100 L0,85 L35,50 L0,15 L15,0 Z'
+
 /** 視点なし（entity=all）は won=null の単一系列 */
 const neutral = computed(() => props.samples.every(s => s.won === null))
 
-function pointsOf(kind: 'won' | 'lost' | 'all'): [number, number][] {
+/** data = [x(全体平均), y(終盤4打), rallyId] */
+function pointsOf(kind: 'won' | 'lost' | 'all'): [number, number, string][] {
   return props.samples
     .filter(s => (kind === 'all' ? true : kind === 'won' ? s.won === true : s.won === false))
-    .map((s) => {
-      const v = tempoValueOf(s, props.measure)
-      if (v === null) return null
-      // y はカテゴリ行 + 微小ジッタ（重なり回避）
-      const base = kind === 'all' ? 0.5 : kind === 'won' ? 1 : 0
-      const jitter = ((s.rallyId.charCodeAt(0) % 10) - 5) * 0.014
-      return [v, base + jitter] as [number, number]
-    })
-    .filter((p): p is [number, number] => p !== null)
+    .map(s => [s.avgIntervalSec, s.last4IntervalSec, s.rallyId] as [number, number, string])
 }
 
+/** 両軸を同一スケールにして y=x 対角線を成立させる（0.5 秒刻みで切り上げ） */
+const axisMax = computed(() => {
+  const vals = props.samples.flatMap(s => [s.avgIntervalSec, s.last4IntervalSec])
+  const max = Math.max(...vals, 0.5)
+  return Math.ceil(max / 0.5) * 0.5
+})
+
 const option = computed(() => {
-  const series = neutral.value
-    ? [{ name: t('shotStats.tempo.all'), type: 'scatter', symbolSize: 9, data: pointsOf('all') }]
+  const scatter = neutral.value
+    ? [{
+        name: t('shotStats.tempo.all'), type: 'scatter', symbolSize: 10,
+        itemStyle: { color: WON_COLOR }, data: pointsOf('all')
+      }]
     : [
-        { name: t('shotStats.tempo.won'), type: 'scatter', symbolSize: 9, data: pointsOf('won') },
-        { name: t('shotStats.tempo.lost'), type: 'scatter', symbolSize: 9, data: pointsOf('lost') }
+        {
+          name: t('shotStats.tempo.won'), type: 'scatter', symbolSize: 10,
+          itemStyle: { color: WON_COLOR }, data: pointsOf('won')
+        },
+        {
+          name: t('shotStats.tempo.lost'), type: 'scatter', symbol: CROSS_SYMBOL, symbolSize: 11,
+          itemStyle: { color: LOST_COLOR }, data: pointsOf('lost')
+        }
       ]
   return {
     tooltip: {
       trigger: 'item',
-      formatter: (p: { value: [number, number], seriesName: string }) =>
-        `${p.seriesName}: ${p.value[0].toFixed(2)} ${unitLabel.value}`
+      formatter: (p: { value: [number, number, string], seriesName: string }) =>
+        `${p.seriesName}<br/>${t('shotStats.tempo.axisAvg')}: ${p.value[0].toFixed(2)}<br/>`
+        + `${t('shotStats.tempo.axisLast4')}: ${p.value[1].toFixed(2)}`
     },
     textStyle: { color: chartText.value, fontSize: 13 },
-    legend: { bottom: 0, textStyle: { color: chartText.value, fontSize: 13 } },
-    grid: { left: 48, right: 16, top: 20, bottom: 44 },
+    legend: { top: 0, right: 0, textStyle: { color: chartText.value, fontSize: 12 } },
+    grid: { left: 56, right: 16, top: 28, bottom: 48 },
     xAxis: {
       type: 'value',
-      name: unitLabel.value,
-      nameGap: 30,
+      name: t('shotStats.tempo.axisAvg'),
+      min: 0,
+      max: axisMax.value,
+      nameGap: 28,
       nameLocation: 'middle',
-      axisLabel: { color: chartText.value, fontSize: 13 },
+      axisLabel: { color: chartText.value, fontSize: 12 },
       nameTextStyle: { color: chartText.value, fontSize: 12 }
     },
-    yAxis: { type: 'value', min: -0.4, max: 1.4, show: false },
-    series
+    yAxis: {
+      type: 'value',
+      name: t('shotStats.tempo.axisLast4'),
+      min: 0,
+      max: axisMax.value,
+      nameGap: 38,
+      nameLocation: 'middle',
+      axisLabel: { color: chartText.value, fontSize: 12 },
+      nameTextStyle: { color: chartText.value, fontSize: 12 }
+    },
+    series: [
+      ...scatter,
+      {
+        // y=x 対角補助線: 下 = 終盤に加速 / 上 = 減速
+        type: 'line', silent: true, showSymbol: false, animation: false,
+        lineStyle: { type: 'dashed', width: 1, opacity: 0.5 },
+        itemStyle: { color: chartText.value },
+        tooltip: { show: false },
+        data: [[0, 0], [axisMax.value, axisMax.value]]
+      }
+    ]
   }
 })
 
-const unitLabel = computed(() =>
-  props.measure === 'avg' ? t('shotStats.tempo.unitAvg') : t('shotStats.tempo.unitLast3')
-)
+/** 点タップ → ラリー ID を emit（動画ジャンプはページ側, REQ-019 準拠） */
+function onPointClick(params: { seriesType?: string, data?: [number, number, string] }): void {
+  if (params.seriesType !== 'scatter' || !params.data) return
+  emit('select', params.data[2])
+}
 
-/** measure ごとの表示対象数（last3 は 3 打未満を除く） */
-const shown = computed(() =>
-  props.samples.filter(s => tempoValueOf(s, props.measure) !== null).length
-)
+defineExpose({ onPointClick })
 </script>
 
 <template>
   <div class="tempo-chart">
-    <div class="tempo-header">
-      <h3 class="chart-title">
-        {{ $t('shotStats.tempo.title') }}
-      </h3>
-      <div class="measure-toggle">
-        <UButton
-          size="xs"
-          :variant="measure === 'avg' ? 'solid' : 'ghost'"
-          data-testid="tempo-avg"
-          @click="emit('update:measure', 'avg')"
-        >
-          {{ $t('shotStats.tempo.avg') }}
-        </UButton>
-        <UButton
-          size="xs"
-          :variant="measure === 'last3' ? 'solid' : 'ghost'"
-          data-testid="tempo-last3"
-          @click="emit('update:measure', 'last3')"
-        >
-          {{ $t('shotStats.tempo.last3') }}
-        </UButton>
-      </div>
-    </div>
+    <h3 class="chart-title">
+      {{ $t('shotStats.tempo.title') }}
+    </h3>
     <ClientOnly>
       <VChart
         class="chart"
         :option="option"
         autoresize
+        @click="onPointClick"
       />
     </ClientOnly>
     <p
       class="tempo-note"
       data-testid="tempo-note"
     >
-      {{ $t('shotStats.tempo.note', { n: shown, excluded }) }}
+      {{ $t('shotStats.tempo.note', { n: samples.length, excluded }) }}
     </p>
   </div>
 </template>
 
 <style scoped>
 .tempo-chart { display: flex; flex-direction: column; gap: 0.25rem; }
-.tempo-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
 .chart-title { font-size: 0.875rem; font-weight: 600; }
-.measure-toggle { display: flex; gap: 0.25rem; }
-.chart { width: 100%; height: 260px; }
+.chart { width: 100%; height: 320px; }
 .tempo-note { font-size: 0.75rem; opacity: 0.7; }
 </style>
