@@ -160,6 +160,7 @@ export interface RallyTempoRow {
   timed_count: number
   duration_ms: number | null
   last3_avg_interval_ms: number | null
+  last4_avg_interval_ms: number | null
   team_a_player1_id: string
   team_a_player2_id: string
   team_b_player1_id: string
@@ -241,17 +242,20 @@ export interface PhaseRate {
 }
 
 /** K: テンポ measure（切替トグル, REQ-016） */
-export type TempoMeasure = 'avg' | 'last3'
-
-/** K: 適格ラリーのテンポ値（分布描画用, REQ-015/106） */
+/**
+ * K: 適格ラリーのテンポ値（2 軸散布図用, REQ-015/106 + 改修2026-08-12）。
+ * 単位は秒/打（小さいほど速い）に統一。対象 = 4 打以上・全打点時刻あり。
+ */
 export interface TempoSample {
   rallyId: string
   /** 選択中の視点チームが取ったか（null = 視点なし = 対象全体） */
   won: boolean | null
-  /** (shot_count - 1) / (duration_ms / 1000) 打/秒 */
-  avgShotsPerSec: number
-  /** ラスト 3 打の 2 間隔平均（ms）。3 本未満は null */
-  last3IntervalMs: number | null
+  /** ラリー全体の平均ショット間隔（秒/打）= duration ÷ (shot_count − 1) */
+  avgIntervalSec: number
+  /** 終盤 4 打の平均間隔（秒/打）= (t_last − t_last-3) ÷ 3 */
+  last4IntervalSec: number
+  /** 動画ジャンプ用（サーブの押下時刻。null = 動画なし） */
+  videoStartMs: number | null
 }
 
 /**
@@ -272,6 +276,9 @@ export interface FlowRally {
   timedCount: number
   durationMs: number | null
   last3Ms: number | null
+  last4Ms: number | null
+  videoSourceType: 'youtube' | 'local'
+  videoSourceUrl: string
   teamA: [string, string]
   teamB: [string, string]
 }

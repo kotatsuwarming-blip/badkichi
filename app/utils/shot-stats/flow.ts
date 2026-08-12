@@ -30,6 +30,9 @@ export function mergeFlowRallies(rallies: RallyRow[], tempo: RallyTempoRow[]): F
       timedCount: t.timed_count,
       durationMs: t.duration_ms,
       last3Ms: t.last3_avg_interval_ms,
+      last4Ms: t.last4_avg_interval_ms,
+      videoSourceType: r.video_source_type,
+      videoSourceUrl: r.video_source_url,
       teamA: [t.team_a_player1_id, t.team_a_player2_id],
       teamB: [t.team_b_player1_id, t.team_b_player2_id]
     })

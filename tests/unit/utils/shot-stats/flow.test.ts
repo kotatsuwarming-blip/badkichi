@@ -21,7 +21,7 @@ function tempoRow(id: string, partial: Partial<RallyTempoRow> = {}): RallyTempoR
   return {
     rally_id: id, match_id: 'm1', set_number: 1, rally_number: 1,
     serving_team: 'A', point_winner: 'A', shot_count: 3, timed_count: 3,
-    duration_ms: 1400, last3_avg_interval_ms: 700,
+    duration_ms: 1400, last3_avg_interval_ms: 700, last4_avg_interval_ms: null,
     team_a_player1_id: 'p0', team_a_player2_id: 'p1',
     team_b_player1_id: 'p2', team_b_player2_id: 'p3', ...partial
   }
@@ -34,7 +34,10 @@ describe('mergeFlowRallies', () => {
       [tempoRow('r1')]
     )
     expect(merged).toHaveLength(1)
-    expect(merged[0]).toMatchObject({ rallyId: 'r1', scoreA: 5, scoreB: 3, durationMs: 1400, teamA: ['p0', 'p1'] })
+    expect(merged[0]).toMatchObject({
+      rallyId: 'r1', scoreA: 5, scoreB: 3, durationMs: 1400, teamA: ['p0', 'p1'],
+      videoSourceType: 'youtube', videoSourceUrl: 'u'
+    })
   })
   it('セット・ラリー番号順にソート', () => {
     const merged = mergeFlowRallies(

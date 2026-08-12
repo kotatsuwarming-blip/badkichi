@@ -9,7 +9,7 @@
  */
 import { computed, ref, watch, type Ref } from 'vue'
 import type { RallyRow, StatsEntity } from '~/types/stats-dashboard'
-import type { FlowRally, RallyTempoRow, StatsSubject, TempoMeasure } from '~/types/shot-stats'
+import type { FlowRally, RallyTempoRow, StatsSubject } from '~/types/shot-stats'
 import type { StatsViewScope } from '~/composables/useStatsView'
 import { callStatsRpc } from '~/utils/stats-dashboard/stats-rpc'
 import { mergeFlowRallies } from '~/utils/shot-stats/flow'
@@ -78,7 +78,6 @@ export function useRallyFlowView(
   const phaseEntries = computed(() => buildPhaseEntries(targetRows.value, subject.value, opts.nameOf))
 
   /** K: テンポサンプル + 除外数（REQ-106） */
-  const measure = ref<TempoMeasure>('avg')
   const tempo = computed(() => toTempoSamples(targetRows.value, subject.value))
 
   /** L: セット選択（試合単位のみ使用） */
@@ -91,6 +90,6 @@ export function useRallyFlowView(
 
   return {
     rows, pending, loaded, error, execute,
-    subject, phaseEntries, measure, tempo, setNumbers, ralliesOfSet, isEmpty
+    subject, phaseEntries, tempo, setNumbers, ralliesOfSet, isEmpty
   }
 }

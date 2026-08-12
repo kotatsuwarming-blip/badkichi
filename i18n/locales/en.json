@@ -494,14 +494,12 @@
     },
     "tempo": {
       "title": "Rally tempo",
-      "avg": "Average",
-      "last3": "Endgame",
-      "unitAvg": "shots/sec",
-      "unitLast3": "sec (last-3 interval)",
+      "axisAvg": "Rally average (sec/shot)",
+      "axisLast4": "Last-4 average (sec/shot)",
       "won": "Won rallies",
       "lost": "Lost rallies",
       "all": "All rallies",
-      "note": "Approximate values based on tap timestamps ({n} rallies shown / {excluded} excluded)"
+      "note": "Approximate values from tap timestamps. Rallies with 4+ shots and all shots timed ({n} shown / {excluded} excluded). Below the diagonal = faster finish. Tap a point to replay"
     },
     "flow": {
       "title": "Set momentum",

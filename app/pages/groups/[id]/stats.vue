@@ -105,6 +105,18 @@ function onPickLocalFile(e: Event): void {
   }
 }
 
+/** テンポ散布図の点タップ → 該当ラリーを 2 秒前から再生（ソース切替は onSelectRally と同一） */
+function onSelectTempoRally(rallyId: string): void {
+  const r = flow.rows.value.find(x => x.rallyId === rallyId)
+  if (!r || r.videoStartMs === null) return
+  onSelectRally({
+    match_id: r.matchId,
+    video_start_timestamp_ms: r.videoStartMs,
+    video_source_type: r.videoSourceType,
+    video_source_url: r.videoSourceUrl
+  } as RallyRow)
+}
+
 function onOverviewSelect(payload: { playerId?: string, pair?: { player1Id: string, player2Id: string }, role: StatsRole }): void {
   if (payload.pair) view.setEntity({ kind: 'pair', player1Id: payload.pair.player1Id, player2Id: payload.pair.player2Id })
   else if (payload.playerId) view.setEntity({ kind: 'player', playerId: payload.playerId })
@@ -300,8 +312,7 @@ function backToPair(): void {
             <StatsTempoChart
               :samples="flow.tempo.value.samples"
               :excluded="flow.tempo.value.excluded"
-              :measure="flow.measure.value"
-              @update:measure="flow.measure.value = $event"
+              @select="onSelectTempoRally"
             />
           </template>
           <p
