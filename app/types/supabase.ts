@@ -761,6 +761,7 @@ export type Database = {
         }
         Returns: {
           duration_ms: number
+          is_precise: boolean
           last3_avg_interval_ms: number
           last4_avg_interval_ms: number
           match_id: string
