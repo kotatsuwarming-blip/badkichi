@@ -389,9 +389,11 @@ function backToPair(): void {
 .stats-header { display: flex; align-items: center; gap: 1rem; }
 .title { font-weight: 600; }
 .entity-controls { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-.charts-col, .video-col, .table-col { display: flex; flex-direction: column; gap: 1rem; }
+/* min-width:0: ECharts canvas の実 px 幅で列が縮めなくなるのを防ぐ（動画再表示時の横はみ出し対策, 2026-08-16） */
+.charts-col, .video-col, .table-col { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
 .source-picker { display: flex; flex-direction: column; gap: 0.5rem; }
 .serve-top { display: grid; grid-template-columns: 1fr; gap: 1rem; align-items: start; }
+.serve-top > * { min-width: 0; }
 .rate-block { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
 .stats-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
 @media (min-width: 1024px) {
