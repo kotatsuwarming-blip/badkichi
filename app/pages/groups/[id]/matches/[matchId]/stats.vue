@@ -78,6 +78,7 @@ const wormPoints = computed<WormPoint[]>(() => {
 function onSelectWormPoint(point: WormPoint): void {
   // タップ → 動画ジャンプ（既定 2 秒前, REQ-019）
   if (point.videoStartMs === null) return
+  videoHidden.value = false
   videoPane.value?.seekToMs(Math.max(0, point.videoStartMs - SEEK_LEAD_MS))
 }
 
@@ -85,6 +86,7 @@ function onSelectWormPoint(point: WormPoint): void {
 function onSelectTempoRally(rallyId: string): void {
   const r = flow.rows.value.find(x => x.rallyId === rallyId)
   if (!r || r.videoStartMs === null) return
+  videoHidden.value = false
   videoPane.value?.seekToMs(Math.max(0, r.videoStartMs - SEEK_LEAD_MS))
 }
 
@@ -97,6 +99,9 @@ const overviewEntries = computed<(PlayerRate | PairRate)[]>(() =>
     : (view.overview.value?.playerRates ?? [])
 )
 const isEntity = computed(() => view.entity.value.kind !== 'all')
+
+// 動画パネルの表示/非表示（非表示中はチャートをフル幅に。ラリー選択で自動再表示, 2026-08-16）
+const videoHidden = ref(false)
 
 // 動画ソース（youtube 即時 / local 再選択）
 const videoSource = ref<VideoSource | null>(null)
@@ -113,6 +118,7 @@ function onPickLocalFile(e: Event): void {
 const videoPane = ref<{ seekToMs: (ms: number) => void } | null>(null)
 function onSelectRally(rally: RallyRow): void {
   if (rally.video_start_timestamp_ms === null) return
+  videoHidden.value = false
   videoPane.value?.seekToMs(Math.max(0, rally.video_start_timestamp_ms - SEEK_LEAD_MS))
 }
 
@@ -207,6 +213,16 @@ function backToPair(): void {
       >
         {{ $t('shotStats.tabs.rallyflow') }}
       </UButton>
+      <UButton
+        size="sm"
+        variant="ghost"
+        class="video-toggle"
+        :icon="videoHidden ? 'i-lucide-video' : 'i-lucide-video-off'"
+        data-testid="video-toggle"
+        @click="videoHidden = !videoHidden"
+      >
+        {{ videoHidden ? $t('stats.video.show') : $t('stats.video.hide') }}
+      </UButton>
     </nav>
 
     <StatsAnnotationBadge
@@ -219,6 +235,7 @@ function backToPair(): void {
     <div
       v-else
       class="stats-grid"
+      :class="{ 'video-hidden': videoHidden }"
     >
       <section class="charts-col">
         <div
@@ -355,7 +372,10 @@ function backToPair(): void {
         </div>
       </section>
 
-      <section class="video-col">
+      <section
+        v-show="!videoHidden"
+        class="video-col"
+      >
         <StatsVideoPane
           v-if="videoSource"
           ref="videoPane"
@@ -390,6 +410,7 @@ function backToPair(): void {
 <style scoped>
 .stats-page { display: flex; flex-direction: column; gap: 1rem; padding: 1rem; }
 .stats-tabs { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.video-toggle { margin-left: auto; }
 .tab-panel { display: flex; flex-direction: column; gap: 1rem; }
 .placeholder { font-size: 0.875rem; opacity: 0.7; }
 .set-toggle { display: flex; gap: 0.25rem; align-items: center; flex-wrap: wrap; }
@@ -414,5 +435,10 @@ function backToPair(): void {
   .video-col { position: sticky; top: 1rem; }
   .table-col { grid-area: table; }
   .serve-top { grid-template-columns: 1fr 1fr; }
+  /* 動画パネル非表示中はチャートをフル幅に (2026-08-16) */
+  .stats-grid.video-hidden {
+    grid-template-columns: 1fr;
+    grid-template-areas: 'charts' 'table';
+  }
 }
 </style>

@@ -146,11 +146,11 @@ export interface ShotBin {
  * 既定ビン（境界は調整可。1 / 2 / 3〜7 / 8〜12 / 13+） 🔵 ヒアリング2026-06-09 + U-06(2026-06-16)
  * 1打=サーブで決着（サーブミス/エース）、2打=レシーブで決着。ラリー成立（3打以上）と
  * 分けることで「サーブ周りで得しているか」が読めるようにする（川島提案）。
- * ラベルの \n は echarts のカテゴリ軸で2行表示になる。
+ * ラベルの \n は echarts のカテゴリ軸で2行表示になる（半幅表示で隣と重ならない短文にする）。
  */
 export const RALLY_LENGTH_BINS: readonly ShotBin[] = [
-  { key: '1', label: '1 打\n(サーブミス等)', min: 1, max: 1 },
-  { key: '2', label: '2 打\n(レシーブ決着)', min: 2, max: 2 },
+  { key: '1', label: '1 打\nサーブ決着', min: 1, max: 1 },
+  { key: '2', label: '2 打\nレシーブ決着', min: 2, max: 2 },
   { key: '3-7', label: '3〜7 打', min: 3, max: 7 },
   { key: '8-12', label: '8〜12 打', min: 8, max: 12 },
   { key: '13+', label: '13 打以上', min: 13, max: null }
