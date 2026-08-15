@@ -41,10 +41,10 @@ const option = computed(() => {
     textStyle: { color: chartText.value, fontSize: 13 },
     // 凡例は下部へ。軸名（本数/%）と凡例の衝突を解消（U-06: 凡例がグラフに被る）
     legend: { data: [t('stats.rallyLength.count'), t('stats.rallyLength.winRate')], bottom: 0, textStyle: { color: chartText.value, fontSize: 13 } },
-    // 2行ラベル（1打/2打の決着注記）ぶん下余白を確保
-    grid: { left: 48, right: 48, top: 28, bottom: 60 },
-    // 軸ラベル・軸名はやや大きめで視認性を上げる（U-06）。interval:0 で5ビン全ラベルを常時表示
-    xAxis: { type: 'category', data: s.labels, axisLabel: { color: chartText.value, fontSize: 13, fontWeight: 500, interval: 0 } },
+    // 2行ラベル（1打/2打の決着注記）ぶん下余白を確保。top/bottom はポジション別と揃える（横並び, 2026-08-16）
+    grid: { left: 48, right: 48, top: 20, bottom: 56 },
+    // interval:0 で5ビン全ラベルを常時表示。半幅（横並び）でも隣と重ならないよう 11px
+    xAxis: { type: 'category', data: s.labels, axisLabel: { color: chartText.value, fontSize: 11, fontWeight: 500, interval: 0 } },
     yAxis: [
       { type: 'value', name: t('stats.rallyLength.count'), min: 0, max: scale.max, interval: scale.interval, nameGap: 12, axisLabel: { color: chartText.value, fontSize: 13 }, nameTextStyle: { color: chartText.value, fontSize: 12 } },
       { type: 'value', name: '%', min: 0, max: 100, interval: 20, splitLine: { show: false }, nameGap: 12, axisLabel: { color: chartText.value, fontSize: 13 }, nameTextStyle: { color: chartText.value, fontSize: 12 } }

@@ -367,6 +367,10 @@
     "empty": {
       "title": "No data",
       "description": "No rallies have been recorded for this match yet"
+    },
+    "video": {
+      "hide": "Hide video",
+      "show": "Show video"
     }
   },
   "legal": {
