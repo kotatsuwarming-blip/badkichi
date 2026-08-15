@@ -218,36 +218,46 @@ function backToPair(): void {
           class="tab-panel"
           data-testid="panel-serve"
         >
-          <template v-if="isEntity">
-            <div class="entity-controls">
-              <StatsPositionToggle
-                :position="view.drilldown.value.position"
-                @change="view.setDrillPosition"
-              />
-              <UButton
-                v-if="view.drilldown.value.memberId"
-                size="xs"
-                variant="ghost"
-                data-testid="back-to-pair"
-                @click="backToPair"
-              >
-                {{ $t('stats.backToPair') }}
-              </UButton>
+          <!-- ポジション別得点率とラリー長は同じドリルダウンに連動するため横並び (2026-08-16) -->
+          <div class="serve-top">
+            <div class="rate-block">
+              <template v-if="isEntity">
+                <div class="entity-controls">
+                  <StatsPositionToggle
+                    :position="view.drilldown.value.position"
+                    @change="view.setDrillPosition"
+                  />
+                  <UButton
+                    v-if="view.drilldown.value.memberId"
+                    size="xs"
+                    variant="ghost"
+                    data-testid="back-to-pair"
+                    @click="backToPair"
+                  >
+                    {{ $t('stats.backToPair') }}
+                  </UButton>
+                </div>
+                <StatsRateChart
+                  :entries="view.entityRates.value"
+                  mode="player"
+                  :selected-role="view.drilldown.value.role"
+                  @select="onEntitySelect"
+                />
+              </template>
+              <template v-else>
+                <StatsRateChart
+                  :entries="overviewEntries"
+                  :mode="view.globalFilter.value.subjectMode"
+                  @select="onOverviewSelect"
+                />
+              </template>
             </div>
-            <StatsRateChart
-              :entries="view.entityRates.value"
-              mode="player"
-              :selected-role="view.drilldown.value.role"
-              @select="onEntitySelect"
+            <StatsRallyLengthChart
+              :bins="view.rallyLengthBins.value"
+              :selected-keys="view.drilldown.value.shotBinKeys"
+              @select-bins="view.setDrillBins"
             />
-          </template>
-          <template v-else>
-            <StatsRateChart
-              :entries="overviewEntries"
-              :mode="view.globalFilter.value.subjectMode"
-              @select="onOverviewSelect"
-            />
-          </template>
+          </div>
           <template v-if="shot.loaded.value">
             <StatsServeTypeChart :rows="shot.filteredServeRows.value" />
             <StatsReceiveTypeChart :rows="shot.filteredReceiveRows.value" />
@@ -290,11 +300,6 @@ function backToPair(): void {
           class="tab-panel"
           data-testid="panel-rallyflow"
         >
-          <StatsRallyLengthChart
-            :bins="view.rallyLengthBins.value"
-            :selected-keys="view.drilldown.value.shotBinKeys"
-            @select-bins="view.setDrillBins"
-          />
           <!-- 配球ヒートマップ（3打目以降 = ラリー分析のためラリー展開へ, 2026-08-08 再編） -->
           <StatsShotHeatmap
             v-if="shot.loaded.value"
@@ -368,6 +373,8 @@ function backToPair(): void {
 .entity-controls { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
 .charts-col, .video-col, .table-col { display: flex; flex-direction: column; gap: 1rem; }
 .source-picker { display: flex; flex-direction: column; gap: 0.5rem; }
+.serve-top { display: grid; grid-template-columns: 1fr; gap: 1rem; align-items: start; }
+.rate-block { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
 .stats-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
 @media (min-width: 1024px) {
   .stats-grid {
@@ -377,6 +384,9 @@ function backToPair(): void {
   }
   .charts-col { grid-area: charts; }
   .video-col { grid-area: video; }
+  /* 動画はスクロールに追従（下方のチャートから再生しても見える, 2026-08-16） */
+  .video-col { position: sticky; top: 1rem; }
   .table-col { grid-area: table; }
+  .serve-top { grid-template-columns: 1fr 1fr; }
 }
 </style>
