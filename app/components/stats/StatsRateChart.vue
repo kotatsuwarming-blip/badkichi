@@ -60,7 +60,7 @@ const option = computed(() => {
     // 凡例はプロット領域と重ならないよう下部に配置（U-06: 凡例がグラフに被る）
     legend: { data: [t('stats.rate.serve'), t('stats.rate.receive')], bottom: 0, textStyle: { color: chartText.value, fontSize: 13 } },
     // top/bottom はラリー長チャートとプロット領域を揃える（横並び配置, 2026-08-16）
-    grid: { left: 44, right: 16, top: 20, bottom: 56 },
+    grid: { left: 44, right: 16, top: 20, bottom: 64 },
     // 軸ラベル（選手名）はやや大きめ・太めで視認性を上げる（U-06）
     xAxis: { type: 'category', data: labels, axisLabel: { color: chartText.value, fontSize: 13, fontWeight: 500 } },
     yAxis: { type: 'value', min: 0, max: 100, axisLabel: { color: chartText.value, fontSize: 13 } },
