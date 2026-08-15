@@ -43,8 +43,8 @@ const option = computed(() => {
     legend: { data: [t('stats.rallyLength.count'), t('stats.rallyLength.winRate')], bottom: 0, textStyle: { color: chartText.value, fontSize: 13 } },
     // 2行ラベル（1打/2打の決着注記）ぶん下余白を確保。top/bottom はポジション別と揃える（横並び, 2026-08-16）
     grid: { left: 48, right: 48, top: 20, bottom: 56 },
-    // interval:0 で5ビン全ラベルを常時表示。半幅（横並び）でも隣と重ならないよう 11px
-    xAxis: { type: 'category', data: s.labels, axisLabel: { color: chartText.value, fontSize: 11, fontWeight: 500, interval: 0 } },
+    // interval:0 で5ビン全ラベルを常時表示。半幅（横並び）でも隣と重ならないよう 10px + 行間
+    xAxis: { type: 'category', data: s.labels, axisLabel: { color: chartText.value, fontSize: 10, fontWeight: 500, interval: 0, lineHeight: 14 } },
     yAxis: [
       { type: 'value', name: t('stats.rallyLength.count'), min: 0, max: scale.max, interval: scale.interval, nameGap: 12, axisLabel: { color: chartText.value, fontSize: 13 }, nameTextStyle: { color: chartText.value, fontSize: 12 } },
       { type: 'value', name: '%', min: 0, max: 100, interval: 20, splitLine: { show: false }, nameGap: 12, axisLabel: { color: chartText.value, fontSize: 13 }, nameTextStyle: { color: chartText.value, fontSize: 12 } }
