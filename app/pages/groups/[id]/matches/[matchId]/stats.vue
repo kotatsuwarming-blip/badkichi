@@ -267,13 +267,16 @@ function backToPair(): void {
                   mode="player"
                   :selected-role="view.drilldown.value.role"
                   @select="onEntitySelect"
+                  @select-role="view.setDrillRole"
                 />
               </template>
               <template v-else>
                 <StatsRateChart
                   :entries="overviewEntries"
                   :mode="view.globalFilter.value.subjectMode"
+                  :selected-role="view.drilldown.value.role"
                   @select="onOverviewSelect"
+                  @select-role="view.setDrillRole"
                 />
               </template>
             </div>

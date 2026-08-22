@@ -8,7 +8,7 @@
  * 関連設計: docs/design/stats-dashboard/{interfaces.ts,dataflow.md}
  * 関連要件: REQ-003 / REQ-004 / REQ-012 / NFR-201 / REQ-406
  */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { PairRate, PlayerRate, StatsRole } from '~/types/stats-dashboard'
 import { useChartTextColor } from '~/composables/useChartTextColor'
@@ -22,6 +22,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   select: [payload: { playerId?: string, pair?: { player1Id: string, player2Id: string }, role: StatsRole }]
+  /** 凡例クリック → 役割ドリルダウン（棒クリックと同じ連動, 2026-08-22） */
+  selectRole: [role: StatsRole]
 }>()
 
 const { t } = useI18n()
@@ -46,13 +48,17 @@ const option = computed(() => {
 
   return {
     tooltip: {
-      trigger: 'item',
-      formatter: (p: { seriesIndex: number, dataIndex: number, value: number | null, seriesName: string, name: string }) => {
-        const den = (p.seriesIndex === 0 ? serveDen : receiveDen)[p.dataIndex]
-        const rate = p.value === null || p.value === undefined
-          ? t('stats.rate.noData')
-          : t('stats.rate.withCount', { rate: p.value, n: den })
-        return `${p.name}<br/>${p.seriesName}: ${rate}`
+      // axis トリガ: 0%（棒が見えない）でも列のホバーで両系列の率と母数 n を表示（2026-08-22）
+      trigger: 'axis',
+      formatter: (params: { seriesIndex: number, dataIndex: number, value: number | null, seriesName: string, name: string }[]) => {
+        const lines = params.map((p) => {
+          const den = (p.seriesIndex === 0 ? serveDen : receiveDen)[p.dataIndex]
+          const rate = p.value === null || p.value === undefined
+            ? t('stats.rate.noData')
+            : t('stats.rate.withCount', { rate: p.value, n: den })
+          return `${p.seriesName}: ${rate}`
+        })
+        return `${params[0]!.name}<br/>${lines.join('<br/>')}`
       }
     },
     // チャート全文字をテーマ追従色・標準サイズに（U-06: 文字が読みづらい / ダーク背景対応）
@@ -65,8 +71,9 @@ const option = computed(() => {
     xAxis: { type: 'category', data: labels, axisLabel: { color: chartText.value, fontSize: 13, fontWeight: 500 } },
     yAxis: { type: 'value', min: 0, max: 100, axisLabel: { color: chartText.value, fontSize: 13 } },
     series: [
-      { name: t('stats.rate.serve'), type: 'bar', data: serve, itemStyle: { opacity: roleOpacity('serve') } },
-      { name: t('stats.rate.receive'), type: 'bar', data: receive, itemStyle: { opacity: roleOpacity('receive') } }
+      // barMinHeight: 得点率 0% でも棒を視認・クリックできる最小高さ（null=データなしは非表示のまま, 2026-08-22）
+      { name: t('stats.rate.serve'), type: 'bar', barMinHeight: 3, data: serve, itemStyle: { opacity: roleOpacity('serve') } },
+      { name: t('stats.rate.receive'), type: 'bar', barMinHeight: 3, data: receive, itemStyle: { opacity: roleOpacity('receive') } }
     ]
   }
 })
@@ -90,7 +97,14 @@ function onChartClick(params: { seriesIndex: number, dataIndex: number }): void 
   }
 }
 
-defineExpose({ onChartClick })
+// 凡例クリック → 系列の表示トグルは打ち消し、役割ドリルダウンとして emit（棒クリックと同じ連動, 2026-08-22）
+const chartRef = ref<{ dispatchAction?: (action: Record<string, unknown>) => void } | null>(null)
+function onLegendSelect(params: { name: string }): void {
+  chartRef.value?.dispatchAction?.({ type: 'legendSelect', name: params.name })
+  emit('selectRole', params.name === t('stats.rate.serve') ? 'serve' : 'receive')
+}
+
+defineExpose({ onChartClick, onLegendSelect })
 </script>
 
 <template>
@@ -103,10 +117,12 @@ defineExpose({ onChartClick })
     </h3>
     <ClientOnly>
       <VChart
+        ref="chartRef"
         class="chart"
         :option="option"
         autoresize
         @click="onChartClick"
+        @legendselectchanged="onLegendSelect"
       />
     </ClientOnly>
   </div>
