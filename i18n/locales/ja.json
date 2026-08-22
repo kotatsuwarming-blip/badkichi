@@ -290,7 +290,8 @@
       "markComplete": "この試合を完了にする",
       "completed": "完了済み",
       "unmark": "取り消す"
-    }
+    },
+    "courtChange": "コートチェンジ"
   },
   "stats": {
     "matchTitle": "試合統計",

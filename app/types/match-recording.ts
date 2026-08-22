@@ -120,6 +120,8 @@ export interface RallyHistoryItem {
   overrideCount: number
   /** 該当ラリーの動画開始位置 (ms)。[▶] ジャンプに使う。null=動画アラインメントなし。REQ-009。 */
   videoStartTimestampMs: number | null
+  /** 該当ラリー時点のカメラ手前チーム（再開時のコートチェンジ状態復元用, 2026-08-22）。 */
+  cameraNearTeam?: Team | null
 }
 
 // ========================================
@@ -177,6 +179,8 @@ export interface UseRecordingSessionReturn {
   suggestedFirstServingTeam: Readonly<Ref<Team | null>>
   /** カメラ手前チーム（コート描画の向き）。セット開始時に確定。REQ-002。 */
   cameraNearTeam: Readonly<Ref<Team | null>>
+  /** コートチェンジ（チェンジエンズ）: 以降のラリーの camera_near_team を反転（手動, 2026-08-22） */
+  toggleCameraNearTeam: () => void
 
   // セットアップ（同期）
   configureAndStartSet: (setup: SetSetupInput, positions: SetPositionInput[]) => Promise<ActionResult<SetRow['id']>>
