@@ -290,7 +290,8 @@
       "markComplete": "Mark match complete",
       "completed": "Completed",
       "unmark": "Undo"
-    }
+    },
+    "courtChange": "Change ends"
   },
   "stats": {
     "matchTitle": "Match stats",

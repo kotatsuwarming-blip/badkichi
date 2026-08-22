@@ -260,6 +260,18 @@ onMounted(async () => {
             @let="session.recordLet"
             @skip="session.skipRally"
           />
+          <!-- コートチェンジ（チェンジエンズ）: 以降のラリーのカメラ手前チームを反転
+               （ファイナル 11 点・15 点マッチの 8 点・練習の任意交代に手動対応, 2026-08-22） -->
+          <UButton
+            size="sm"
+            variant="outline"
+            icon="i-lucide-arrow-left-right"
+            :disabled="cameraNearTeam === null"
+            data-testid="court-change"
+            @click="session.toggleCameraNearTeam"
+          >
+            {{ $t('record.courtChange') }}
+          </UButton>
           <RecordingPositionControls
             :can-advance="setWinner !== null"
             @override="session.recordOverride"
