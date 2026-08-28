@@ -10,7 +10,7 @@
  *   - キーボード: e.code ベースで捕捉 (Shift+数字が記号になるレイアウト差を回避)。
  *     Backspace = 直前1段 undo (REQ-108)。
  */
-import { computed, onBeforeUnmount, onMounted, shallowRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { UseVideoPlayerReturn, VideoSource } from '~/types/video-playback'
 import type { AnnotationMode, AnnotationRally } from '~/types/shot-annotation'
@@ -20,6 +20,7 @@ import { useAnnotationProgress } from '~/composables/useAnnotationProgress'
 import { QUICK_REASON_KEYS, useQuickPass } from '~/composables/useQuickPass'
 import { useTypePass } from '~/composables/useTypePass'
 import { usePositionPass } from '~/composables/usePositionPass'
+import { extendWindow } from '~/utils/annotation/offset'
 
 const route = useRoute()
 const matchId = route.params.matchId as string
@@ -98,12 +99,46 @@ const activeRallyId = computed(() => session.cursor.value?.rallyId ?? null)
 
 // ---- ループ再生制御 (決まり方の決着窓 / 種別・全ショットの打球窓、REQ-004 / REQ-101) ----
 // 種別パスは動きがないと判定できないためローカル動画でもループする (2026-08-03 再設計)
-const activeLoopWindow = computed(() => {
+const baseLoopWindow = computed(() => {
   if (session.mode.value === 'quick') return quick.loopWindow.value
   if (session.mode.value === 'type') return typePass.loopWindow.value
   if (session.mode.value === 'position' && session.isYoutube.value) return positionPass.loopWindow.value
   return null
 })
+
+// ショットが窓に収まっていないときの手動延長 (前後独立・累積。ヒアリング2026-08-29)
+const LOOP_EXTEND_STEP_MS = 1000
+const loopExtendBeforeMs = ref(0)
+const loopExtendAfterMs = ref(0)
+const activeLoopWindow = computed(() => {
+  const w = baseLoopWindow.value
+  if (!w) return null
+  return extendWindow(w, loopExtendBeforeMs.value, loopExtendAfterMs.value)
+})
+// 対象ショット (= 既定窓) が変わったら延長をリセット
+watch(() => (baseLoopWindow.value ? `${baseLoopWindow.value.fromMs}:${baseLoopWindow.value.toMs}` : null), () => {
+  loopExtendBeforeMs.value = 0
+  loopExtendAfterMs.value = 0
+})
+
+/** 前へ延長: 広げた区間をすぐ確認できるよう新しい開始点から再生 */
+function extendLoopBefore(): void {
+  if (!baseLoopWindow.value) return
+  loopExtendBeforeMs.value += LOOP_EXTEND_STEP_MS
+  const w = activeLoopWindow.value
+  const p = player.value
+  if (!w || !p) return
+  p.controls.seekToMs(w.fromMs)
+  p.controls.play()
+}
+
+/** 後ろへ延長: クイックパスの通し方式で停止済みでも続きが見えるよう再生を再開 */
+function extendLoopAfter(): void {
+  if (!baseLoopWindow.value) return
+  loopExtendAfterMs.value += LOOP_EXTEND_STEP_MS
+  const p = player.value
+  if (p && p.state.value.status !== 'playing') p.controls.play()
+}
 
 let loopTimer: ReturnType<typeof setInterval> | null = null
 
@@ -232,6 +267,15 @@ function onKeydown(event: KeyboardEvent): void {
   if (event.key === 'Backspace') {
     event.preventDefault()
     undoAndReposition()
+    return
+  }
+  // ループ窓の手動延長: , = 前へ / . = 後ろへ (種別・打点のキー入力と衝突しない記号キー、2026-08-29)
+  if (event.code === 'Comma' || event.code === 'Period') {
+    if (baseLoopWindow.value) {
+      event.preventDefault()
+      if (event.code === 'Comma') extendLoopBefore()
+      else extendLoopAfter()
+    }
     return
   }
   const key = codeToKey(event.code)
@@ -394,6 +438,39 @@ onBeforeUnmount(() => {
             :skip-keys="session.mode.value === 'quick'"
             @reselect-file="file => initPlayer({ type: 'local', file })"
           />
+          <!-- ループ窓の手動延長 (ショットが窓に収まらないとき。ショット移動でリセット、2026-08-29) -->
+          <div
+            v-if="player && baseLoopWindow"
+            class="flex items-center gap-2"
+          >
+            <UButton
+              size="xs"
+              variant="outline"
+              icon="i-lucide-chevrons-left"
+              data-testid="loop-extend-before"
+              :title="t('annotation.loopExtendKeys')"
+              @click="extendLoopBefore"
+            >
+              {{ t('annotation.loopExtendBefore') }}
+            </UButton>
+            <UButton
+              size="xs"
+              variant="outline"
+              trailing-icon="i-lucide-chevrons-right"
+              data-testid="loop-extend-after"
+              :title="t('annotation.loopExtendKeys')"
+              @click="extendLoopAfter"
+            >
+              {{ t('annotation.loopExtendAfter') }}
+            </UButton>
+            <span
+              v-if="loopExtendBeforeMs > 0 || loopExtendAfterMs > 0"
+              class="text-xs opacity-70"
+              data-testid="loop-extend-status"
+            >
+              {{ t('annotation.loopExtended', { before: loopExtendBeforeMs / 1000, after: loopExtendAfterMs / 1000 }) }}
+            </span>
+          </div>
           <UAlert
             v-else-if="session.match.value?.videoSourceType === 'local'"
             color="info"

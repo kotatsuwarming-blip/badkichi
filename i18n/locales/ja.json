@@ -474,7 +474,11 @@
       "title": "ラリー一覧",
       "rally": "第{set}セット #{n}",
       "shots": "{n}打"
-    }
+    },
+    "loopExtendBefore": "前へ+1秒",
+    "loopExtendAfter": "後ろへ+1秒",
+    "loopExtendKeys": "キー: , で前へ / . で後ろへ延長",
+    "loopExtended": "延長中: 前 {before} 秒 / 後 {after} 秒（次のショットでリセット）"
   },
   "shotStats": {
     "tabs": {
