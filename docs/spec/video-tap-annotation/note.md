@@ -3,7 +3,8 @@
 **作成日**: 2026-08-28
 **位置づけ**: アノテーションスタジオ打点パスの UX 全面改善。「動画フレーム直接タップ +
 コート4隅校正（ホモグラフィ）」= ヒアリング2026-08-28 の**案A**を採用（ユーザ確定）。
-**状態**: 方針確定・未着手。次は `/kairo-requirements video-tap-annotation`。
+**状態**: 要件定義書 5 点セット作成済み（2026-08-28）。§5 の論点は自律モードで提案値を仮置き（🟡）→
+[interview-record.md](interview-record.md)「確認待ち一覧」をユーザ確認後、`/kairo-design video-tap-annotation` へ。
 
 ## 1. 背景（なぜやるか）
 
@@ -57,7 +58,7 @@
 
 - **CLAUDE.md のフロー**に従う: main から `feature/video-tap-annotation` を切る →
   dev マージで検証 → main へ PR。
-- **注意**: 打点パスの二択廃止（コミット b5e27ea）ほか直近の変更は `feat/shot-stats`
+- **注意**: 打点パスの二択廃止（コミット c429d68）ほか直近の変更は `feat/shot-stats`
   ブランチ上にあり main 未マージ。**feat/shot-stats の main マージ後に branch を切る**か、
   未マージのまま始めるなら usePositionPass の競合に留意（二択廃止と本件は同じ関数
   `setPosition` 周辺を触る）。
@@ -72,3 +73,19 @@
 3. 落下点（クイックパス）も動画直接タップ化するか（同じ変換の再利用）
 4. タブレット利用を正式サポートに含めるか（タッチ操作・レイアウト検証の範囲）
 5. 校正精度の検証方法（既知のライン交点をタップして誤差表示する等のセルフチェック）
+
+## 6. 要件定義の結果（2026-08-28）
+
+- 出力: [requirements.md](requirements.md) / [interview-record.md](interview-record.md) /
+  [user-stories.md](user-stories.md) / [acceptance-criteria.md](acceptance-criteria.md)
+- §5 の論点への仮置き（要ユーザ確認。interview-record Q3〜Q7/Q9）:
+  1. コート図フォールバック → **残す**（ミニマップも入力可 = REQ-011/101/202）
+  2. 校正導線 → **提示 + スキップ可 + 前セット引き継ぎをワンタップ提案**（REQ-006/007/008）
+  3. 落下点 → **動画タップ化を採用**（Should Have, REQ-015）
+  4. タブレット → **正式対象外**。Pointer Events でタッチ受付のみ（REQ-408 / NFR-202）
+  5. 校正精度 → **コートラインの投影ガイド線**で目視確認（REQ-005）。数値誤差は REQ-304（MAY）
+- 実装調査で新たに確定（🔵）: コートチェンジ（31c8b9a）は校正に影響しない（REQ-107）/
+  校正座標は再生面（16:9 固定）の正規化座標で保存（REQ-406）/
+  VideoPlayer の `overlay` スロットは `pointer-events: none`・z-index 2、click-catch 層は
+  z-index 3 → タップ受付レイヤはその上に置き、再生/停止トグルと分離する（REQ-014）
+
