@@ -3,7 +3,7 @@
  * オフセット校正の平均・非対称ループ窓・負値 clamp
  */
 import { describe, it, expect } from 'vitest'
-import { averageOffset, loopWindowFor, startFromPreviousShot } from '~/utils/annotation/offset'
+import { averageOffset, loopWindowFor, startFromPreviousShot, extendWindow } from '~/utils/annotation/offset'
 
 describe('averageOffset', () => {
   it('TC-010-01: 校正3件 (-380, -420, -400) → 平均 -400ms', () => {
@@ -31,6 +31,21 @@ describe('loopWindowFor', () => {
   it('TC-010-B01 / EDGE-004: 動画開始前になる場合は 0 に clamp', () => {
     expect(loopWindowFor('hitSearch', 500).fromMs).toBe(0)
     expect(loopWindowFor('rallyEnd', 300).fromMs).toBe(0)
+  })
+})
+
+describe('extendWindow (ループ窓の手動延長、2026-08-29)', () => {
+  it('前後を独立に延長する', () => {
+    expect(extendWindow({ fromMs: 5000, toMs: 7000 }, 1000, 0)).toEqual({ fromMs: 4000, toMs: 7000 })
+    expect(extendWindow({ fromMs: 5000, toMs: 7000 }, 0, 2000)).toEqual({ fromMs: 5000, toMs: 9000 })
+    expect(extendWindow({ fromMs: 5000, toMs: 7000 }, 1000, 2000)).toEqual({ fromMs: 4000, toMs: 9000 })
+  })
+  it('開始は 0 未満に clamp (EDGE-004 準拠)', () => {
+    expect(extendWindow({ fromMs: 500, toMs: 2000 }, 1000, 0)).toEqual({ fromMs: 0, toMs: 2000 })
+  })
+  it('延長 0 は同一窓を返す', () => {
+    const w = { fromMs: 5000, toMs: 7000 }
+    expect(extendWindow(w, 0, 0)).toBe(w)
   })
 })
 
