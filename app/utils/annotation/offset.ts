@@ -42,6 +42,18 @@ export function loopWindowFor(purpose: LoopPurpose, anchorMs: number): LoopWindo
 }
 
 /**
+ * ループ窓の手動延長 (前後 ms)。ショットが窓に収まっていないときに記録者が広げる
+ * (ヒアリング2026-08-29)。開始は 0 未満に clamp (EDGE-004 準拠)。
+ */
+export function extendWindow(window: LoopWindow, beforeMs: number, afterMs: number): LoopWindow {
+  if (beforeMs <= 0 && afterMs <= 0) return window
+  return {
+    fromMs: Math.max(0, window.fromMs - Math.max(0, beforeMs)),
+    toMs: window.toMs + Math.max(0, afterMs)
+  }
+}
+
+/**
  * 直前ショットの時刻が分かっていれば、そこをループ開始点にして前置きを削る
  * (ドッグフーディング 2026-08-05「直前ショットの打刻以降から再生したい」)。
  * 直前時刻が窓開始より前 (= 既定の窓の方が狭い) やアンカー以降 (異常値) は既定のまま。

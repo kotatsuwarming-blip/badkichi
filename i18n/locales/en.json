@@ -474,7 +474,11 @@
       "title": "Rallies",
       "rally": "Set {set} #{n}",
       "shots": "{n} shots"
-    }
+    },
+    "loopExtendBefore": "+1s earlier",
+    "loopExtendAfter": "+1s later",
+    "loopExtendKeys": "Keys: , extends earlier / . extends later",
+    "loopExtended": "Extended: {before}s before / {after}s after (resets on next shot)"
   },
   "shotStats": {
     "tabs": {
