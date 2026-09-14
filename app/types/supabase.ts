@@ -737,9 +737,9 @@ export type Database = {
           serving_team: string
           set_number: number
           team_a_player1_id: string
-          team_a_player2_id: string | null
+          team_a_player2_id: string
           team_b_player1_id: string
-          team_b_player2_id: string | null
+          team_b_player2_id: string
         }[]
       }
       stats_rally_length: {
@@ -775,9 +775,9 @@ export type Database = {
           set_number: number
           shot_count: number
           team_a_player1_id: string
-          team_a_player2_id: string | null
+          team_a_player2_id: string
           team_b_player1_id: string
-          team_b_player2_id: string | null
+          team_b_player2_id: string
           timed_count: number
         }[]
       }
