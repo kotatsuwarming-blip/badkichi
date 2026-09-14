@@ -649,6 +649,7 @@ export type Database = {
           p_group_id?: string
           p_match_id?: string
           p_match_ids?: string[]
+          p_set_number?: number
         }
         Returns: {
           player1_id: string
@@ -664,6 +665,7 @@ export type Database = {
           p_group_id?: string
           p_match_id?: string
           p_match_ids?: string[]
+          p_set_number?: number
         }
         Returns: {
           player_id: string
@@ -686,6 +688,7 @@ export type Database = {
           p_receiver_player_id?: string
           p_role?: string
           p_server_player_id?: string
+          p_set_number?: number
           p_shot_ranges?: Json
         }
         Returns: {
@@ -734,9 +737,9 @@ export type Database = {
           serving_team: string
           set_number: number
           team_a_player1_id: string
-          team_a_player2_id: string | null
+          team_a_player2_id: string
           team_b_player1_id: string
-          team_b_player2_id: string | null
+          team_b_player2_id: string
         }[]
       }
       stats_rally_length: {
@@ -744,6 +747,7 @@ export type Database = {
           p_group_id?: string
           p_match_id?: string
           p_match_ids?: string[]
+          p_set_number?: number
         }
         Returns: {
           rallies: number
@@ -760,7 +764,9 @@ export type Database = {
         }
         Returns: {
           duration_ms: number
+          is_precise: boolean
           last3_avg_interval_ms: number
+          last4_avg_interval_ms: number
           match_id: string
           point_winner: string
           rally_id: string
@@ -769,9 +775,9 @@ export type Database = {
           set_number: number
           shot_count: number
           team_a_player1_id: string
-          team_a_player2_id: string | null
+          team_a_player2_id: string
           team_b_player1_id: string
-          team_b_player2_id: string | null
+          team_b_player2_id: string
           timed_count: number
         }[]
       }

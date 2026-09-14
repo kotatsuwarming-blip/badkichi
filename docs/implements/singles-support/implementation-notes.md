@@ -39,7 +39,7 @@ TASK-0001（DIRECT）: migration + supabase.ts 手修正。pre-commit の migrat
 ## 残作業（TASK-0011）
 
 - [x] dev マージ + push（af9f5c7、migrate-dev / ci / gen-types 発火）
-- [ ] migrate-dev 完了確認（`supabase migration list`）
-- [ ] `pnpm db:types` 再生成と手修正差分の確認（REQ-408）
+- [x] migrate-dev 完了確認（CI run 34799566906 success, 25s）
+- [x] 型再生成差分の確認（REQ-408）: gen-types CI (ab94d8c) を正として採用。RPC 戻り値の nullability は生成器の制約で string になるが、ドメイン型 (shot-stats.ts) が null 許容を担うため問題なし
 - [ ] ブラウザでの受け入れ基準確認（acceptance-criteria.md §1〜§5b）
 - [ ] main への PR
