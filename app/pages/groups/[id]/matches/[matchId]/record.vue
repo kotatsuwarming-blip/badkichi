@@ -35,6 +35,8 @@ const { showError } = useToastErrors()
 const { capture } = useAnalytics()
 
 const isCompleted = computed(() => match.value?.completedAt != null)
+// singles: 左右入替ボタンを出さず、コート図はサービスコート側だけに選手を描く
+const isSingles = computed(() => match.value?.matchType === 'singles')
 
 // 既存セットから次のセット番号を採番 (再入場時の set_number 重複を防ぐ、REQ-002)
 const nextSetNumber = computed(() => {
@@ -158,8 +160,11 @@ onMounted(async () => {
     useSetPositions(target.id),
     useSetRallies(target.id)
   ])
-  if ((pos.value ?? []).length === 4) {
-    session.resumeSet(target, pos.value ?? [], rallies.value ?? [])
+  // doubles=4 行 / singles=各チーム right の 2 行。両チームの立ち位置が揃っていれば再開できる
+  const positions = pos.value ?? []
+  const hasBothTeams = positions.some(p => p.team === 'A') && positions.some(p => p.team === 'B')
+  if (hasBothTeams) {
+    session.resumeSet(target, positions, rallies.value ?? [])
   }
 })
 </script>
@@ -244,6 +249,8 @@ onMounted(async () => {
             :receiver="gameState.receiver"
             :camera-near-team="cameraNearTeam"
             :names="names"
+            :singles="isSingles"
+            :server-position="gameState.serverPosition"
           />
           <RecordingShotButton
             :shot-count="shotCount"
@@ -274,6 +281,7 @@ onMounted(async () => {
           </UButton>
           <RecordingPositionControls
             :can-advance="setWinner !== null"
+            :show-override="!isSingles"
             @override="session.recordOverride"
             @next-set="session.advanceToNextSet"
           />

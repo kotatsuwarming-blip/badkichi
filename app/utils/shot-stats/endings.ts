@@ -17,8 +17,9 @@ import { zoneOf } from '~/utils/shot-stats/mirror'
 
 /** RallyEndingRow 上での対象チーム解決（flow.subjectTeamOf と同規則） */
 export function endingSubjectTeam(row: RallyEndingRow, subject: StatsSubject): Team | null {
-  const teamA = [row.team_a_player1_id, row.team_a_player2_id]
-  const teamB = [row.team_b_player1_id, row.team_b_player2_id]
+  // singles は player2 が null → 1 人構成
+  const teamA = [row.team_a_player1_id, row.team_a_player2_id].filter((id): id is string => id !== null)
+  const teamB = [row.team_b_player1_id, row.team_b_player2_id].filter((id): id is string => id !== null)
   if (subject.kind === 'player') {
     if (teamA.includes(subject.playerId)) return 'A'
     if (teamB.includes(subject.playerId)) return 'B'
@@ -98,8 +99,8 @@ export function buildEndingEntries(
   const byPlayer = new Map<string, EndingBreakdown>()
   for (const r of rows) {
     const teams: [Team, string[]][] = [
-      ['A', [r.team_a_player1_id, r.team_a_player2_id]],
-      ['B', [r.team_b_player1_id, r.team_b_player2_id]]
+      ['A', [r.team_a_player1_id, r.team_a_player2_id].filter((id): id is string => id !== null)],
+      ['B', [r.team_b_player1_id, r.team_b_player2_id].filter((id): id is string => id !== null)]
     ]
     for (const [team, ids] of teams) {
       for (const id of ids) {

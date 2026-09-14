@@ -15,6 +15,12 @@ export function createInitialState(
     }
   }
 
+  // シングルス (チーム 1 人): 片側スロットしか与えられないので同一選手で両スロットを埋める。
+  // 以降の applyRally / applyOverride の左右入替は同一選手のため無害で、serverPosition の
+  // 偶奇規則 (右=偶数/左=奇数) がそのままシングルスのサービスコート規則になる (NFR-201)。
+  fillSingleSlot(teamA)
+  fillSingleSlot(teamB)
+
   const servingTeam = config.firstServingTeam
   // スコア0（偶数）→ サーバーは右コート
   const serverPosition = 'right' as const
@@ -30,4 +36,9 @@ export function createInitialState(
     serverPosition,
     positions: { teamA, teamB }
   }
+}
+
+function fillSingleSlot(team: { left: string, right: string }): void {
+  if (!team.left && team.right) team.left = team.right
+  if (!team.right && team.left) team.right = team.left
 }

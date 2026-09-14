@@ -171,6 +171,8 @@ export interface AnnotationMatchInfo {
   id: string
   videoSourceType: 'youtube' | 'local'
   videoSourceUrl: string
+  /** 対戦形式。singles はロスターが各チーム 1 人 (打者二択が発生しない)。 */
+  matchType: 'singles' | 'doubles'
 }
 
 export interface AnnotationRosterEntry {

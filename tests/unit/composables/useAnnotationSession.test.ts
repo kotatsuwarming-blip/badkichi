@@ -55,6 +55,7 @@ import { useAnnotationSession } from '~/composables/useAnnotationSession'
 function seedFixtures() {
   m.fixtures.matches = {
     id: 'm1',
+    match_type: 'doubles',
     video_source_type: 'youtube',
     video_source_url: 'https://youtu.be/x',
     team_a_player1_id: 'A1',
@@ -135,6 +136,27 @@ describe('useAnnotationSession', () => {
     })
     expect(session.isYoutube.value).toBe(true)
     expect(session.hasRallies.value).toBe(true)
+  })
+
+  it('load: singles (player2 = null) は roster 2 人 + matchType (REQ-108 前提)', async () => {
+    m.fixtures.matches = {
+      ...m.fixtures.matches,
+      match_type: 'singles',
+      team_a_player2_id: null,
+      team_b_player2_id: null
+    }
+    m.fixtures.players = [
+      { id: 'A1', name: '田中' },
+      { id: 'B1', name: '佐藤' }
+    ]
+    const session = useAnnotationSession('m1')
+    await session.load()
+    expect(session.loadError.value).toBeNull()
+    expect(session.match.value?.matchType).toBe('singles')
+    expect(session.roster.value).toEqual([
+      { playerId: 'A1', name: '田中', team: 'A' },
+      { playerId: 'B1', name: '佐藤', team: 'B' }
+    ])
   })
 
   it('patchShot: local 即反映 + save へ直列送出 (楽観)', async () => {

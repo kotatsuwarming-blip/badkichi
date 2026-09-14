@@ -87,6 +87,13 @@ describe('PositionControls', () => {
     expect((w.find('[data-testid="next-set"]').element as HTMLButtonElement).disabled).toBe(true)
   })
 
+  it('showOverride=false (singles) は入替ボタンなし、next-set は残る (REQ-106)', () => {
+    const w = mount(PositionControls, { props: { canAdvance: true, showOverride: false }, global })
+    expect(w.find('[data-testid="override-a"]').exists()).toBe(false)
+    expect(w.find('[data-testid="override-b"]').exists()).toBe(false)
+    expect(w.find('[data-testid="next-set"]').exists()).toBe(true)
+  })
+
   it('canAdvance=true で next-set が活性 → emit', async () => {
     const w = mount(PositionControls, { props: { canAdvance: true }, global })
     await w.find('[data-testid="next-set"]').trigger('click')

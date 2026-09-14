@@ -12,6 +12,7 @@
 
 import type { Ref } from 'vue'
 import type { Database } from '~/types/supabase'
+import type { MatchType } from '~/types/match'
 import type {
   Team,
   CourtSide,
@@ -43,7 +44,7 @@ export type SetSetupInput = SetConfig & {
   cameraNearTeamAtStart: Team | null
 }
 
-/** 初期立ち位置入力（4選手）。rule-engine SetPlayerPosition と同形。REQ-003。 */
+/** 初期立ち位置入力（doubles=4行 / singles=各チーム right の 2 行）。rule-engine SetPlayerPosition と同形。REQ-003。 */
 export type SetPositionInput = SetPlayerPosition
 
 /** セット概要（useSets の射影）。採番・再開・決着判定に使う。REQ-002/010。 */
@@ -223,10 +224,11 @@ export interface MatchSummary {
   matchWinner: Team | null
 }
 
-/** useMatchForRecording: matches を1件読み、VideoSource 構築材料 + 4選手ロスターへ。REQ-001/004。 */
+/** useMatchForRecording: matches を1件読み、VideoSource 構築材料 + ロスター (singles=2人/doubles=4人) へ。REQ-001/004。 */
 export interface MatchForRecording {
   id: string
   name: string | null
+  matchType: MatchType
   videoSourceType: 'youtube' | 'local'
   videoSourceUrl: string
   completedAt: string | null // 完了フラグ (matches.completed_at)。null=未完了

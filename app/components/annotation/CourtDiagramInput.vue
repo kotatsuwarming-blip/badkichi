@@ -89,6 +89,18 @@ const markerPos = computed(() =>
       class="stroke-white/70"
       stroke-width="0.8"
     />
+    <!-- シングルスサイドライン (ダブルスサイドラインから 0.46m 内側、常時描画 REQ-301a) -->
+    <line
+      v-for="x in [COURT.left + 4.6, COURT.left + COURT.width - 4.6]"
+      :key="`ssl-${x}`"
+      :x1="x"
+      :x2="x"
+      :y1="COURT.top"
+      :y2="COURT.top + COURT.height"
+      class="stroke-white/50"
+      stroke-width="0.8"
+      data-testid="singles-sideline"
+    />
     <!-- センターライン -->
     <line
       v-for="[y1, y2] in [[COURT.top, NET_Y - 19.8], [NET_Y + 19.8, COURT.top + COURT.height]]"

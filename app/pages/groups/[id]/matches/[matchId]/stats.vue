@@ -173,6 +173,7 @@ function backToPair(): void {
       :included-match-ids="view.includedMatchIds.value"
       :set-numbers="view.knownSetNumbers.value"
       :show-period="false"
+      :show-pair-mode="match?.matchType !== 'singles'"
       @set-subject-mode="view.setSubjectMode"
       @set-player="view.setPlayer"
       @set-pair1="view.setPair1"
@@ -313,6 +314,7 @@ function backToPair(): void {
         >
           <StatsWeaknessMaps
             v-if="shot.loaded.value"
+            :singles="match?.matchType === 'singles'"
             :miss-cells="shot.missOriginCells.value"
             :lost="shot.landZonesLost.value"
           />

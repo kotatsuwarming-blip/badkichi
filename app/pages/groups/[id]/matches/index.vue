@@ -5,7 +5,7 @@
  *   - 一覧取得: useMatches() で未削除試合を match_date 降順で取得・表示 (REQ-001 / TASK-0003)
  *   - 表示: 試合名（未入力時は対戦カード A1・A2 vs B1・B2）+ 試合日付 (NFR-203)
  *   - 空状態: 0 件で説明文 + 「試合を追加」CTA (REQ-201)
- *   - 選手不足: usePlayers 未削除ロスター < 4 人で追加 disabled + players 導線 (REQ-203)
+ *   - 選手不足: usePlayers 未削除ロスター < 2 人 (singles の最小) で追加 disabled + players 導線 (REQ-203)
  *   - 追加/編集: MatchesMatchFormModal を create/edit mode で開き saved 後 refresh (機能2/3)
  *   - 削除: 確認ダイアログ → 承認で useDeleteMatch → refresh (REQ-105 / 機能4)
  *   - layout 無指定: default.vue 自動継承 (ADR-011 D1)
@@ -30,7 +30,8 @@ const { data: matches, pending, error, refresh } = useMatches()
 
 // 選手不足判定（REQ-203）。選択肢は未削除ロスター
 const { data: players } = usePlayers()
-const hasEnoughPlayers = computed(() => (players.value?.length ?? 0) >= 4)
+// singles なら 2 人で試合を作れる。doubles の 4 人要件はフォーム検証 (player_required) が担う
+const hasEnoughPlayers = computed(() => (players.value?.length ?? 0) >= 2)
 const playersPath = computed(() => `/groups/${route.params.id}/players`)
 
 // 削除（確認ダイアログ → 承認で実行）
@@ -48,8 +49,8 @@ const deleteTarget = ref<MatchListItem | null>(null)
 
 // 試合名 or 対戦カード（NFR-203）。選手名は useMatches が埋め込みで解決済み（削除済も維持, EDGE-007）
 function cardLabel(m: MatchListItem): string {
-  const a = `${m.teamA[0].name}・${m.teamA[1].name}`
-  const b = `${m.teamB[0].name}・${m.teamB[1].name}`
+  const a = m.teamA.map(p => p.name).join('・') // singles=1 人 / doubles=2 人
+  const b = m.teamB.map(p => p.name).join('・')
   return `${a} ${t('matches.versus')} ${b}`
 }
 function titleOf(m: MatchListItem): string {
@@ -171,6 +172,14 @@ watch(error, (e) => {
             <span class="font-medium">{{ titleOf(m) }}</span>
             <div class="flex items-center gap-2">
               <span class="text-sm text-gray-500">{{ m.matchDate }}</span>
+              <UBadge
+                color="neutral"
+                variant="outline"
+                size="sm"
+                :data-testid="`match-type-${m.id}`"
+              >
+                {{ t(`matches.matchTypeOptions.${m.matchType}`) }}
+              </UBadge>
               <UBadge
                 v-if="m.recordingStatus === 'done'"
                 color="primary"
