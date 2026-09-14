@@ -145,11 +145,12 @@ export type Database = {
           group_id: string
           id: string
           match_date: string
+          match_type: string
           name: string | null
           team_a_player1_id: string
-          team_a_player2_id: string
+          team_a_player2_id: string | null
           team_b_player1_id: string
-          team_b_player2_id: string
+          team_b_player2_id: string | null
           updated_at: string
           video_source_type: string
           video_source_url: string
@@ -161,11 +162,12 @@ export type Database = {
           group_id: string
           id?: string
           match_date?: string
+          match_type?: string
           name?: string | null
           team_a_player1_id: string
-          team_a_player2_id: string
+          team_a_player2_id?: string | null
           team_b_player1_id: string
-          team_b_player2_id: string
+          team_b_player2_id?: string | null
           updated_at?: string
           video_source_type: string
           video_source_url: string
@@ -177,11 +179,12 @@ export type Database = {
           group_id?: string
           id?: string
           match_date?: string
+          match_type?: string
           name?: string | null
           team_a_player1_id?: string
-          team_a_player2_id?: string
+          team_a_player2_id?: string | null
           team_b_player1_id?: string
-          team_b_player2_id?: string
+          team_b_player2_id?: string | null
           updated_at?: string
           video_source_type?: string
           video_source_url?: string
@@ -731,9 +734,9 @@ export type Database = {
           serving_team: string
           set_number: number
           team_a_player1_id: string
-          team_a_player2_id: string
+          team_a_player2_id: string | null
           team_b_player1_id: string
-          team_b_player2_id: string
+          team_b_player2_id: string | null
         }[]
       }
       stats_rally_length: {
@@ -766,9 +769,9 @@ export type Database = {
           set_number: number
           shot_count: number
           team_a_player1_id: string
-          team_a_player2_id: string
+          team_a_player2_id: string | null
           team_b_player1_id: string
-          team_b_player2_id: string
+          team_b_player2_id: string | null
           timed_count: number
         }[]
       }

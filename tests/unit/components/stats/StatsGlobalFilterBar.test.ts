@@ -87,4 +87,17 @@ describe('StatsGlobalFilterBar', () => {
     await input.trigger('change')
     expect(w.emitted('setDateRange')![0]).toEqual(['2026-06-05', null])
   })
+
+  it('showPairMode=false (singles 試合) はペア別ボタンなし (REQ-110)', () => {
+    const w = mount(StatsGlobalFilterBar, {
+      props: {
+        players, matchesMeta, globalFilter: gfOf(),
+        includedMatchIds: ['m1', 'm2'], setNumbers: [1, 2], showPeriod: false,
+        showPairMode: false
+      },
+      global
+    })
+    expect(w.find('[data-testid="mode-pair"]').exists()).toBe(false)
+    expect(w.find('[data-testid="mode-player"]').exists()).toBe(true)
+  })
 })

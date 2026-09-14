@@ -48,6 +48,23 @@ describe('mergeFlowRallies', () => {
   })
 })
 
+describe('singles: player2 = null (TC-006-01)', () => {
+  const merged = mergeFlowRallies(
+    [rallyRow('r1')],
+    [tempoRow('r1', { team_a_player2_id: null, team_b_player2_id: null })]
+  )
+  it('teamA/teamB が 1 人構成の配列になる (null 混入なし)', () => {
+    expect(merged[0]!.teamA).toEqual(['p0'])
+    expect(merged[0]!.teamB).toEqual(['p2'])
+  })
+  it('subjectTeamOf: 選手は解決、ペアは null', () => {
+    const r = merged[0]!
+    expect(subjectTeamOf(r, { kind: 'player', playerId: 'p0' })).toBe('A')
+    expect(subjectTeamOf(r, { kind: 'player', playerId: 'p1' })).toBeNull()
+    expect(subjectTeamOf(r, { kind: 'pair', player1Id: 'p0', player2Id: 'p1' })).toBeNull()
+  })
+})
+
 describe('subjectTeamOf', () => {
   const base = mergeFlowRallies([rallyRow('r1')], [tempoRow('r1')])[0] as FlowRally
   it('選手: 所属チームを返す', () => {

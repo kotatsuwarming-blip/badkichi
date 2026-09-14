@@ -10,7 +10,7 @@
     "invalid_video_source_type": "動画ソース種別が不正です",
     "video_source_required": "動画ソースを指定してください",
     "invalid_youtube_url": "YouTube の URL または動画 ID を入力してください",
-    "players_must_be_distinct": "4 選手はそれぞれ別の選手を選択してください",
+    "players_must_be_distinct": "同じ選手を複数の枠に選択することはできません",
     "player_required": "選手を選択してください",
     "invitation_not_found_by_link": "招待リンクが無効です。発行者にご確認ください",
     "invitation_expired": "招待コードの有効期限が切れています",
@@ -27,7 +27,8 @@
     },
     "check_violation": {
       "generic": "入力値が不正です"
-    }
+    },
+    "invalid_match_type": "対戦形式が不正です"
   },
   "app": {
     "name": "バドきち"
@@ -183,7 +184,7 @@
     "deleteConfirmTitle": "試合を削除",
     "deleteConfirmMessage": "この試合を削除しますか？録画データも参照できなくなります。",
     "deleteConfirmApprove": "削除する",
-    "notEnoughPlayers": "試合を作成するには選手が 4 人以上必要です",
+    "notEnoughPlayers": "試合を作成するには選手が 2 人以上（ダブルスは 4 人以上）必要です",
     "goToPlayers": "選手を追加する",
     "createSuccess": "試合を追加しました",
     "updateSuccess": "試合を更新しました",
@@ -193,7 +194,14 @@
     "groupStats": "グループ統計",
     "statusDone": "完了",
     "statusRecording": "記録中",
-    "annotate": "注釈"
+    "annotate": "注釈",
+    "matchTypeLabel": "対戦形式",
+    "matchTypeOptions": {
+      "singles": "シングルス",
+      "doubles": "ダブルス"
+    },
+    "playerALabel": "選手 A",
+    "playerBLabel": "選手 B"
   },
   "record": {
     "back": "戻る",
@@ -584,6 +592,7 @@
       "missNote": "自分のショットがネット・アウトで終わった打点（選手視点・下が自陣）",
       "concededTitle": "決められた落下点",
       "teamNote": "チーム単位の集計です（ダブルスはどちらの選手が取るべきだったか判別できないため、ペア両選手で共有）",
+      "playerNote": "選手単位の集計です（シングルス）",
       "followupNote": "「崩され」の遡り分析（例: スマッシュレシーブが甘くなり最終的に決められたケースの起点特定）は集計方法を検討中です"
     },
     "strengths": {

@@ -143,9 +143,10 @@ export interface RallyEndingRow {
   /** カメラ手前チーム（座標の向き解決に使用。null = 向き不明 → 落下点は集計不能） */
   camera_near_team: Team | null
   team_a_player1_id: string
-  team_a_player2_id: string
+  /** singles では null */
+  team_a_player2_id: string | null
   team_b_player1_id: string
-  team_b_player2_id: string
+  team_b_player2_id: string | null
 }
 
 /** stats_rally_tempo の行（確定ラリー 1 行） */
@@ -163,9 +164,10 @@ export interface RallyTempoRow {
   last4_avg_interval_ms: number | null
   is_precise: boolean
   team_a_player1_id: string
-  team_a_player2_id: string
+  /** singles では null */
+  team_a_player2_id: string | null
   team_b_player1_id: string
-  team_b_player2_id: string
+  team_b_player2_id: string | null
 }
 
 // ========================================
@@ -284,8 +286,9 @@ export interface FlowRally {
   isPrecise: boolean
   videoSourceType: 'youtube' | 'local'
   videoSourceUrl: string
-  teamA: [string, string]
-  teamB: [string, string]
+  /** チーム構成 (singles=1 人 / doubles=2 人) */
+  teamA: string[]
+  teamB: string[]
 }
 
 /** J: 対象（選手/ペア）ごとの局面別得点率（entity=all は選手ごとに 1 エントリ） */

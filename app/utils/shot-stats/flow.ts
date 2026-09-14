@@ -34,8 +34,9 @@ export function mergeFlowRallies(rallies: RallyRow[], tempo: RallyTempoRow[]): F
       isPrecise: t.is_precise,
       videoSourceType: r.video_source_type,
       videoSourceUrl: r.video_source_url,
-      teamA: [t.team_a_player1_id, t.team_a_player2_id],
-      teamB: [t.team_b_player1_id, t.team_b_player2_id]
+      // singles は player2 が null → 1 人構成
+      teamA: [t.team_a_player1_id, t.team_a_player2_id].filter((id): id is string => id !== null),
+      teamB: [t.team_b_player1_id, t.team_b_player2_id].filter((id): id is string => id !== null)
     })
   }
   merged.sort((a, b) =>

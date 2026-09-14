@@ -27,7 +27,8 @@
     },
     "check_violation": {
       "generic": ""
-    }
+    },
+    "invalid_match_type": ""
   },
   "app": {
     "name": "バドきち"
@@ -193,7 +194,14 @@
     "groupStats": "Group stats",
     "statusDone": "Done",
     "statusRecording": "Recording",
-    "annotate": "Annotate"
+    "annotate": "Annotate",
+    "matchTypeLabel": "Match type",
+    "matchTypeOptions": {
+      "singles": "Singles",
+      "doubles": "Doubles"
+    },
+    "playerALabel": "Player A",
+    "playerBLabel": "Player B"
   },
   "record": {
     "back": "Back",
@@ -584,6 +592,7 @@
       "missNote": "Positions where your shots ended in net/out (player perspective, own side at bottom)",
       "concededTitle": "Conceded landing spots",
       "teamNote": "Aggregated per team (in doubles we cannot tell which player should have covered it, so both partners share this map)",
+      "playerNote": "",
       "followupNote": "Tracing back 'broken-down' rallies (e.g. weak smash receive leading to the losing shot) is under design"
     },
     "strengths": {

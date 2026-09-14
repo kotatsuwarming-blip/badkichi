@@ -46,6 +46,26 @@ describe('classifyEnding (REQ-005 / EDGE-105)', () => {
   })
 })
 
+describe('singles: player2 = null の行 (TC-006-01 / EDGE-104)', () => {
+  const singlesRow = (partial: Partial<RallyEndingRow>) =>
+    row({ team_a_player2_id: null, team_b_player2_id: null, decisive_hit_player_id: 'p0', ...partial })
+  it('選手主体: 1 人構成のチームを正しく解決する', () => {
+    const [entry] = buildEndingEntries([singlesRow({})], { kind: 'player', playerId: 'p0' }, id => id)
+    expect(entry!.breakdown.won).toEqual({ ace: 1, opponent_error: 0 })
+    const [entryB] = buildEndingEntries([singlesRow({})], { kind: 'player', playerId: 'p2' }, id => id)
+    expect(entryB!.breakdown.lost).toEqual({ own_error: 0, opponent_ace: 1 })
+  })
+  it('ペア主体: singles 行では null (対象外)', () => {
+    const [entry] = buildEndingEntries([singlesRow({})], { kind: 'pair', player1Id: 'p0', player2Id: 'p1' }, id => id)
+    expect(entry!.breakdown.won).toEqual({ ace: 0, opponent_error: 0 })
+    expect(entry!.breakdown.unknown).toBe(0)
+  })
+  it('all (選手別ランキング): null が選手として混入しない', () => {
+    const entries = buildEndingEntries([singlesRow({})], { kind: 'all' }, id => id)
+    expect(entries.map(e => e.subjectId)).toEqual(['p0', 'p2'])
+  })
+})
+
 describe('buildEndingEntries (TC-005-01)', () => {
   const rows = [
     row({ rally_id: 'r1' }), // A エース

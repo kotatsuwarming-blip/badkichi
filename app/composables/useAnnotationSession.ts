@@ -49,7 +49,7 @@ export function useAnnotationSession(matchId: string) {
     try {
       const { data: matchRow, error: matchError } = await client
         .from('matches')
-        .select('id, video_source_type, video_source_url, team_a_player1_id, team_a_player2_id, team_b_player1_id, team_b_player2_id')
+        .select('id, match_type, video_source_type, video_source_url, team_a_player1_id, team_a_player2_id, team_b_player1_id, team_b_player2_id')
         .eq('id', matchId)
         .is('deleted_at', null)
         .single()
@@ -58,15 +58,16 @@ export function useAnnotationSession(matchId: string) {
       match.value = {
         id: matchRow.id,
         videoSourceType: matchRow.video_source_type as AnnotationMatchInfo['videoSourceType'],
-        videoSourceUrl: matchRow.video_source_url
+        videoSourceUrl: matchRow.video_source_url,
+        matchType: matchRow.match_type as AnnotationMatchInfo['matchType']
       }
 
-      const teamOf = new Map<string, Team>([
-        [matchRow.team_a_player1_id, 'A'],
-        [matchRow.team_a_player2_id, 'A'],
-        [matchRow.team_b_player1_id, 'B'],
-        [matchRow.team_b_player2_id, 'B']
-      ])
+      // singles は player2 が null → 各チーム 1 人 (打者候補が 1 人になり二択が自動解決される)
+      const teamOf = new Map<string, Team>()
+      teamOf.set(matchRow.team_a_player1_id, 'A')
+      if (matchRow.team_a_player2_id) teamOf.set(matchRow.team_a_player2_id, 'A')
+      teamOf.set(matchRow.team_b_player1_id, 'B')
+      if (matchRow.team_b_player2_id) teamOf.set(matchRow.team_b_player2_id, 'B')
       const { data: playerRows, error: playerError } = await client
         .from('players')
         .select('id, name')

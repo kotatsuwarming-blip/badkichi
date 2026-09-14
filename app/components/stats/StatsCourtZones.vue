@@ -19,6 +19,7 @@ const H = 1340
 const NET = H / 2
 const SHORT_SERVICE = 198 // ネットからショートサービスラインまで 1.98m
 const LONG_SERVICE = 76 // バックバウンダリーからダブルスロングサービスラインまで 0.76m
+const SINGLES_SIDE = 46 // ダブルスサイドラインからシングルスサイドラインまで 0.46m (REQ-301a)
 
 /** ゾーン row（0=手前バック）→ SVG y（下が手前） */
 function cellY(row: number, zones: number): number {
@@ -85,6 +86,18 @@ function cellY(row: number, zones: number): number {
         :y1="H - LONG_SERVICE"
         :x2="W"
         :y2="H - LONG_SERVICE"
+      />
+      <!-- シングルスサイドライン (左右 0.46m 内側、常時描画 REQ-301a) -->
+      <line
+        v-for="x in [SINGLES_SIDE, W - SINGLES_SIDE]"
+        :key="`ssl-${x}`"
+        :x1="x"
+        y1="0"
+        :x2="x"
+        :y2="H"
+        stroke-width="4"
+        opacity="0.6"
+        data-testid="singles-sideline"
       />
       <!-- センターライン（ショートサービスライン〜バック） -->
       <line

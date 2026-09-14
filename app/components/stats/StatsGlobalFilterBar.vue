@@ -11,14 +11,16 @@
 import { computed } from 'vue'
 import type { MatchMeta, StatsGlobalFilter, SubjectMode } from '~/types/stats-dashboard'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   players: { id: string, name: string }[]
   matchesMeta: MatchMeta[]
   globalFilter: StatsGlobalFilter
   includedMatchIds: string[] | null
   setNumbers: number[]
   showPeriod: boolean
-}>()
+  /** ペア別モードを出すか (singles 試合の単体統計では false)。既定 true */
+  showPairMode?: boolean
+}>(), { showPairMode: true })
 
 const emit = defineEmits<{
   setSubjectMode: [mode: SubjectMode]
@@ -61,6 +63,7 @@ function onDateTo(e: Event): void {
           {{ $t('stats.mode.player') }}
         </UButton>
         <UButton
+          v-if="showPairMode"
           size="xs"
           :variant="globalFilter.subjectMode === 'pair' ? 'solid' : 'ghost'"
           data-testid="mode-pair"

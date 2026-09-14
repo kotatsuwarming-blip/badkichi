@@ -9,6 +9,7 @@ const P4 = '44444444-4444-4444-4444-444444444444'
 const base = {
   name: 'XX練習会',
   matchDate: '2026-06-05',
+  matchType: 'doubles' as const,
   teamAPlayer1Id: P1,
   teamAPlayer2Id: P2,
   teamBPlayer1Id: P3,
@@ -56,5 +57,44 @@ describe('matchFormSchema', () => {
     const r = matchFormSchema.safeParse({ ...base, teamBPlayer2Id: P1 })
     expect(r.success).toBe(false)
     if (!r.success) expect(r.error.issues.some(i => i.message === 'players_must_be_distinct')).toBe(true)
+  })
+
+  it('TC8: doubles で player2 未入力は player_required (path 付き)', () => {
+    const r = matchFormSchema.safeParse({ ...base, teamAPlayer2Id: undefined })
+    expect(r.success).toBe(false)
+    if (!r.success) {
+      expect(r.error.issues.some(i => i.message === 'player_required' && i.path[0] === 'teamAPlayer2Id')).toBe(true)
+    }
+  })
+
+  it('TC9: singles は player2 なしで OK、出力の player2 は null', () => {
+    const r = matchFormSchema.safeParse({ ...base, matchType: 'singles', teamAPlayer2Id: undefined, teamBPlayer2Id: undefined })
+    expect(r.success).toBe(true)
+    if (r.success) {
+      expect(r.data.matchType).toBe('singles')
+      expect(r.data.teamAPlayer2Id).toBeNull()
+      expect(r.data.teamBPlayer2Id).toBeNull()
+    }
+  })
+
+  it('TC10: singles で残った player2 入力は無視して null に正規化', () => {
+    const r = matchFormSchema.safeParse({ ...base, matchType: 'singles' })
+    expect(r.success).toBe(true)
+    if (r.success) {
+      expect(r.data.teamAPlayer2Id).toBeNull()
+      expect(r.data.teamBPlayer2Id).toBeNull()
+    }
+  })
+
+  it('TC11: singles で A/B が同一選手は拒否', () => {
+    const r = matchFormSchema.safeParse({ ...base, matchType: 'singles', teamAPlayer2Id: undefined, teamBPlayer2Id: undefined, teamBPlayer1Id: P1 })
+    expect(r.success).toBe(false)
+    if (!r.success) expect(r.error.issues.some(i => i.message === 'players_must_be_distinct')).toBe(true)
+  })
+
+  it('TC12: matchType 未指定は拒否', () => {
+    const { matchType: _omit, ...rest } = base
+    const r = matchFormSchema.safeParse(rest)
+    expect(r.success).toBe(false)
   })
 })

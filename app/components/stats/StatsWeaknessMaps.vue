@@ -6,6 +6,7 @@
  * 2. 決められた落下点: 相手の決定打が自陣に落ちた位置のヒートマップ。
  *    ダブルスはどちらの選手が取るべきだったか判別できないため**チーム単位**
  *    （選手を選んでもペア両選手で同じ図が出る）。
+ *    シングルスはチーム = 個人のため選手単位の注記に切り替える (REQ-302)。
  * ※「崩され」の遡り分析（決められる前のどのショットで崩されたか）は集計方法を検討中（note 参照）。
  */
 import type { LandZoneResult, PlacementDestCell } from '~/types/shot-stats'
@@ -15,6 +16,8 @@ defineProps<{
   missCells: PlacementDestCell[]
   /** 被決定点（buildLandZones の lost 側） */
   lost: LandZoneResult
+  /** シングルス試合なら true (被決定点の注記を選手単位の文言に、REQ-302) */
+  singles?: boolean
 }>()
 </script>
 
@@ -37,7 +40,7 @@ defineProps<{
         {{ $t('shotStats.weakness.concededTitle') }}
       </h3>
       <p class="map-note">
-        {{ $t('shotStats.weakness.teamNote') }}
+        {{ $t(singles ? 'shotStats.weakness.playerNote' : 'shotStats.weakness.teamNote') }}
       </p>
       <StatsCourtZones
         :cells="lost.cells"
