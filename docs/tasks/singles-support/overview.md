@@ -1,8 +1,8 @@
 # singles-support タスク概要
 
 **作成日**: 2026-08-28
-**推定工数**: 32.5 時間
-**総タスク数**: 11 件
+**推定工数**: 35.5 時間
+**総タスク数**: 13 件
 **クリティカルパス**: TASK-0001 → TASK-0002 → TASK-0006 → TASK-0008 → TASK-0011
 
 ## 関連文書
@@ -29,7 +29,7 @@
 | Phase 1 | migration + 生成型の先行手修正 + ドメイン型 / フォーム schema | 2 | 5h |
 | Phase 2 | 純関数（rule-engine 補完 / buildSetInput / 統計 null 除外）+ 単体テスト | 3 | 6h |
 | Phase 3 | composable（試合 CRUD 4 本 / 注釈セッション + 種別パス）+ 単体テスト | 2 | 7h |
-| Phase 4 | UI（試合フォーム・一覧 / 記録画面 / 統計フィルタ）+ i18n + コンポーネントテスト | 3 | 11.5h |
+| Phase 4 | UI（試合フォーム・一覧 / 記録画面 / 統計フィルタ / コートライン / 失点マップ注記）+ i18n + コンポーネントテスト | 5 | 14.5h |
 | Phase 5 | dev 統合（CI migration・型再生成・ブラウザ受け入れ確認）+ PR | 1 | 3h |
 
 ## マイルストーン
@@ -236,6 +236,34 @@
 - **完了条件**:
   - [ ] テスト green
 
+### TASK-0012: シングルスサイドラインのコート図描画
+
+- [ ] **タスク完了**
+- **タスクタイプ**: TDD
+- **要件リンク**: REQ-301（a/b）
+- **依存タスク**: TASK-0009
+- **実装詳細**:
+  - `CourtDiagramInput.vue` / `StatsCourtZones.vue`: シングルスサイドライン（左右 0.46m 内側）を常時描画
+  - `CourtDiagram.vue`（記録）: `singles=true` のときサイドラインを描画
+- **テスト要件**:
+  - [ ] 各コンポーネントで `singles-sideline` 要素の有無を検証（記録図は singles のみ）
+- **完了条件**:
+  - [ ] テスト green
+
+### TASK-0013: 失点マップのシングルス注記切替
+
+- [ ] **タスク完了**
+- **タスクタイプ**: TDD
+- **要件リンク**: REQ-302
+- **依存タスク**: TASK-0010
+- **実装詳細**:
+  - `StatsWeaknessMaps.vue` に `singles` prop、注記を `weakness.playerNote` / `weakness.teamNote` で切替
+  - `matches/[matchId]/stats.vue` から `:singles` を配線、i18n キー追加（ja/en）
+- **テスト要件**:
+  - [ ] singles=true で playerNote、false で teamNote（TC-302-01/02）
+- **完了条件**:
+  - [ ] テスト green、`pnpm i18n:check` OK
+
 ## Phase 5: 統合（3h）
 
 ### TASK-0011: dev 統合・migration 適用・受け入れ確認・PR
@@ -243,7 +271,7 @@
 - [ ] **タスク完了**
 - **タスクタイプ**: DIRECT
 - **要件リンク**: 全要件（特に REQ-407, REQ-408, 受け入れ基準 §1〜§6）
-- **依存タスク**: TASK-0008, TASK-0009, TASK-0010
+- **依存タスク**: TASK-0008, TASK-0009, TASK-0010, TASK-0012, TASK-0013
 - **実装詳細**:
   - `feature/singles` を `dev` worktree（`../badkichi-dev`）へマージ → push（`migrate-dev.yml` 発火）
   - CI 完了後 `pnpm db:types` で `app/types/supabase.ts` を再生成し、手修正との差分を確認（差分があれば取り込む）
