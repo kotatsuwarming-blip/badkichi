@@ -491,8 +491,7 @@
   "shotStats": {
     "tabs": {
       "serve": "Serve",
-      "strengths": "Strengths",
-      "weakness": "Weaknesses",
+      "strengths": "Strengths & Issues",
       "rallyflow": "Rally flow"
     },
     "badge": {
@@ -599,8 +598,40 @@
       "playerNote": "",
       "followupNote": "Tracing back 'broken-down' rallies (e.g. weak smash receive leading to the losing shot) is under design"
     },
-    "strengths": {
-      "note": "Strength analysis (decisive shots) is being reworked. Showing the placement heatmap (3rd shot onward) for now"
+    "value": {
+      "title": "Shot value (which shots pay off, by position)",
+      "note": "Each shot scores: winner +1 / forced error +1 / setup +0.7·+0.5 / own error −1 / allowed opponent winner −0.7·−0.5. Shown as net points per 100 shots.",
+      "netLabel": "Net",
+      "courtNote": "Blue = positive, red = negative. Tap cells to filter (multiple allowed). No selection = whole court.",
+      "rowFront": "Front",
+      "rowMid": "Mid",
+      "rowBack": "Back",
+      "rowSelectAll": "Toggle the whole {row} row",
+      "col0": "L",
+      "col1": "C",
+      "col2": "R",
+      "wholeCourtLabel": "Whole court (no selection)",
+      "selectedLabel": "Selected: {zones}",
+      "earned": "Earned",
+      "lost": "Lost",
+      "netLabel100": "Net (per 100 shots)",
+      "denominator": "n={n} shots (of {total})",
+      "plainGain": "Per 100 shots from here, you gain roughly {pts} points",
+      "plainLoss": "Per 100 shots from here, you lose roughly {pts} points",
+      "plainEven": "From here it is roughly break-even",
+      "colType": "Shot type",
+      "colNet": "Net /100",
+      "axisLabel": "← costs points 0 earns points →",
+      "role": {
+        "kime": "Winner (+1)",
+        "yuhatsu": "Forced error (+1)",
+        "fuseki": "Setup (+0.7/+0.5)",
+        "miss": "Own error (−1)",
+        "yurushi": "Allowed winner (−0.7/−0.5)"
+      },
+      "lowSample": "Low sample",
+      "whiskerHint": "Thin line under each bar = 95% uncertainty range while samples are few. Long line = not conclusive yet.",
+      "empty": "No shots match this range. Clear the zone selection or add annotations."
     }
   }
 }
