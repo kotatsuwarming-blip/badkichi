@@ -124,6 +124,16 @@ describe('CourtDiagram singles (REQ-107)', () => {
     expect(w.find('[data-testid="cell-A1"]').classes()).toContain('is-server')
   })
 
+  it('TC-301-04: ダブルスロングサービスラインは形式問わず常に描く', () => {
+    const s = mountSingles('right')
+    expect(s.findAll('[data-testid="doubles-long-service-line"]')).toHaveLength(2)
+    const d = mount(CourtDiagram, {
+      props: { positions, servingTeam: 'A', server: 'A2', receiver: 'B1', cameraNearTeam: 'A', names },
+      global: { stubs: {}, mocks: { $t: (k: string) => k } }
+    })
+    expect(d.findAll('[data-testid="doubles-long-service-line"]')).toHaveLength(2)
+  })
+
   it('TC-301-03: singles はシングルスサイドラインを描く (doubles では描かない)', () => {
     const w = mountSingles('right')
     expect(w.findAll('[data-testid="singles-sideline"]')).toHaveLength(2)

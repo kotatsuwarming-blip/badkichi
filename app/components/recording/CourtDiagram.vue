@@ -165,6 +165,14 @@ const arrow = computed(() => {
           >{{ $t('record.court.receive') }}</span>
         </div>
       </div>
+      <!-- ダブルスロングサービスライン (バックから 0.76m 内側の横線、形式問わず常時 REQ-301c) -->
+      <div
+        v-for="edge in ['top', 'bottom']"
+        :key="`dlsl-${edge}`"
+        class="doubles-long-service-line"
+        :style="edge === 'top' ? { top: '5.7%' } : { bottom: '5.7%' }"
+        data-testid="doubles-long-service-line"
+      />
       <!-- シングルスサイドライン (外周=ダブルスサイドラインとの区別、REQ-301b) -->
       <template v-if="singles">
         <div
@@ -286,6 +294,16 @@ const arrow = computed(() => {
 .shuttle-skirt { fill: #fff; stroke: #1a1a1a; stroke-width: 1; stroke-linejoin: round; }
 .shuttle-feather { stroke: #1a1a1a; stroke-width: 0.8; fill: none; }
 .shuttle-cork { fill: #d84315; stroke: #1a1a1a; stroke-width: 1; }
+
+/* ダブルスロングサービスライン (76/1340 ≒ 5.7% 内側の横線、REQ-301c) */
+.doubles-long-service-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+}
 
 /* シングルスサイドライン (46/610 ≒ 7.5% 内側の縦線、REQ-301b) */
 .singles-sideline {
