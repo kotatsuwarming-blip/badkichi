@@ -1,0 +1,394 @@
+<title>ショット有効性ドリルダウン モック</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --ink-mute: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --ring: rgba(11, 11, 11, 0.10);
+    /* ポイント内訳セグメント(+側 = 青の濃→淡, −側 = 赤の濃→淡) */
+    --seg-kime: #1c5cab;
+    --seg-yuhatsu: #3987e5;
+    --seg-fuseki-p: #86b6ef;
+    --seg-miss: #c23837;
+    --seg-fuseki-m: #f0a09f;
+    /* ゾーンセルの塗り(収支の向きと強さ) */
+    --cell-pos-2: #9ec5f4;
+    --cell-pos-1: #cde2fb;
+    --cell-zero: #f0efec;
+    --cell-neg-1: #f8d7d6;
+    --cell-neg-2: #f0a9a8;
+    --select: #0b0b0b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
+      --ink-mute: #898781;
+      --grid: #2c2c2a;
+      --baseline: #383835;
+      --ring: rgba(255, 255, 255, 0.10);
+      --seg-kime: #6da7ec;
+      --seg-yuhatsu: #3987e5;
+      --seg-fuseki-p: #1c5cab;
+      --seg-miss: #e66767;
+      --seg-fuseki-m: #8f3231;
+      --cell-pos-2: #1c5cab;
+      --cell-pos-1: #143b6b;
+      --cell-zero: #383835;
+      --cell-neg-1: #58221f;
+      --cell-neg-2: #8f3231;
+      --select: #ffffff;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --ink-mute: #898781;
+    --grid: #2c2c2a;
+    --baseline: #383835;
+    --ring: rgba(255, 255, 255, 0.10);
+    --seg-kime: #6da7ec;
+    --seg-yuhatsu: #3987e5;
+    --seg-fuseki-p: #1c5cab;
+    --seg-miss: #e66767;
+    --seg-fuseki-m: #8f3231;
+    --cell-pos-2: #1c5cab;
+    --cell-pos-1: #143b6b;
+    --cell-zero: #383835;
+    --cell-neg-1: #58221f;
+    --cell-neg-2: #8f3231;
+    --select: #ffffff;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", sans-serif;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  header h1 { font-size: 1.25rem; margin: 0 0 4px; text-wrap: balance; }
+  header p.sub { color: var(--ink-2); font-size: 0.85rem; margin: 0; }
+  .mock-chip {
+    display: inline-block; font-size: 0.72rem; letter-spacing: 0.06em;
+    border: 1px solid var(--ring); border-radius: 999px; padding: 1px 10px;
+    color: var(--ink-2); margin-bottom: 8px;
+  }
+
+  .howto {
+    display: flex; gap: 18px; flex-wrap: wrap;
+    background: var(--surface); border: 1px solid var(--ring); border-radius: 10px;
+    padding: 12px 16px; margin: 18px 0 22px; font-size: 0.82rem; color: var(--ink-2);
+  }
+  .howto b { color: var(--ink); font-weight: 600; }
+
+  .layout { display: grid; grid-template-columns: 280px 1fr; gap: 22px; align-items: start; }
+  @media (max-width: 720px) { .layout { grid-template-columns: 1fr; } }
+
+  /* ---- コート(自陣 3×3) ---- */
+  .court-card {
+    background: var(--surface); border: 1px solid var(--ring); border-radius: 12px; padding: 16px;
+  }
+  .court-card h2, .panel h2 { font-size: 0.9rem; margin: 0 0 2px; }
+  .card-note { font-size: 0.75rem; color: var(--ink-mute); margin: 0 0 12px; }
+  .net-label {
+    text-align: center; font-size: 0.7rem; letter-spacing: 0.2em; color: var(--ink-mute);
+    border-bottom: 3px double var(--baseline); padding-bottom: 2px; margin-bottom: 6px;
+  }
+  .court { display: grid; grid-template-columns: 30px 1fr 1fr 1fr; gap: 4px; }
+  .rowlab {
+    writing-mode: vertical-rl; font-size: 0.72rem; color: var(--ink-2);
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; cursor: pointer; padding: 0; border-radius: 6px;
+  }
+  .rowlab:hover { background: var(--cell-zero); }
+  .rowlab:focus-visible, .cell:focus-visible { outline: 2px solid var(--seg-yuhatsu); outline-offset: 1px; }
+  .cell {
+    aspect-ratio: 4 / 3; border: 1px solid var(--grid); border-radius: 6px;
+    cursor: pointer; padding: 4px; font-family: inherit;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+    background: var(--cell-zero); color: var(--ink); position: relative;
+  }
+  .cell .sv { font-size: 0.88rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .cell .n { font-size: 0.66rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .cell.sel { border: 2px solid var(--select); box-shadow: 0 0 0 1px var(--surface) inset; }
+  .cell.sel::after {
+    content: "✓"; position: absolute; top: 2px; right: 5px; font-size: 0.7rem; font-weight: 700;
+  }
+  .court-foot { font-size: 0.72rem; color: var(--ink-mute); margin-top: 10px; }
+
+  /* ---- 右パネル ---- */
+  .panel { background: var(--surface); border: 1px solid var(--ring); border-radius: 12px; padding: 16px 18px; }
+  .panel + .panel { margin-top: 16px; }
+
+  .summary-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .chip {
+    display: inline-flex; flex-direction: column; align-items: center; gap: 0;
+    border-radius: 8px; padding: 4px 12px; font-variant-numeric: tabular-nums;
+  }
+  .chip .lab { font-size: 0.68rem; opacity: 0.85; }
+  .chip .val { font-size: 1.1rem; font-weight: 700; }
+  .chip.earn { background: color-mix(in srgb, var(--seg-yuhatsu) 16%, transparent); }
+  .chip.earn .val { color: var(--seg-kime); }
+  .chip.lose { background: color-mix(in srgb, var(--seg-miss) 14%, transparent); }
+  .chip.lose .val { color: var(--seg-miss); }
+  .op { font-size: 1.1rem; color: var(--ink-mute); }
+  .chip.net { border: 1.5px solid var(--ring); }
+  .chip.net .val { font-size: 1.5rem; }
+  .chip.net .val small { font-size: 0.85rem; font-weight: 400; color: var(--ink-2); }
+  .sum-meta { font-size: 0.8rem; color: var(--ink-2); }
+  .plain { font-size: 0.86rem; margin: 10px 0 0; }
+  .insight { font-size: 0.82rem; color: var(--ink-2); margin: 4px 0 0; }
+  .insight b { color: var(--ink); }
+
+  /* 内訳行 */
+  .brk-head, .brk-row { display: grid; grid-template-columns: 7.2em 1fr 6.5em; gap: 10px; align-items: center; }
+  .brk-head { font-size: 0.7rem; color: var(--ink-mute); margin: 14px 0 4px; }
+  .brk-row { padding: 5px 0; border-top: 1px solid var(--grid); }
+  .brk-row.dim { opacity: 0.45; }
+  .shot-name { font-size: 0.82rem; }
+  .shot-name .n { color: var(--ink-mute); font-size: 0.72rem; font-variant-numeric: tabular-nums; }
+  .shot-name .low { display: inline-block; font-size: 0.62rem; border: 1px solid var(--ring); border-radius: 999px; padding: 0 6px; color: var(--ink-2); margin-left: 4px; }
+
+  .track { position: relative; height: 34px; }
+  .zeroline { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--baseline); }
+  .seg { position: absolute; top: 6px; height: 14px; }
+  .seg.pos { border-radius: 0 4px 4px 0; }
+  .seg.neg { border-radius: 4px 0 0 4px; }
+  .whisker { position: absolute; top: 26px; height: 2px; background: var(--ink-mute); opacity: 0.7; }
+  .netmark { position: absolute; top: 23px; width: 2px; height: 8px; background: var(--ink); }
+
+  .sv-num { text-align: right; font-variant-numeric: tabular-nums; font-size: 0.85rem; font-weight: 600; }
+  .sv-num small { display: block; font-weight: 400; color: var(--ink-mute); font-size: 0.7rem; }
+
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 12px; font-size: 0.72rem; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+  .footnote { font-size: 0.74rem; color: var(--ink-mute); margin-top: 14px; }
+  .footnote p { margin: 3px 0; }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="mock-chip">画面モック — ダミーデータ</span>
+    <h1>強み分析: ショット有効性のゾーン別ドリルダウン</h1>
+    <p class="sub">どこから打つ球が得点に効いているか(+)/失点のもとになっているか(−)。数字は 100 本あたりの得点収支。</p>
+  </header>
+
+  <div class="howto">
+    <span><b>① コートのゾーンをタップ</b>(複数可・行ラベルで一列まとめて)</span>
+    <span><b>② 上段でそのゾーンの総合収支</b>を見る</span>
+    <span><b>③ 下段の内訳で「なぜ」</b>を球種ごとに見る</span>
+  </div>
+
+  <div class="layout">
+    <section class="court-card">
+      <h2>打った場所(自陣・選手視点)</h2>
+      <p class="card-note">セルの数字 = そのゾーンから打った球の収支 /100本</p>
+      <div class="net-label">ネット</div>
+      <div class="court" id="court"></div>
+      <p class="court-foot">青 = プラス収支 / 赤 = マイナス収支。選択なしのときはコート全体の集計を表示。</p>
+    </section>
+
+    <div>
+      <section class="panel">
+        <h2 id="sum-title">選択中: 後・左 + 後・中</h2>
+        <div class="summary-line">
+          <span class="chip earn"><span class="lab">稼いだ</span><span class="val" id="sum-pos">+24</span></span>
+          <span class="op">−</span>
+          <span class="chip lose"><span class="lab">失った</span><span class="val" id="sum-neg">31</span></span>
+          <span class="op">=</span>
+          <span class="chip net"><span class="lab">収支(100本あたり)</span><span class="val" id="sum-sv">−7 <small>±17</small></span></span>
+          <span class="sum-meta" id="sum-meta">n=42 打(全 310 打中)</span>
+        </div>
+        <p class="plain" id="sum-plain"></p>
+        <p class="insight" id="sum-insight"></p>
+      </section>
+
+      <section class="panel">
+        <h2>球種別のポイント内訳</h2>
+        <div class="brk-head"><span>球種</span><span style="text-align:center">← 失点のもと 0 得点に貢献 →</span><span style="text-align:right">収支 /100本</span></div>
+        <div id="rows"></div>
+        <div class="legend">
+          <span><i class="sw" style="background:var(--seg-kime)"></i>決め(+1)</span>
+          <span><i class="sw" style="background:var(--seg-yuhatsu)"></i>ミス誘発(+1)</span>
+          <span><i class="sw" style="background:var(--seg-fuseki-p)"></i>布石(+0.7/+0.5)</span>
+          <span><i class="sw" style="background:var(--seg-miss)"></i>自ミス(−1)</span>
+          <span><i class="sw" style="background:var(--seg-fuseki-m)"></i>相手の決めを許した(−0.7/−0.5)</span>
+        </div>
+        <div class="footnote">
+          <p>下の細い線 = 本数が少ないうちの「まだこのくらい揺れる」幅(95%)。線が長い球種は判断保留。</p>
+          <p>n が 5 本未満の球種は薄く表示(本数不足)。</p>
+          <p>将来候補(今回スコープ外): 相手ポジション軸(ミックスの「上げさせる」戦術分析)。</p>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ダミーデータ: セルごと・球種ごとの [n, 決め, 誘発, 布石+, 自ミス, 布石−] (生ポイント)
+  const CELLS = [
+    // 前列(ネット際)
+    [{ t: "ヘアピン", d: [14, 2, 3, 2.4, 2, 0.7] }, { t: "プッシュ", d: [12, 3, 2, 1.4, 2, 0.5] }, { t: "ロブ(高い)", d: [8, 0, 1, 0.7, 1, 0.7] }],
+    [{ t: "プッシュ", d: [16, 4, 3, 1.9, 2, 1.0] }, { t: "ヘアピン", d: [12, 1, 3, 2.1, 1, 0.5] }, { t: "ロブ(低い)", d: [7, 0, 1, 1.2, 1, 0.7] }],
+    [{ t: "ヘアピン", d: [9, 1, 1, 1.2, 2, 0.7] }, { t: "プッシュ", d: [7, 1, 1, 0.7, 1, 0.5] }, { t: "ロブ(高い)", d: [6, 0, 0, 0.5, 1, 1.2] }],
+    // 中列
+    [{ t: "ドライブ", d: [13, 1, 2, 1.4, 2, 0.7] }, { t: "ショートレシーブ", d: [11, 0, 1, 2.1, 1, 0.5] }, { t: "ロブ(高い)", d: [7, 0, 0, 0.7, 1, 0.7] }],
+    [{ t: "ドライブ", d: [15, 2, 2, 1.4, 2, 1.0] }, { t: "ショートレシーブ", d: [12, 0, 2, 2.4, 1, 0.7] }, { t: "スマッシュ", d: [8, 2, 1, 0.7, 1, 0.5] }],
+    [{ t: "ドライブ", d: [10, 1, 1, 0.7, 2, 1.0] }, { t: "ロブ(高い)", d: [8, 0, 1, 0.5, 2, 1.2] }, { t: "ヘアピン", d: [4, 0, 1, 0.5, 1, 0.2] }],
+    // 後列(コート奥)
+    [{ t: "スマッシュ", d: [8, 1, 1, 1.0, 2, 0.5] }, { t: "クリア(高い)", d: [5, 0, 0, 0.5, 1, 0.7] }, { t: "ロブ(高い)", d: [6, 0, 0.5, 0.2, 1.5, 1.0] }, { t: "ドロップ", d: [3, 0.5, 0.5, 0.7, 1, 0] }],
+    [{ t: "スマッシュ", d: [6, 1, 0.5, 0.5, 1, 0.5] }, { t: "クリア(高い)", d: [3, 0, 0, 0.2, 0.5, 0.5] }, { t: "ロブ(高い)", d: [5, 0, 0, 0.2, 1, 0.7] }, { t: "ドロップ", d: [3, 0.5, 0.5, 0.2, 0, 0.5] }],
+    [{ t: "スマッシュ", d: [5, 0.5, 0.5, 0.2, 1.5, 0.7] }, { t: "クリア(高い)", d: [4, 0, 0, 0.2, 1, 1.0] }, { t: "ロブ(高い)", d: [4, 0, 0, 0, 1, 1.0] }]
+  ];
+  const ROW_LABELS = ["前", "中", "後"];
+  const COL_LABELS = ["左", "中", "右"];
+  const SCALE = 70; // 横軸 ±70 /100本
+
+  let selected = new Set([6, 7]); // 初期状態: 後・左 + 後・中
+
+  function cellAgg(idx) {
+    let n = 0, net = 0;
+    for (const { d } of CELLS[idx]) { n += d[0]; net += d[1] + d[2] + d[3] - d[4] - d[5]; }
+    return { n, sv: n ? 100 * net / n : 0 };
+  }
+
+  function aggregate(indices) {
+    const byType = new Map();
+    for (const i of indices) {
+      for (const { t, d } of CELLS[i]) {
+        const e = byType.get(t) || [0, 0, 0, 0, 0, 0];
+        d.forEach((v, k) => e[k] += v);
+        byType.set(t, e);
+      }
+    }
+    return byType;
+  }
+
+  function fmt(v) { return (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(Math.round(v)); }
+
+  function renderCourt() {
+    const court = document.getElementById("court");
+    court.innerHTML = "";
+    for (let r = 0; r < 3; r++) {
+      const lab = document.createElement("button");
+      lab.className = "rowlab";
+      lab.textContent = ROW_LABELS[r] + "列";
+      lab.title = this ? "" : ROW_LABELS[r] + "列を一括選択";
+      lab.onclick = () => {
+        const rowIdx = [r * 3, r * 3 + 1, r * 3 + 2];
+        const allIn = rowIdx.every(i => selected.has(i));
+        rowIdx.forEach(i => allIn ? selected.delete(i) : selected.add(i));
+        render();
+      };
+      court.appendChild(lab);
+      for (let c = 0; c < 3; c++) {
+        const i = r * 3 + c;
+        const { n, sv } = cellAgg(i);
+        const btn = document.createElement("button");
+        btn.className = "cell" + (selected.has(i) ? " sel" : "");
+        btn.style.background = sv >= 8 ? "var(--cell-pos-2)" : sv > 2 ? "var(--cell-pos-1)"
+          : sv <= -8 ? "var(--cell-neg-2)" : sv < -2 ? "var(--cell-neg-1)" : "var(--cell-zero)";
+        btn.innerHTML = `<span class="sv">${fmt(sv)}</span><span class="n">n=${n}</span>`;
+        btn.setAttribute("aria-pressed", selected.has(i));
+        btn.setAttribute("aria-label", `${ROW_LABELS[r]}・${COL_LABELS[c]} ゾーン 収支${fmt(sv)} ${n}打`);
+        btn.onclick = () => { selected.has(i) ? selected.delete(i) : selected.add(i); render(); };
+        court.appendChild(btn);
+      }
+    }
+  }
+
+  function segsHtml(vals, n) {
+    // vals: /100本換算の [決め, 誘発, 布石+, 自ミス, 布石−]
+    const segs = [];
+    let acc = 0;
+    const posKeys = [["決め", vals[0], "var(--seg-kime)"], ["ミス誘発", vals[1], "var(--seg-yuhatsu)"], ["布石", vals[2], "var(--seg-fuseki-p)"]];
+    for (const [name, v, color] of posKeys) {
+      if (v <= 0) continue;
+      segs.push(`<div class="seg pos" title="${name} +${v.toFixed(1)} /100本" style="left:calc(50% + ${acc / SCALE * 50}% + 1px); width:calc(${v / SCALE * 50}% - 1px); background:${color}"></div>`);
+      acc += v;
+    }
+    const pos = acc;
+    acc = 0;
+    const negKeys = [["自ミス", vals[3], "var(--seg-miss)"], ["相手の決めを許した", vals[4], "var(--seg-fuseki-m)"]];
+    for (const [name, v, color] of negKeys) {
+      if (v <= 0) continue;
+      acc += v;
+      segs.push(`<div class="seg neg" title="${name} −${v.toFixed(1)} /100本" style="left:calc(50% - ${acc / SCALE * 50}%); width:calc(${v / SCALE * 50}% - 1px); background:${color}"></div>`);
+    }
+    const net = pos - acc;
+    const ci = 108 / Math.sqrt(n);
+    const lo = Math.max(-SCALE, net - ci), hi = Math.min(SCALE, net + ci);
+    segs.push(`<div class="whisker" style="left:calc(50% + ${lo / SCALE * 50}%); width:${(hi - lo) / SCALE * 50}%"></div>`);
+    segs.push(`<div class="netmark" style="left:calc(50% + ${net / SCALE * 50}% - 1px)"></div>`);
+    return { html: `<div class="track"><div class="zeroline"></div>${segs.join("")}</div>`, net, ci };
+  }
+
+  function render() {
+    renderCourt();
+    const idx = selected.size ? [...selected] : [...Array(9).keys()];
+    const byType = aggregate(idx);
+
+    let totalN = 0, totalPos = 0, totalNeg = 0;
+    for (const e of byType.values()) { totalN += e[0]; totalPos += e[1] + e[2] + e[3]; totalNeg += e[4] + e[5]; }
+    const allN = [...Array(9).keys()].reduce((a, i) => a + cellAgg(i).n, 0);
+    const pos100 = totalN ? 100 * totalPos / totalN : 0;
+    const neg100 = totalN ? 100 * totalNeg / totalN : 0;
+    const sv = pos100 - neg100;
+    const ci = totalN ? 108 / Math.sqrt(totalN) : 0;
+
+    const names = selected.size
+      ? [...selected].sort().map(i => `${ROW_LABELS[Math.floor(i / 3)]}・${COL_LABELS[i % 3]}`).join(" + ")
+      : "コート全体(未選択)";
+    document.getElementById("sum-title").textContent = "選択中: " + names;
+    document.getElementById("sum-pos").textContent = "+" + Math.round(pos100);
+    document.getElementById("sum-neg").textContent = String(Math.round(neg100));
+    document.getElementById("sum-sv").innerHTML = `${fmt(sv)} <small>±${Math.round(ci)}</small>`;
+    document.getElementById("sum-meta").textContent = `n=${totalN} 打(全 ${allN} 打中)`;
+    const absSv = Math.abs(Math.round(sv));
+    document.getElementById("sum-plain").textContent = absSv < 2
+      ? "ここから100本打った場合の得失はほぼトントンです。"
+      : `ここから100本打つと、だいたい ${absSv} 点ぶん${sv > 0 ? "得している" : "損している"}計算です。`;
+
+    // 内訳行(n 降順)
+    const rows = [...byType.entries()].sort((a, b) => b[1][0] - a[1][0]);
+    const container = document.getElementById("rows");
+    container.innerHTML = "";
+    let worst = null;
+    for (const [t, e] of rows) {
+      const n = e[0];
+      const per = e.slice(1).map(v => 100 * v / n);
+      const { html, net } = segsHtml(per, n);
+      const low = n < 5;
+      if (!low && (worst === null || net < worst.net)) worst = { t, net };
+      const rowCi = Math.round(108 / Math.sqrt(n));
+      container.insertAdjacentHTML("beforeend",
+        `<div class="brk-row${low ? " dim" : ""}">
+          <span class="shot-name">${t}<br><span class="n">n=${n}</span>${low ? '<span class="low">本数不足</span>' : ""}</span>
+          ${html}
+          <span class="sv-num">${fmt(net)}<small>±${rowCi}</small></span>
+        </div>`);
+    }
+    document.getElementById("sum-insight").innerHTML = worst && worst.net < 0
+      ? `このゾーンの収支を最も下げているのは <b>${worst.t}(${fmt(worst.net)}/100本)</b>。`
+      : `このゾーンに大きなマイナス要因はありません。`;
+  }
+
+  render();
+</script>
