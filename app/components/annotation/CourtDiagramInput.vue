@@ -89,6 +89,18 @@ const markerPos = computed(() =>
       class="stroke-white/70"
       stroke-width="0.8"
     />
+    <!-- ダブルスロングサービスライン (バックバウンダリーから 0.76m 内側、常時描画 REQ-301c) -->
+    <line
+      v-for="y in [COURT.top + 7.6, COURT.top + COURT.height - 7.6]"
+      :key="`dlsl-${y}`"
+      :x1="COURT.left"
+      :x2="COURT.left + COURT.width"
+      :y1="y"
+      :y2="y"
+      class="stroke-white/50"
+      stroke-width="0.8"
+      data-testid="doubles-long-service-line"
+    />
     <!-- シングルスサイドライン (ダブルスサイドラインから 0.46m 内側、常時描画 REQ-301a) -->
     <line
       v-for="x in [COURT.left + 4.6, COURT.left + COURT.width - 4.6]"
