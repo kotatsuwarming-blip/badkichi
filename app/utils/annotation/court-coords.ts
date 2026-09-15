@@ -25,6 +25,30 @@ export function fromNormalized(p: CourtPoint, court: CourtRect): { px: number, p
   }
 }
 
+/** コート実寸比の境界定数 (正規化座標)。幅 6.1m × 全長 13.4m */
+const SINGLES_SIDE = 46 / 610 // ダブルスサイドライン → シングルスサイドライン 0.46m
+const SHORT_SERVICE = 198 / 1340 // ネット → ショートサービスライン 1.98m
+const DOUBLES_LONG_SERVICE = 76 / 1340 // バックバウンダリー → ダブルスロングサービスライン 0.76m
+
+/**
+ * 落下点が「アウト」かを対戦形式・サーブ規則込みで判定する（REQ-111/112、整合チェック用）。
+ * - singles: 境界はシングルスサイドライン（両サイドライン間は out）
+ * - serve（サーブで決着 = ラリー1打）: ショートサービスライン手前（ネット両側の帯）は out。
+ *   doubles ではロングサービスライン奥も out（singles のロング境界 = バックバウンダリーは基本判定で担保）
+ * 保存座標や out_direction の細分（deriveOutDirection）には影響しない。
+ */
+export function isLandingOut(land: CourtPoint, opts: { singles?: boolean, serve?: boolean } = {}): boolean {
+  const sideLimitLo = opts.singles ? SINGLES_SIDE : 0
+  const sideLimitHi = opts.singles ? 1 - SINGLES_SIDE : 1
+  if (land.x < sideLimitLo || land.x > sideLimitHi) return true
+  if (land.y < 0 || land.y > 1) return true
+  if (opts.serve) {
+    if (Math.abs(land.y - 0.5) < SHORT_SERVICE) return true // ショートサービスライン手前
+    if (!opts.singles && (land.y < DOUBLES_LONG_SERVICE || land.y > 1 - DOUBLES_LONG_SERVICE)) return true
+  }
+  return false
+}
+
 /**
  * 落下点から out の細分を導出する（REQ-005）。
  * side = x が範囲外 / back = y が範囲外 / both = 両方（コーナー奥）。
