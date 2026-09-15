@@ -872,6 +872,30 @@ export type Database = {
           shots: number
         }[]
       }
+      stats_shot_value: {
+        Args: {
+          p_group_id?: string
+          p_match_id?: string
+          p_match_ids?: string[]
+          p_set_number?: number
+          p_zones?: number
+        }
+        Returns: {
+          fuseki1: number
+          fuseki2: number
+          hand: string
+          hit_player_id: string
+          kime: number
+          miss: number
+          n: number
+          shot_type: string
+          yuhatsu: number
+          yurushi1: number
+          yurushi2: number
+          zone_col: number
+          zone_row: number
+        }[]
+      }
       stats_shot_zones: {
         Args: {
           p_group_id?: string

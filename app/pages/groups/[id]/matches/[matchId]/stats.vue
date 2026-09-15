@@ -36,8 +36,8 @@ onMounted(() => capture('stats_viewed', { scope: 'match', match_id: matchId, gro
 const { data: match } = useMatchForRecording(matchId)
 const view = useStatsView({ kind: 'match', matchId, groupId })
 
-// 4 タブ（サーブ周り / 強み / 弱点 / ラリー展開, 2026-08-08 #8 再編）
-type StatsTab = 'serve' | 'strengths' | 'weakness' | 'rallyflow'
+// 3 タブ（サーブ周り / 強み・課題 / ラリー展開, shot-value REQ-201 で強み+弱点を統合）
+type StatsTab = 'serve' | 'strengths' | 'rallyflow'
 const activeTab = ref<StatsTab>('serve')
 const coverage = useAnnotationCoverage(() => ({ p_match_id: matchId }))
 const globalSetNumber = computed(() => view.globalFilter.value.setNumber)
@@ -200,14 +200,6 @@ function backToPair(): void {
       </UButton>
       <UButton
         size="sm"
-        :variant="activeTab === 'weakness' ? 'solid' : 'ghost'"
-        data-testid="tab-weakness"
-        @click="activeTab = 'weakness'"
-      >
-        {{ $t('shotStats.tabs.weakness') }}
-      </UButton>
-      <UButton
-        size="sm"
         :variant="activeTab === 'rallyflow' ? 'solid' : 'ghost'"
         data-testid="tab-rallyflow"
         @click="activeTab = 'rallyflow'"
@@ -303,21 +295,15 @@ function backToPair(): void {
           class="tab-panel"
           data-testid="panel-strengths"
         >
-          <p class="placeholder">
-            {{ $t('shotStats.strengths.note') }}
-          </p>
-        </div>
-        <div
-          v-show="activeTab === 'weakness'"
-          class="tab-panel"
-          data-testid="panel-weakness"
-        >
-          <StatsWeaknessMaps
-            v-if="shot.loaded.value"
-            :singles="match?.matchType === 'singles'"
-            :miss-cells="shot.missOriginCells.value"
-            :lost="shot.landZonesLost.value"
-          />
+          <!-- SV（ショット収支）→ ミスした打点 → 決められた落下点（shot-value REQ-201） -->
+          <template v-if="shot.loaded.value">
+            <StatsShotValuePanel :rows="shot.filteredSvRows.value" />
+            <StatsWeaknessMaps
+              :singles="match?.matchType === 'singles'"
+              :miss-cells="shot.missOriginCells.value"
+              :lost="shot.landZonesLost.value"
+            />
+          </template>
           <p
             v-else
             class="placeholder"

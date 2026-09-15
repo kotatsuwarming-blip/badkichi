@@ -14,6 +14,7 @@ import type {
   PlacementDestCell, RallyEndingRow, ReceiveDetailRow, ServeTypeStatRow, ShotPlacementRow,
   ShotTypeStatRow, StatsSubject
 } from '~/types/shot-stats'
+import type { ShotValueRow } from '~/types/shot-value'
 import type { StatsViewScope } from '~/composables/useStatsView'
 import { callStatsRpc } from '~/utils/stats-dashboard/stats-rpc'
 import { buildDecisiveRanking, buildEndingEntries, buildLandZones } from '~/utils/shot-stats/endings'
@@ -50,6 +51,7 @@ export function useShotStatsView(
   const receiveRows = ref<ReceiveDetailRow[]>([])
   const placementRows = ref<ShotPlacementRow[]>([])
   const endingRows = ref<RallyEndingRow[]>([])
+  const svRows = ref<ShotValueRow[]>([])
   const pending = ref(false)
   const loaded = ref(false)
   const error = ref<string | null>(null)
@@ -71,12 +73,13 @@ export function useShotStatsView(
     pending.value = true
     error.value = null
     try {
-      const [types, serves, receives, placement, endings] = await Promise.all([
+      const [types, serves, receives, placement, endings, sv] = await Promise.all([
         callStatsRpc<ShotTypeStatRow>(client, 'stats_shot_types', scopeArgs()),
         callStatsRpc<ServeTypeStatRow>(client, 'stats_serve_types', scopeArgs()),
         callStatsRpc<ReceiveDetailRow>(client, 'stats_receive_detail', scopeArgs()),
         callStatsRpc<ShotPlacementRow>(client, 'stats_shot_placement', { ...scopeArgs(), p_hand: zoneHand.value }),
-        callStatsRpc<RallyEndingRow>(client, 'stats_rally_endings', scopeArgs())
+        callStatsRpc<RallyEndingRow>(client, 'stats_rally_endings', scopeArgs()),
+        callStatsRpc<ShotValueRow>(client, 'stats_shot_value', scopeArgs())
       ])
       if (req !== seq) return
       typeRows.value = types
@@ -84,6 +87,7 @@ export function useShotStatsView(
       receiveRows.value = receives
       placementRows.value = placement
       endingRows.value = endings
+      svRows.value = sv
       loaded.value = true
     } catch (e) {
       if (req !== seq) return
@@ -170,6 +174,14 @@ export function useShotStatsView(
         : cell
   }
 
+  // SV（強み・課題タブ）: 選手・hand はクライアント側絞り込み（NFR-001, shot-value REQ-202）
+  const filteredSvRows = computed(() =>
+    svRows.value.filter(r =>
+      (subjectPlayerIds.value === null || subjectPlayerIds.value.includes(r.hit_player_id))
+      && (handFilter.value === null || r.hand === handFilter.value)
+    )
+  )
+
   const isEmpty = computed(() =>
     loaded.value && typeRows.value.length === 0 && endingRows.value.length === 0
   )
@@ -185,6 +197,8 @@ export function useShotStatsView(
     endingEntries, decisiveRanking, landZonesWon, landZonesLost,
     // F
     selectedOrigin, selectOrigin, originCells, destCells, destExtras, heatmapTotal, missOriginCells,
+    // SV（強み・課題）
+    svRows, filteredSvRows,
     isEmpty
   }
 }

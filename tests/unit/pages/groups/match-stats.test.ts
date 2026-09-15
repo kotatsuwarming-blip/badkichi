@@ -114,6 +114,8 @@ const shotMock = {
     right: { count: 0, breakdown: [] }, back: { count: 0, breakdown: [] }
   }),
   heatmapTotal: ref(0),
+  svRows: ref([]),
+  filteredSvRows: ref([]),
   isEmpty: ref(false)
 }
 vi.mock('~/composables/useShotStatsView', () => ({ useShotStatsView: () => shotMock }))
@@ -140,6 +142,7 @@ const stubs = {
   StatsSetFlowChart: FlowChartStub,
   StatsShotFilterBar: { props: ['hitterIds', 'setNumbers', 'playerFilter', 'setNumber', 'nameOf'], template: '<div data-testid="shot-filter" />' },
   StatsWeaknessMaps: { props: ['missCells', 'lost'], template: '<div data-testid="weakness-maps" />' },
+  StatsShotValuePanel: { props: ['rows'], template: '<div data-testid="sv-panel" />' },
   StatsEndingsChart: { props: ['entries', 'ranking'], template: '<div data-testid="endings-chart" />' },
   StatsEndingsCourtMap: { props: ['won', 'lost'], template: '<div data-testid="endings-map" />' },
   StatsServeTypeChart: { props: ['rows', 'nameOf'], template: '<div data-testid="serve-chart" />' },
@@ -237,7 +240,7 @@ describe('試合単位 stats ページ', () => {
     flowMock.setNumbers.value = []
   })
 
-  it('タブ再編 (#8/フィルタ再編): サーブ周り = 得点率 + サーブ/レシーブ、弱点 = 弱点マップ、ヒートマップはラリー展開へ', async () => {
+  it('タブ再編 (#8/shot-value REQ-201): サーブ周り = 得点率 + サーブ/レシーブ、強み・課題 = SV + 弱点マップ、ヒートマップはラリー展開へ', async () => {
     shotMock.loaded.value = true
     const w = mountPage()
     // サーブ周り（既定）: 得点率チャート + サーブ/レシーブ分析
@@ -248,7 +251,11 @@ describe('試合単位 stats ページ', () => {
     for (const tid of ['endings-chart', 'endings-map', 'mix-chart', 'mix-scatter', 'hand-chart', 'shot-filter']) {
       expect(w.find(`[data-testid="${tid}"]`).exists(), tid).toBe(false)
     }
-    expect(w.find('[data-testid="weakness-maps"]').exists()).toBe(true) // 弱点タブ (v-show)
+    // 強み・課題タブ (v-show): SV パネル → 弱点マップの順で同居（shot-value REQ-201）。弱点タブは廃止
+    const strengths = w.find('[data-testid="panel-strengths"]')
+    expect(strengths.find('[data-testid="sv-panel"]').exists()).toBe(true)
+    expect(strengths.find('[data-testid="weakness-maps"]').exists()).toBe(true)
+    expect(w.find('[data-testid="tab-weakness"]').exists()).toBe(false)
     // ヒートマップはラリー展開タブ内 (v-show, 2026-08-08 フィルタ再編)
     const rallyflow = w.find('[data-testid="panel-rallyflow"]')
     expect(rallyflow.find('[data-testid="heatmap"]').exists()).toBe(true)

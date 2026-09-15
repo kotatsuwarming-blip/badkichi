@@ -9,7 +9,7 @@ PR 作成時に base 差分が feature/singles 分を含まないことを確認
 
 ### TASK-0001: stats_shot_value RPC（migration + 検算テスト）
 
-- [ ] **タスク完了**
+- [x] **タスク完了**
 - **タスクタイプ**: TDD / **要件**: REQ-001, 101〜104, 401 / **依存**: なし
 - 実装: `supabase/migrations/{ts}_shot_value_read_function.sql`（design/database-schema.sql の草案を実装。
   placement 20260808140000 と向き正規化の一致を目視確認）
@@ -19,7 +19,7 @@ PR 作成時に base 差分が feature/singles 分を含まないことを確認
 
 ### TASK-0002: 型 + 重み定数 + score.ts 純関数
 
-- [ ] **タスク完了**
+- [x] **タスク完了**
 - **タスクタイプ**: TDD / **要件**: REQ-002, 003, 005〜007 / **依存**: なし
 - 実装: `app/types/shot-value.ts` / `app/utils/shot-value/{weights,score}.ts`
   （design/interfaces.ts のシグネチャ。aggregateRoles / toAggregate / typeBreakdown / zoneCells）
@@ -30,7 +30,7 @@ PR 作成時に base 差分が feature/singles 分を含まないことを確認
 
 ### TASK-0003: StatsShotValueCourt（3×3 セレクタ）
 
-- [ ] **タスク完了**
+- [x] **タスク完了**
 - **タスクタイプ**: TDD / **要件**: REQ-004 / **依存**: 0002
 - 実装: button セル 3×3・複数選択・行一括・セル内 SV/n・ネット位置表示（モック準拠。
   zone_row 2 = ネット際を上段に描画）
@@ -39,7 +39,7 @@ PR 作成時に base 差分が feature/singles 分を含まないことを確認
 
 ### TASK-0004: StatsShotValueSummary + Breakdown
 
-- [ ] **タスク完了**
+- [x] **タスク完了**
 - **タスクタイプ**: TDD / **要件**: REQ-003, 005〜007 / **依存**: 0002
 - 実装: 等式チップ（稼いだ−失った=収支±CI）+ 平易文 / 5 役割積み上げ行 + ヒゲ + 凡例 +
   ホバー数値（title）+ n 降順 + n<5 薄表示 + 空状態（EDGE-003）
@@ -47,7 +47,7 @@ PR 作成時に base 差分が feature/singles 分を含まないことを確認
 
 ### TASK-0005: StatsShotValuePanel + rpc.ts 結線
 
-- [ ] **タスク完了**
+- [x] **タスク完了**
 - **タスクタイプ**: TDD / **要件**: REQ-004, 101, 202, NFR-001 / **依存**: 0001, 0003, 0004
 - 実装: 選択状態保持・打者/hand フィルタ適用・rpc.ts（呼び出しは初回+セット切替のみ）
 - テスト: 選択変更で再フェッチしないこと・フィルタ連動・母数併記
@@ -56,7 +56,7 @@ PR 作成時に base 差分が feature/singles 分を含まないことを確認
 
 ### TASK-0006: タブ改組（強み・課題）
 
-- [ ] **タスク完了**
+- [x] **タスク完了**
 - **タスクタイプ**: TDD / **要件**: REQ-201〜203, 402 / **依存**: 0005
 - 実装: 両 stats ページのタブ 4→3・SV パネル + StatsWeaknessMaps 移設・
   i18n（tabs.strengths 改名 / tabs.weakness, strengths.note 削除 / shotStats.value.* 追加, ja+en）
