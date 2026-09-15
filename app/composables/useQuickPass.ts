@@ -11,6 +11,7 @@ import { computed, ref } from 'vue'
 import type { ComputedRef, Ref } from 'vue'
 import type { Team } from '~/utils/rule-engine/types'
 import type {
+  AnnotationMatchInfo,
   AnnotationCursor,
   AnnotationRally,
   AnnotationShot,
@@ -21,12 +22,14 @@ import type {
   RallyEndPatch
 } from '~/types/shot-annotation'
 import { loopWindowFor } from '~/utils/annotation/offset'
-import { deriveOutDirection } from '~/utils/annotation/court-coords'
+import { isLandingOut } from '~/utils/annotation/court-coords'
 import { checkConsistency, deriveInOut } from '~/utils/annotation/derive'
 
 /** session のうちクイックパスが必要とする面 (構造的部分型) */
 export interface QuickPassDeps {
   rallies: Ref<AnnotationRally[]>
+  /** 対戦形式の参照 (REQ-111: singles は in/out 境界がシングルスサイドライン)。useAnnotationSession.match と同形 */
+  match: Ref<AnnotationMatchInfo | null>
   cursor: Ref<AnnotationCursor | null>
   shotsOf: (rallyId: string) => AnnotationShot[]
   goTo: (cursor: AnnotationCursor) => void
@@ -194,11 +197,16 @@ export function useQuickPass(deps: QuickPassDeps): UseQuickPassReturn {
   async function setLanding(point: CourtPoint): Promise<void> {
     const rally = currentRally.value
     if (!rally) return
-    // EDGE-002: 導出された in/out と座標の内外が矛盾 → ソフト警告 (保存は行う)
+    // EDGE-002: 導出された in/out と座標の内外が矛盾 → ソフト警告 (保存は行う)。
+    // 内外判定は形式・サーブ規則込み (REQ-111: singles はシングルスサイドライン境界 /
+    // REQ-112: サーブ決着はショートサービスライン手前・doubles ロング奥も out)。
     const derived = derivedInOut.value
-    const direction = deriveOutDirection(point)
-    landingWarning.value = (derived === 'out' && direction === null)
-      || (derived === 'in' && direction !== null)
+    const outByGeometry = isLandingOut(point, {
+      singles: deps.match.value?.matchType === 'singles',
+      serve: deps.shotsOf(rally.id).length === 1
+    })
+    landingWarning.value = (derived === 'out' && !outByGeometry)
+      || (derived === 'in' && outByGeometry)
     await deps.patchRally(rally.id, { landX: point.x, landY: point.y, outDirection: null })
     afterLanding()
   }
