@@ -228,13 +228,17 @@ export function useTypePass(deps: TypePassDeps): UseTypePassReturn {
       // トグル ON: 無印 = forehand を明示保存 (null の曖昧性排除、REQ-104)
       patch.hand = opts.backhand ? 'backhand' : 'forehand'
     }
+    // 打者候補が 1 人 (singles) なら二択は発生しないので同時に確定する
+    const soleHitter = hitterCandidates.value.length === 1 ? hitterCandidates.value[0] : undefined
     if (entry.shot.shotNumber === 1) {
       patch.hitPlayerId = entry.rally.serverPlayerId
     } else if (entry.shot.shotNumber === 2) {
       patch.hitPlayerId = entry.rally.receiverPlayerId
+    } else if (soleHitter) {
+      patch.hitPlayerId = soleHitter.playerId
     }
     await deps.patchShot(entry.shot.id, patch)
-    if (entry.shot.shotNumber <= 2) {
+    if (entry.shot.shotNumber <= 2 || soleHitter) {
       advance()
     } else {
       awaitingHitter.value = true

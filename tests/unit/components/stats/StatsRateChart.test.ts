@@ -53,4 +53,24 @@ describe('StatsRateChart', () => {
     expect(option.series[0].itemStyle.opacity).toBe(1) // serve（選択）
     expect(option.series[1].itemStyle.opacity).toBe(0.3) // receive（非選択）
   })
+
+  it('凡例クリックで selectRole を emit（系列トグルではなく役割ドリルダウン, 2026-08-22）', () => {
+    const w = mount(StatsRateChart, { props: { entries: players, mode: 'player' }, global })
+    const vm = w.vm as unknown as { onLegendSelect: (p: { name: string }) => void }
+    vm.onLegendSelect({ name: 'stats.rate.serve' })
+    vm.onLegendSelect({ name: 'stats.rate.receive' })
+    expect(w.emitted('selectRole')![0][0]).toBe('serve')
+    expect(w.emitted('selectRole')![1][0]).toBe('receive')
+  })
+
+  it('得点率 0% の棒も視認・クリックできる最小高さを持つ（barMinHeight, 2026-08-22）', () => {
+    const zero: PlayerRate[] = [
+      { playerId: 'p0', playerName: '田中', serve: { rate: 0, denominator: 3, numerator: 0 }, receive: { rate: 0.5, denominator: 2, numerator: 1 } }
+    ]
+    const w = mount(StatsRateChart, { props: { entries: zero, mode: 'player' }, global })
+    const option = w.findComponent(VChart).props('option') as { series: { barMinHeight: number, data: (number | null)[] }[], tooltip: { trigger: string } }
+    expect(option.series[0].barMinHeight).toBe(3)
+    expect(option.series[0].data).toEqual([0]) // 0% は null ではなく 0 として描画
+    expect(option.tooltip.trigger).toBe('axis') // 棒が細くても列ホバーで n を表示
+  })
 })

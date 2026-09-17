@@ -74,6 +74,7 @@ const rowFixture = {
   id: 'm1',
   name: 'XX練習会',
   match_date: '2026-06-05',
+  match_type: 'doubles',
   created_at: '2026-06-05T10:00:00Z',
   video_source_type: 'local',
   video_source_url: 'm1.mp4',
@@ -117,6 +118,14 @@ describe('useMatches', () => {
   it('TC4: 削除済 player も名前解決される (EDGE-007)', async () => {
     const { data } = await useMatches()
     expect(data.value?.[0]?.teamA[1].name).toBe('鈴木(削除済)')
+  })
+
+  it('TC4b: singles (player2 埋め込み null) は 1 人構成 + matchType (REQ-007)', async () => {
+    order2Mock.mockResolvedValue({ data: [{ ...rowFixture, match_type: 'singles', ta2: null, tb2: null }], error: null })
+    const { data } = await useMatches()
+    expect(data.value?.[0]?.matchType).toBe('singles')
+    expect(data.value?.[0]?.teamA).toEqual([{ id: 'p1', name: '佐藤' }])
+    expect(data.value?.[0]?.teamB).toEqual([{ id: 'p3', name: '高橋' }])
   })
 
   it('TC5: completed_at で完了状態を導出、sets.winner でセット数を集計', async () => {

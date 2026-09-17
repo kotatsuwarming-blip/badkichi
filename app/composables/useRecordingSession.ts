@@ -173,7 +173,11 @@ export function useRecordingSession(
     currentSetId = set.id
     currentConfig = set // SetSummary は SetSetupInput 互換 (config + setNumber + cameraNearTeamAtStart)
     pendingPositions = null
-    cameraNearTeam.value = set.cameraNearTeamAtStart
+    // コートチェンジ後の状態を復元: 最後のラリーの camera_near_team があればそれを引き継ぐ（2026-08-22）
+    const lastCam = [...rallies]
+      .sort((a, b) => b.rallyNumber - a.rallyNumber)
+      .find(r => r.cameraNearTeam != null)?.cameraNearTeam
+    cameraNearTeam.value = lastCam ?? set.cameraNearTeamAtStart
     currentSetNumber.value = set.setNumber
 
     let state = createInitialState(
@@ -196,6 +200,16 @@ export function useRecordingSession(
     overrideCounts.B = 0
     undoStack.length = 0
     updateUndoLabel()
+  }
+
+  /**
+   * コートチェンジ（チェンジエンズ）: 以降のラリーの camera_near_team を反転する（手動, 2026-08-22）。
+   * ファイナルゲームの 11 点（15 点マッチは 8 点）や練習の任意交代に記録者がボタンで対応する。
+   * 向き未設定（null）のセットでは no-op。
+   */
+  function toggleCameraNearTeam(): void {
+    if (cameraNearTeam.value === null) return
+    cameraNearTeam.value = cameraNearTeam.value === 'A' ? 'B' : 'A'
   }
 
   function advanceToNextSet(): void {
@@ -405,6 +419,7 @@ export function useRecordingSession(
     matchWinner,
     suggestedFirstServingTeam,
     cameraNearTeam,
+    toggleCameraNearTeam,
     configureAndStartSet,
     advanceToNextSet,
     resumeSet,

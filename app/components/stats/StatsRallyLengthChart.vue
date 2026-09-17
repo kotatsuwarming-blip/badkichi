@@ -13,6 +13,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { toRallyLengthSeries } from '~/utils/stats-dashboard/to-rally-length-series'
 import { useChartTextColor } from '~/composables/useChartTextColor'
+import { countAxisScale } from '~/utils/shot-stats/chart-axis'
 import type { RallyLengthBin } from '~/types/stats-dashboard'
 
 const props = defineProps<{
@@ -32,19 +33,29 @@ const series = computed(() => toRallyLengthSeries(props.bins))
 
 const option = computed(() => {
   const s = series.value
+  // 両軸を同一分割数に固定してグリッド線を1組に統合（2軸で横線が倍増して見えづらいため）
+  const scale = countAxisScale(Math.max(...s.counts, 0))
   return {
     tooltip: { trigger: 'axis' },
     // チャート全文字をテーマ追従色・標準サイズに（U-06）
     textStyle: { color: chartText.value, fontSize: 13 },
     // 凡例は下部へ。軸名（本数/%）と凡例の衝突を解消（U-06: 凡例がグラフに被る）
     legend: { data: [t('stats.rallyLength.count'), t('stats.rallyLength.winRate')], bottom: 0, textStyle: { color: chartText.value, fontSize: 13 } },
-    // 2行ラベル（1打/2打の決着注記）ぶん下余白を確保
-    grid: { left: 48, right: 48, top: 28, bottom: 60 },
-    // 軸ラベル・軸名はやや大きめで視認性を上げる（U-06）。interval:0 で5ビン全ラベルを常時表示
-    xAxis: { type: 'category', data: s.labels, axisLabel: { color: chartText.value, fontSize: 13, fontWeight: 500, interval: 0 } },
+    // 2行ラベル（1打/2打の決着注記）ぶん下余白を確保。top/bottom はポジション別と揃える（横並び, 2026-08-16）
+    grid: { left: 48, right: 48, top: 20, bottom: 64 },
+    // interval:0 で5ビン全ラベルを常時表示。隣接する決着注記（1打/2打）は行を段違いにして
+    // 半幅（横並び）でも重ならないようにする（2打側だけ 1 行下げる）
+    xAxis: {
+      type: 'category',
+      data: s.labels,
+      axisLabel: {
+        color: chartText.value, fontSize: 11, fontWeight: 500, interval: 0, lineHeight: 13,
+        formatter: (v: string, i: number) => (i === 1 ? v.replace('\n', '\n\n') : v)
+      }
+    },
     yAxis: [
-      { type: 'value', name: t('stats.rallyLength.count'), min: 0, nameGap: 12, axisLabel: { color: chartText.value, fontSize: 13 }, nameTextStyle: { color: chartText.value, fontSize: 12 } },
-      { type: 'value', name: '%', min: 0, max: 100, nameGap: 12, axisLabel: { color: chartText.value, fontSize: 13 }, nameTextStyle: { color: chartText.value, fontSize: 12 } }
+      { type: 'value', name: t('stats.rallyLength.count'), min: 0, max: scale.max, interval: scale.interval, nameGap: 12, axisLabel: { color: chartText.value, fontSize: 13 }, nameTextStyle: { color: chartText.value, fontSize: 12 } },
+      { type: 'value', name: '%', min: 0, max: 100, interval: 20, splitLine: { show: false }, nameGap: 12, axisLabel: { color: chartText.value, fontSize: 13 }, nameTextStyle: { color: chartText.value, fontSize: 12 } }
     ],
     series: [
       {

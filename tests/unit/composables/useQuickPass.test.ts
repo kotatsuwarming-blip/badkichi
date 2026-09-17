@@ -53,7 +53,11 @@ function shot(id: string, rallyId: string, shotNumber: number, videoTimestampMs:
   }
 }
 
-function makeDeps(rallies: AnnotationRally[], shotsMap: Record<string, AnnotationShot[]>) {
+function makeDeps(
+  rallies: AnnotationRally[],
+  shotsMap: Record<string, AnnotationShot[]>,
+  matchType: 'singles' | 'doubles' = 'doubles'
+) {
   const ralliesRef = ref(rallies)
   const cursor = ref<AnnotationCursor | null>(null)
   const patchRally = vi.fn(async (rallyId: string, patch: RallyEndPatch) => {
@@ -67,6 +71,7 @@ function makeDeps(rallies: AnnotationRally[], shotsMap: Record<string, Annotatio
   })
   const deps: QuickPassDeps = {
     rallies: ralliesRef,
+    match: ref({ id: 'm1', videoSourceType: 'youtube' as const, videoSourceUrl: 'x', matchType }),
     cursor,
     shotsOf: (rallyId: string) => shotsMap[rallyId] ?? [],
     goTo: (c: AnnotationCursor) => {
@@ -184,6 +189,69 @@ describe('useQuickPass', () => {
     await qp.selectEndReason('floor') // derived in
     qp.skipLanding()
     expect(qp.currentRally.value?.id).toBe('r2')
+  })
+
+  // ---- singles-support REQ-111/112: 落下点 in/out 境界 ----
+
+  it('TC-111-01: singles は両サイドライン間 (x=0.04) を out 扱い → 警告なし', async () => {
+    const f = makeDeps(
+      [rally('r1', { pointWinner: 'B' })],
+      { r1: [shot('sh1', 'r1', 1, 5000), shot('sh2', 'r1', 2, 6000), shot('sh3', 'r1', 3, 7000)] },
+      'singles'
+    )
+    const qp = useQuickPass(f.deps)
+    qp.start()
+    await qp.selectEndReason('floor') // derived out (最終接触 A = 敗者)
+    await qp.setLanding({ x: 0.04, y: 0.7 })
+    expect(qp.landingWarning.value).toBe(false)
+  })
+
+  it('TC-111-01 回帰: doubles では両サイドライン間はコート内 → 警告あり', async () => {
+    fixtures.deps.rallies.value[0]!.pointWinner = 'B' // derived out
+    const qp = useQuickPass(fixtures.deps)
+    qp.start()
+    await qp.selectEndReason('floor')
+    await qp.setLanding({ x: 0.04, y: 0.7 })
+    expect(qp.landingWarning.value).toBe(true)
+  })
+
+  it('TC-111 逆向き: singles で導出 in なのに両サイドライン間 → 警告あり', async () => {
+    const f = makeDeps(
+      [rally('r1')], // pointWinner A = 最終接触者 → derived in
+      { r1: [shot('sh1', 'r1', 1, 5000), shot('sh2', 'r1', 2, 6000), shot('sh3', 'r1', 3, 7000)] },
+      'singles'
+    )
+    const qp = useQuickPass(f.deps)
+    qp.start()
+    await qp.selectEndReason('floor')
+    await qp.setLanding({ x: 0.04, y: 0.7 })
+    expect(qp.landingWarning.value).toBe(true)
+  })
+
+  it('TC-112-01: サーブ決着 (1打) はショートサービスライン手前 (y=0.6) を out 扱い → 警告なし', async () => {
+    // r2 = 1打・servingTeam A・pointWinner B → 最終接触 A = 敗者 → derived out
+    const qp = useQuickPass(fixtures.deps)
+    qp.goToRally('r2')
+    await qp.selectEndReason('floor')
+    await qp.setLanding({ x: 0.5, y: 0.6 })
+    expect(qp.landingWarning.value).toBe(false)
+  })
+
+  it('TC-112-01 回帰: 3打ラリーでは y=0.6 はコート内 → 警告あり', async () => {
+    fixtures.deps.rallies.value[0]!.pointWinner = 'B' // derived out
+    const qp = useQuickPass(fixtures.deps)
+    qp.start()
+    await qp.selectEndReason('floor')
+    await qp.setLanding({ x: 0.5, y: 0.6 })
+    expect(qp.landingWarning.value).toBe(true)
+  })
+
+  it('TC-112-02: doubles のサーブ決着はロングサービスライン奥 (y=0.03) も out 扱い → 警告なし', async () => {
+    const qp = useQuickPass(fixtures.deps)
+    qp.goToRally('r2')
+    await qp.selectEndReason('floor')
+    await qp.setLanding({ x: 0.5, y: 0.03 })
+    expect(qp.landingWarning.value).toBe(false)
   })
 
   it('最終ラリーの注釈が終わると isDone', async () => {

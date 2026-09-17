@@ -128,8 +128,7 @@ describe('usePositionPass (ローカル動画)', () => {
     await pp.confirmFrame(5600)
     await pp.setPosition({ x: 0.1, y: 0.1 })
     await pp.confirmFrame(6600) // 3件 → offset = -400
-    await pp.setPosition({ x: 0.1, y: 0.1 })
-    await pp.selectHitter('A1') // 3打目は二択確定で前進
+    await pp.setPosition({ x: 0.1, y: 0.1 }) // 3打目もタップのみで前進 (2026-08-28)
     // sh4 (ts=8000): anchor = 7600
     expect(pp.anchorMs.value).toBe(7600)
     expect(pp.stripTimesMs.value).toEqual([7200, 7400, 7600, 7800, 8000])
@@ -155,19 +154,16 @@ describe('usePositionPass (ローカル動画)', () => {
     expect(shotsMap.r1![1]!.hitPlayerId).toBe('B1')
   })
 
-  it('TC-012-03/04: 3打目以降は該当チームの二択 → selectHitter で確定', async () => {
+  it('3打目以降は二択を聞かずタップのみで前進する (タップ負荷軽減、2026-08-28)', async () => {
     const pp = usePositionPass(fixtures.deps)
     pp.start()
     await pp.setPosition({ x: 0.1, y: 0.1 }) // sh1
     await pp.setPosition({ x: 0.1, y: 0.9 }) // sh2
-    // sh3 (奇数打 = サーブ側 A)
+    // sh3 (奇数打 = サーブ側 A): 二択は出ない・打者は書かない・前進する
     await pp.setPosition({ x: 0.2, y: 0.2 })
-    expect(pp.awaitingHitter.value).toBe(true)
-    expect(pp.hitterCandidates.value.map(p => p.playerId)).toEqual(['A1', 'A2'])
-    await pp.selectHitter('A2')
-    expect(shotsMap.r1![2]!.hitPlayerId).toBe('A2')
-    // sh4 (偶数打 = レシーブ側 B)
-    expect(pp.hitterCandidates.value.map(p => p.playerId)).toEqual(['B1', 'B2'])
+    expect(pp.awaitingHitter.value).toBe(false)
+    expect(shotsMap.r1![2]!.hitPlayerId).toBeNull()
+    expect(pp.currentShot.value?.id).toBe('sh4')
   })
 
   it('confirmFrame は精度区分 frame を併記する (2026-08-03)', async () => {

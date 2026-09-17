@@ -206,6 +206,34 @@ describe('useRecordingSession: 統一 undo', () => {
   })
 })
 
+describe('useRecordingSession: コートチェンジ (2026-08-22)', () => {
+  it('トグルで camera_near_team が反転し、以降のラリー行に反映される', async () => {
+    m.createSet.mockResolvedValue({ data: 's1', error: null })
+    m.createSetPositions.mockResolvedValue({ data: null, error: null })
+    m.createRally.mockResolvedValue({ data: 'r1', error: null })
+    const s = makeSession()
+    await s.configureAndStartSet(setup, positions)
+    expect(s.cameraNearTeam.value).toBe('A')
+    s.toggleCameraNearTeam()
+    expect(s.cameraNearTeam.value).toBe('B')
+    s.toggleCameraNearTeam()
+    expect(s.cameraNearTeam.value).toBe('A')
+    s.toggleCameraNearTeam()
+    await s.recordShot() // 遅延生成されるラリー行の denorm に反転後の値が乗る
+    await flushPromises()
+    expect(m.createRally).toHaveBeenCalledWith(expect.objectContaining({
+      denorm: expect.objectContaining({ cameraNearTeam: 'B' })
+    }))
+  })
+
+  it('向き未設定 (null) のセットではトグルは no-op', async () => {
+    const s = makeSession()
+    await s.configureAndStartSet({ ...setup, cameraNearTeamAtStart: null }, positions)
+    s.toggleCameraNearTeam()
+    expect(s.cameraNearTeam.value).toBeNull()
+  })
+})
+
 describe('useRecordingSession: 再開 (resume)', () => {
   it('確定ラリーを replay して GameState・履歴・次ラリーを復元する', () => {
     const s = makeSession()
@@ -231,6 +259,17 @@ describe('useRecordingSession: 再開 (resume)', () => {
     s.resumeSet(setSummary, positions, rallies)
     expect(s.gameState.value?.score).toEqual({ teamA: 1, teamB: 0 }) // 確定の1点のみ
     expect(s.history.value).toHaveLength(1) // 未確定は履歴に含めない
+  })
+
+  it('コートチェンジ後の再開は最後のラリーの camera_near_team を引き継ぐ (2026-08-22)', () => {
+    const s = makeSession()
+    const setSummary = { id: 's1', setNumber: 3, targetPoints: 21, enableDeuce: true, deucePointCap: 30, firstServingTeam: 'A' as const, cameraNearTeamAtStart: 'A' as const, winner: null }
+    const rallies = [
+      { rallyNumber: 1, servingTeam: 'A' as const, serverPlayerId: 'A2', receiverPlayerId: 'B2', pointWinner: 'A' as const, isLet: false, isPointConfirmed: true, shotCount: 2, overrideCount: 0, videoStartTimestampMs: null, cameraNearTeam: 'A' as const },
+      { rallyNumber: 2, servingTeam: 'A' as const, serverPlayerId: 'A1', receiverPlayerId: 'B1', pointWinner: 'B' as const, isLet: false, isPointConfirmed: true, shotCount: 5, overrideCount: 0, videoStartTimestampMs: null, cameraNearTeam: 'B' as const }
+    ]
+    s.resumeSet(setSummary, positions, rallies)
+    expect(s.cameraNearTeam.value).toBe('B') // at_start ('A') ではなく最終ラリーの値
   })
 })
 

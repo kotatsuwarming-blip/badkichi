@@ -143,6 +143,22 @@ describe('useTypePass (ステップ&ループ方式、2026-08-03)', () => {
     expect(tp.currentShot.value?.id).toBe('sh4')
   })
 
+  it('singles: 打者候補が 1 人なら二択を待たず打者を同時確定して前進', async () => {
+    const shotsMap = fourShots()
+    const { deps } = makeDeps(shotsMap)
+    deps.roster.value = [
+      { playerId: 'A1', name: '田中', team: 'A' },
+      { playerId: 'B1', name: '佐藤', team: 'B' }
+    ]
+    const tp = useTypePass(deps)
+    tp.goToShot('sh3')
+    await tp.inputType('2')
+    expect(shotsMap.r1![2]!.shotType).toBe('smash')
+    expect(shotsMap.r1![2]!.hitPlayerId).toBe('A1') // 奇数打 = サーブ側 A の唯一の選手
+    expect(tp.awaitingHitter.value).toBe(false)
+    expect(tp.currentShot.value?.id).toBe('sh4')
+  })
+
   it('TC-104-01: hand トグル ON (既定) → 無印 = forehand / Shift = backhand', async () => {
     const shotsMap = fourShots()
     const { deps } = makeDeps(shotsMap)

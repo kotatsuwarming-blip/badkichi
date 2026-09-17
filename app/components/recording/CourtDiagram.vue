@@ -9,6 +9,9 @@
  *   - サーバーを🏸(シャトル)で強調、レシーバーを枠線で示す。override で left/right が入れ替わると表示も入れ替わる。
  *   - 選手名は names マップで解決 (presentational、session 非依存でテスト容易)。
  *   - 左右ミラー補正は MVP では行わない (実装時プロトタイプで調整、ui-design.md)。
+ *   - singles: positions は両スロットとも同一選手 (rule-engine の流用)。そのまま描くと同じ名前が
+ *     2 セル並ぶので、serverPosition (偶数=右/奇数=左) のサービスコートだけに選手を置き、
+ *     もう一方のセルは空にする (サーバーも対角のレシーバーも同じラベル側に立つ)。
  */
 import { computed } from 'vue'
 import type { CourtSide, PlayerId, Team, TeamPositions } from '~/utils/rule-engine/types'
@@ -20,6 +23,10 @@ const props = defineProps<{
   receiver: PlayerId
   cameraNearTeam: Team | null
   names: Record<PlayerId, string>
+  /** singles のとき true。serverPosition 側のセルだけに選手を描く */
+  singles?: boolean
+  /** 現在のサーブ位置 (singles の描画に使用) */
+  serverPosition?: CourtSide
 }>()
 
 const nearTeam = computed<Team>(() => props.cameraNearTeam ?? 'A')
@@ -30,12 +37,17 @@ function posOf(team: Team): { left: PlayerId, right: PlayerId } {
 }
 
 function cell(team: Team, side: CourtSide) {
+  // singles: サービスコート (serverPosition) 以外のセルは空 (id は key 用にセル固有にする)
+  if (props.singles && props.serverPosition && side !== props.serverPosition) {
+    return { id: `empty-${team}-${side}`, name: '', isServer: false, isReceiver: false, empty: true }
+  }
   const id = posOf(team)[side]
   return {
     id,
     name: props.names[id] ?? id,
     isServer: id === props.server,
-    isReceiver: id === props.receiver
+    isReceiver: id === props.receiver,
+    empty: false
   }
 }
 
@@ -73,7 +85,7 @@ const arrow = computed(() => {
           v-for="c in farCells"
           :key="c.id"
           class="court-cell"
-          :class="{ 'is-server': c.isServer, 'is-receiver': c.isReceiver }"
+          :class="{ 'is-server': c.isServer, 'is-receiver': c.isReceiver, 'is-empty': c.empty }"
           :data-testid="`cell-${c.id}`"
         >
           <svg
@@ -118,7 +130,7 @@ const arrow = computed(() => {
           v-for="c in nearCells"
           :key="c.id"
           class="court-cell"
-          :class="{ 'is-server': c.isServer, 'is-receiver': c.isReceiver }"
+          :class="{ 'is-server': c.isServer, 'is-receiver': c.isReceiver, 'is-empty': c.empty }"
           :data-testid="`cell-${c.id}`"
         >
           <svg
@@ -153,6 +165,24 @@ const arrow = computed(() => {
           >{{ $t('record.court.receive') }}</span>
         </div>
       </div>
+      <!-- ダブルスロングサービスライン (バックから 0.76m 内側の横線、形式問わず常時 REQ-301c) -->
+      <div
+        v-for="edge in ['top', 'bottom']"
+        :key="`dlsl-${edge}`"
+        class="doubles-long-service-line"
+        :style="edge === 'top' ? { top: '5.7%' } : { bottom: '5.7%' }"
+        data-testid="doubles-long-service-line"
+      />
+      <!-- シングルスサイドライン (外周=ダブルスサイドラインとの区別、REQ-301b) -->
+      <template v-if="singles">
+        <div
+          v-for="side in ['left', 'right']"
+          :key="`ssl-${side}`"
+          class="singles-sideline"
+          :style="side === 'left' ? { left: '7.5%' } : { right: '7.5%' }"
+          data-testid="singles-sideline"
+        />
+      </template>
       <svg
         v-if="arrow"
         class="serve-arrow"
@@ -228,6 +258,8 @@ const arrow = computed(() => {
 .cell-name { font-weight: 600; }
 
 .court-cell.is-server { background: var(--ui-primary); color: #1a1a1a; text-shadow: none; }
+/* singles: 選手のいないサービスコート (空セル) */
+.court-cell.is-empty { opacity: 0.6; }
 .court-cell.is-server .cell-name { font-weight: 800; }
 
 /* ショートサービスライン (ネット手前の白線) */
@@ -262,6 +294,26 @@ const arrow = computed(() => {
 .shuttle-skirt { fill: #fff; stroke: #1a1a1a; stroke-width: 1; stroke-linejoin: round; }
 .shuttle-feather { stroke: #1a1a1a; stroke-width: 0.8; fill: none; }
 .shuttle-cork { fill: #d84315; stroke: #1a1a1a; stroke-width: 1; }
+
+/* ダブルスロングサービスライン (76/1340 ≒ 5.7% 内側の横線、REQ-301c) */
+.doubles-long-service-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+}
+
+/* シングルスサイドライン (46/610 ≒ 7.5% 内側の縦線、REQ-301b) */
+.singles-sideline {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.85);
+  pointer-events: none;
+}
 
 /* サーブ / レシーブ の役割ラベル (名前の下) */
 .cell-role { font-size: 0.625rem; line-height: 1; opacity: 0.85; }

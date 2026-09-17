@@ -146,11 +146,11 @@ export interface ShotBin {
  * 既定ビン（境界は調整可。1 / 2 / 3〜7 / 8〜12 / 13+） 🔵 ヒアリング2026-06-09 + U-06(2026-06-16)
  * 1打=サーブで決着（サーブミス/エース）、2打=レシーブで決着。ラリー成立（3打以上）と
  * 分けることで「サーブ周りで得しているか」が読めるようにする（川島提案）。
- * ラベルの \n は echarts のカテゴリ軸で2行表示になる。
+ * ラベルの \n は echarts のカテゴリ軸で2行表示になる（半幅表示で隣と重ならない短文にする）。
  */
 export const RALLY_LENGTH_BINS: readonly ShotBin[] = [
-  { key: '1', label: '1 打\n(サーブミス等)', min: 1, max: 1 },
-  { key: '2', label: '2 打\n(レシーブ決着)', min: 2, max: 2 },
+  { key: '1', label: '1 打\nサーブ決着', min: 1, max: 1 },
+  { key: '2', label: '2 打\nレシーブ決着', min: 2, max: 2 },
   { key: '3-7', label: '3〜7 打', min: 3, max: 7 },
   { key: '8-12', label: '8〜12 打', min: 8, max: 12 },
   { key: '13+', label: '13 打以上', min: 13, max: null }
@@ -173,13 +173,22 @@ export type StatsEntity
     | { kind: 'player', playerId: string }
     | { kind: 'pair', player1Id: string, player2Id: string }
 
+/** 対象モード（選手別/ペア別）。全タブ共通の最上位フィルタ（2026-08-08 フィルタ再編） */
+export type SubjectMode = 'player' | 'pair'
+
 /**
- * グローバルフィルタ（チャート外で設定）: 対象（選手/ペア）+ 試合期間。
+ * グローバルフィルタ（チャート外で設定）: 対象モード（選手別/ペア別）+ 選手/ペア選択 +
+ * セット + 試合期間。選択が未完（null / 同一選手ペア）の間は全員比較（overview）扱い。
  * dateFrom/dateTo は YYYY-MM-DD（null = 制限なし）。excludedMatchIds は期間内から個別除外する試合。
- * 🔵 受け入れ2026-06-09（選手/ペア・期間はグローバル、個別調整も可）
+ * 🔵 受け入れ2026-06-09 + フィルタ再編2026-08-08（モード・選手・セットを同一階層の全タブ共通に）
  */
 export interface StatsGlobalFilter {
-  entity: StatsEntity
+  subjectMode: SubjectMode
+  playerId: string | null
+  pair1Id: string | null
+  pair2Id: string | null
+  /** セット絞り込み（全タブ共通）。null = 全セット */
+  setNumber: number | null
   dateFrom: string | null
   dateTo: string | null
   excludedMatchIds: string[]

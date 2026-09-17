@@ -10,22 +10,28 @@
  */
 
 import { use } from 'echarts/core'
-import { BarChart, LineChart } from 'echarts/charts'
+import { BarChart, LineChart, ScatterChart } from 'echarts/charts'
 import {
   GridComponent,
   LegendComponent,
+  MarkAreaComponent,
+  MarkLineComponent,
   TooltipComponent
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import VChart from 'vue-echarts'
 
+// ScatterChart / MarkLine / MarkArea は shot-stats（D 散布図・L セット推移）で使用
 use([
   CanvasRenderer,
   BarChart,
   LineChart,
+  ScatterChart,
   GridComponent,
   TooltipComponent,
-  LegendComponent
+  LegendComponent,
+  MarkLineComponent,
+  MarkAreaComponent
 ])
 
 export default defineNuxtPlugin((nuxtApp) => {

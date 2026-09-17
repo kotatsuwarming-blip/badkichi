@@ -14,7 +14,7 @@ export function useSetRallies(setId: string) {
   return useAsyncData<RallyHistoryItem[]>(`set-rallies-${setId}`, async () => {
     const { data, error } = await client
       .from('rallies')
-      .select('rally_number, serving_team, server_player_id, receiver_player_id, point_winner, is_let, is_point_confirmed, video_start_timestamp_ms, shots(count), position_overrides(count)')
+      .select('rally_number, serving_team, server_player_id, receiver_player_id, point_winner, is_let, is_point_confirmed, video_start_timestamp_ms, camera_near_team, shots(count), position_overrides(count)')
       .eq('set_id', setId)
       .is('deleted_at', null)
       .order('rally_number', { ascending: true })
@@ -31,7 +31,8 @@ export function useSetRallies(setId: string) {
       isPointConfirmed: row.is_point_confirmed,
       shotCount: row.shots[0]?.count ?? 0,
       overrideCount: row.position_overrides[0]?.count ?? 0,
-      videoStartTimestampMs: row.video_start_timestamp_ms
+      videoStartTimestampMs: row.video_start_timestamp_ms,
+      cameraNearTeam: row.camera_near_team as RallyHistoryItem['cameraNearTeam']
     }))
   })
 }

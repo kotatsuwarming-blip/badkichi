@@ -43,6 +43,7 @@ import { useCreateMatch } from '~/composables/useCreateMatch'
 const input = {
   name: 'XX練習会',
   matchDate: '2026-06-05',
+  matchType: 'doubles' as const,
   teamAPlayer1Id: 'p1',
   teamAPlayer2Id: 'p2',
   teamBPlayer1Id: 'p3',
@@ -69,6 +70,18 @@ describe('useCreateMatch', () => {
       match_date: '2026-06-05'
     }))
     expect(r.error).toBeNull()
+  })
+
+  it('TC1b: match_type を送る / singles は player2 = null (REQ-003)', async () => {
+    const { createMatch } = useCreateMatch()
+    await createMatch(input)
+    expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({ match_type: 'doubles' }))
+    await createMatch({ ...input, matchType: 'singles', teamAPlayer2Id: null, teamBPlayer2Id: null })
+    expect(insertMock).toHaveBeenLastCalledWith(expect.objectContaining({
+      match_type: 'singles',
+      team_a_player2_id: null,
+      team_b_player2_id: null
+    }))
   })
 
   it('TC2: youtube — video_source_type 分岐', async () => {

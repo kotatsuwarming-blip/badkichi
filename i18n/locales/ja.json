@@ -10,7 +10,7 @@
     "invalid_video_source_type": "動画ソース種別が不正です",
     "video_source_required": "動画ソースを指定してください",
     "invalid_youtube_url": "YouTube の URL または動画 ID を入力してください",
-    "players_must_be_distinct": "4 選手はそれぞれ別の選手を選択してください",
+    "players_must_be_distinct": "同じ選手を複数の枠に選択することはできません",
     "player_required": "選手を選択してください",
     "invitation_not_found_by_link": "招待リンクが無効です。発行者にご確認ください",
     "invitation_expired": "招待コードの有効期限が切れています",
@@ -27,7 +27,8 @@
     },
     "check_violation": {
       "generic": "入力値が不正です"
-    }
+    },
+    "invalid_match_type": "対戦形式が不正です"
   },
   "app": {
     "name": "バドきち"
@@ -183,7 +184,7 @@
     "deleteConfirmTitle": "試合を削除",
     "deleteConfirmMessage": "この試合を削除しますか？録画データも参照できなくなります。",
     "deleteConfirmApprove": "削除する",
-    "notEnoughPlayers": "試合を作成するには選手が 4 人以上必要です",
+    "notEnoughPlayers": "試合を作成するには選手が 2 人以上（ダブルスは 4 人以上）必要です",
     "goToPlayers": "選手を追加する",
     "createSuccess": "試合を追加しました",
     "updateSuccess": "試合を更新しました",
@@ -193,7 +194,14 @@
     "groupStats": "グループ統計",
     "statusDone": "完了",
     "statusRecording": "記録中",
-    "annotate": "注釈"
+    "annotate": "注釈",
+    "matchTypeLabel": "対戦形式",
+    "matchTypeOptions": {
+      "singles": "シングルス",
+      "doubles": "ダブルス"
+    },
+    "playerALabel": "選手 A",
+    "playerBLabel": "選手 B"
   },
   "record": {
     "back": "戻る",
@@ -290,7 +298,8 @@
       "markComplete": "この試合を完了にする",
       "completed": "完了済み",
       "unmark": "取り消す"
-    }
+    },
+    "courtChange": "コートチェンジ"
   },
   "stats": {
     "matchTitle": "試合統計",
@@ -367,6 +376,10 @@
     "empty": {
       "title": "データがありません",
       "description": "この試合にはまだ記録されたラリーがありません"
+    },
+    "video": {
+      "hide": "動画を隠す",
+      "show": "動画を表示"
     }
   },
   "legal": {
@@ -469,6 +482,121 @@
       "title": "ラリー一覧",
       "rally": "第{set}セット #{n}",
       "shots": "{n}打"
+    }
+  },
+  "shotStats": {
+    "tabs": {
+      "serve": "サーブ周り",
+      "strengths": "強み分析",
+      "weakness": "弱点分析",
+      "rallyflow": "ラリー展開"
+    },
+    "badge": {
+      "ended": "決着",
+      "typed": "種別",
+      "pointed": "打点",
+      "handed": "F/B",
+      "timed": "時刻"
+    },
+    "phase": {
+      "title": "局面別得点率",
+      "early": "序盤",
+      "mid": "中盤",
+      "late": "終盤",
+      "clutch": "接戦"
+    },
+    "tempo": {
+      "title": "展開スピード",
+      "axisAvg": "全体平均（秒/打）",
+      "axisLast4": "終盤4打平均（秒/打）",
+      "won": "得点ラリー",
+      "lost": "失点ラリー",
+      "all": "全ラリー",
+      "note": "テンポはラリー単位の応酬速度です（相手・ペアの打も含みます）。打点注釈があるラリーは注釈時刻ベース（精密 {precise} 本）、無いラリーは記録時のタップ時刻ベース（近似 {approx} 本）。対象 = 4打以上・全打点時刻あり（対象外 {excluded} 本）。対角線より下 = 終盤に加速。点タップで再生"
+    },
+    "flow": {
+      "title": "セット推移",
+      "diff": "得点差",
+      "interval": "11点",
+      "set": "第{n}セット",
+      "maxRuns": "最大連取 {won} / 最大連失 {lost}",
+      "empty": "確定ラリーがありません"
+    },
+    "loading": "読み込み中…",
+    "denominator": "注釈済み {n} / 全体 {total}",
+    "filter": {
+      "allPlayers": "全選手",
+      "allSets": "全セット"
+    },
+    "endings": {
+      "title": "決着分析（得点・失点の内訳）",
+      "ace": "エース獲得",
+      "opponentError": "相手ミス獲得",
+      "ownError": "自ミス失点",
+      "opponentAce": "被エース失点",
+      "unknown": "不明",
+      "unannotated": "未注釈",
+      "rankingTitle": "決定打ランキング",
+      "landTitle": "決着落下点",
+      "landWon": "得点",
+      "landLost": "失点",
+      "outNote": "コート外: サイド {side} / バック {back} / 両方 {both}・位置不明 {unlocated}"
+    },
+    "serve": {
+      "title": "サーブ種別 × 得点率"
+    },
+    "mix": {
+      "title": "球種構成比と成果",
+      "share": "使用割合",
+      "decisiveRate": "決定率",
+      "missRate": "ミス率",
+      "scatterTitle": "使用割合 × 得点率",
+      "rallyRate": "得点率"
+    },
+    "hand": {
+      "title": "フォア/バック分析",
+      "count": "本数",
+      "outcome": "決定率 {decisive} / ミス率 {miss}"
+    },
+    "heatmap": {
+      "title": "配球ヒートマップ（3打目以降）",
+      "promptSelect": "手前コートのゾーンをタップすると、そこから打った配球だけに絞り込めます（現在は全体の合計）",
+      "selectedCell": "選択中のゾーンからの配球を表示中（同じゾーンを再タップで解除）",
+      "originTip": "このゾーンから {n} 本",
+      "hint": "選手視点（下が自陣）。手前の数字 = そのゾーンから打った本数（タップで絞り込み）、奥・コート外の数字 = 配球先。数字にカーソルを合わせると球種の内訳が出ます",
+      "outLeft": "左アウト",
+      "outRight": "右アウト",
+      "outBack": "バックアウト",
+      "net": "ネット",
+      "profileTitle": "このゾーンからのショット",
+      "middleNote": "中央ゾーンは候補を固定せず、実際に打った球種のみ表示しています",
+      "legendOk": "継続/決定",
+      "legendMiss": "ミス（ネット・アウト）"
+    },
+    "receive": {
+      "title": "レシーブ分析（サーブ種別 → 返球 → コース）",
+      "promptServe": "サーブ種別の棒をタップすると、そのサーブへの返球とコースにドリルダウンできます",
+      "drilled": "{serve} への返球を表示中（同じ棒を再タップで解除）",
+      "returnsTitle": "{serve} への返球（種別ごと）",
+      "courseTitleAll": "返球コース（全返球）",
+      "courseTitle": "返球コース（{type}）",
+      "unknownCourse": "コース不明",
+      "courseHint": "相手コート（レシーバー視点・下がネット）。数字 = 本数、下段 = そのコースの得点率"
+    },
+    "combo": {
+      "count": "本数",
+      "rate": "得点率"
+    },
+    "weakness": {
+      "missTitle": "ミスした打点",
+      "missNote": "自分のショットがネット・アウトで終わった打点（選手視点・下が自陣）",
+      "concededTitle": "決められた落下点",
+      "teamNote": "チーム単位の集計です（ダブルスはどちらの選手が取るべきだったか判別できないため、ペア両選手で共有）",
+      "playerNote": "選手単位の集計です（シングルス）",
+      "followupNote": "「崩され」の遡り分析（例: スマッシュレシーブが甘くなり最終的に決められたケースの起点特定）は集計方法を検討中です"
+    },
+    "strengths": {
+      "note": "強み分析（決定打まわり）は再考中です。当面は配球ヒートマップ（3打目以降）を表示しています"
     }
   }
 }

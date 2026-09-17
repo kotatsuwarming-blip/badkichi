@@ -276,14 +276,9 @@ export function usePositionPass(deps: PositionPassDeps): UsePositionPassReturn {
       patch.hitPlayerId = entry.rally.receiverPlayerId
     }
     await deps.patchShot(entry.shot.id, patch)
-    if (entry.shot.shotNumber <= 2 || entry.shot.hitPlayerId !== null) {
-      // カーソル操作だけで回すパス。打者が既知なら聞かない (打者の入力・訂正は
-      // キーボード専用の種別パスが担う、2026-08-03 再設計)
-      advance()
-    } else {
-      // 3打目以降で打者未入力: チームは偶奇で確定済み。ペア2人の二択のみ聞く (REQ-012)
-      awaitingHitter.value = true
-    }
+    // 打点パスは打者の二択を聞かずタップだけで前進する (長ラリーのタップ負荷軽減、2026-08-28)。
+    // 3打目以降の打者はチームまで偶奇で確定済み。個人の入力・訂正は種別パスが担う (REQ-012 改)。
+    advance()
   }
 
   async function selectHitter(playerId: string): Promise<void> {

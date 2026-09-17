@@ -12,6 +12,7 @@
 
 import type { Ref } from 'vue'
 import type { Database } from '~/types/supabase'
+import type { MatchType } from '~/types/match'
 import type {
   Team,
   CourtSide,
@@ -43,7 +44,7 @@ export type SetSetupInput = SetConfig & {
   cameraNearTeamAtStart: Team | null
 }
 
-/** 初期立ち位置入力（4選手）。rule-engine SetPlayerPosition と同形。REQ-003。 */
+/** 初期立ち位置入力（doubles=4行 / singles=各チーム right の 2 行）。rule-engine SetPlayerPosition と同形。REQ-003。 */
 export type SetPositionInput = SetPlayerPosition
 
 /** セット概要（useSets の射影）。採番・再開・決着判定に使う。REQ-002/010。 */
@@ -120,6 +121,8 @@ export interface RallyHistoryItem {
   overrideCount: number
   /** 該当ラリーの動画開始位置 (ms)。[▶] ジャンプに使う。null=動画アラインメントなし。REQ-009。 */
   videoStartTimestampMs: number | null
+  /** 該当ラリー時点のカメラ手前チーム（再開時のコートチェンジ状態復元用, 2026-08-22）。 */
+  cameraNearTeam?: Team | null
 }
 
 // ========================================
@@ -177,6 +180,8 @@ export interface UseRecordingSessionReturn {
   suggestedFirstServingTeam: Readonly<Ref<Team | null>>
   /** カメラ手前チーム（コート描画の向き）。セット開始時に確定。REQ-002。 */
   cameraNearTeam: Readonly<Ref<Team | null>>
+  /** コートチェンジ（チェンジエンズ）: 以降のラリーの camera_near_team を反転（手動, 2026-08-22） */
+  toggleCameraNearTeam: () => void
 
   // セットアップ（同期）
   configureAndStartSet: (setup: SetSetupInput, positions: SetPositionInput[]) => Promise<ActionResult<SetRow['id']>>
@@ -219,10 +224,11 @@ export interface MatchSummary {
   matchWinner: Team | null
 }
 
-/** useMatchForRecording: matches を1件読み、VideoSource 構築材料 + 4選手ロスターへ。REQ-001/004。 */
+/** useMatchForRecording: matches を1件読み、VideoSource 構築材料 + ロスター (singles=2人/doubles=4人) へ。REQ-001/004。 */
 export interface MatchForRecording {
   id: string
   name: string | null
+  matchType: MatchType
   videoSourceType: 'youtube' | 'local'
   videoSourceUrl: string
   completedAt: string | null // 完了フラグ (matches.completed_at)。null=未完了

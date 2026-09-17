@@ -2,8 +2,9 @@
 /**
  * SetSetupForm.vue — セット設定 + 初期立ち位置の入力フォーム。
  * 関連: TASK-0016 / REQ-002 / REQ-003 / EDGE-002 / ui-design.md
- * 方針: 各チームの「左の選手」を選ぶと残りが右に自動決定 → スロット重複を構造的に防ぐ (EDGE-002)。
+ * 方針: 各チームの「ファースト (右) の選手」を選ぶと残りが左に自動決定 → スロット重複を構造的に防ぐ (EDGE-002)。
  *       組み立ては buildSetInput 純関数に委譲。先攻は suggestedFirstServingTeam を既定提示 (REQ-107)。
+ *       singles (各チーム 1 人) はファーストが自明なので立ち位置入力欄を出さない。
  */
 import { computed, ref } from 'vue'
 import type { PlayerId, Team } from '~/utils/rule-engine/types'
@@ -22,6 +23,8 @@ const emit = defineEmits<{ submit: [value: BuildSetResult] }>()
 
 const aPlayers = computed(() => props.roster.filter(r => r.team === 'A'))
 const bPlayers = computed(() => props.roster.filter(r => r.team === 'B'))
+// singles: 各チーム 1 人 → ファースト選択は不要 (buildSetInput へは唯一の選手を渡す)
+const isSingles = computed(() => aPlayers.value.length === 1 && bPlayers.value.length === 1)
 
 const targetPoints = ref(21)
 const enableDeuce = ref(true)
@@ -47,6 +50,8 @@ const cameraOptions = computed(() => [
 ])
 
 function onSubmit() {
+  const aFirst = isSingles.value ? aPlayers.value[0]!.playerId : aFirstPlayerId.value
+  const bFirst = isSingles.value ? bPlayers.value[0]!.playerId : bFirstPlayerId.value
   const result = buildSetInput(props.roster, {
     setNumber: props.setNumber,
     targetPoints: targetPoints.value,
@@ -54,8 +59,8 @@ function onSubmit() {
     deucePointCap: deucePointCap.value,
     firstServingTeam: firstServingTeam.value,
     cameraNearTeamAtStart: cameraNearRaw.value === '' ? null : cameraNearRaw.value,
-    aFirstPlayerId: aFirstPlayerId.value,
-    bFirstPlayerId: bFirstPlayerId.value
+    aFirstPlayerId: aFirst,
+    bFirstPlayerId: bFirst
   })
   emit('submit', result)
 }
@@ -110,31 +115,33 @@ function onSubmit() {
       />
     </UFormField>
 
-    <h3
-      class="subtitle"
-      data-testid="positions-title"
-    >
-      {{ $t('record.setup.positionsTitle') }}
-    </h3>
-    <p class="hint">
-      {{ $t('record.setup.firstHint') }}
-    </p>
+    <template v-if="!isSingles">
+      <h3
+        class="subtitle"
+        data-testid="positions-title"
+      >
+        {{ $t('record.setup.positionsTitle') }}
+      </h3>
+      <p class="hint">
+        {{ $t('record.setup.firstHint') }}
+      </p>
 
-    <UFormField :label="$t('record.setup.teamAFirst')">
-      <USelect
-        v-model="aFirstPlayerId"
-        :items="aPlayers.map(p => ({ label: p.name, value: p.playerId }))"
-        data-testid="a-first"
-      />
-    </UFormField>
+      <UFormField :label="$t('record.setup.teamAFirst')">
+        <USelect
+          v-model="aFirstPlayerId"
+          :items="aPlayers.map(p => ({ label: p.name, value: p.playerId }))"
+          data-testid="a-first"
+        />
+      </UFormField>
 
-    <UFormField :label="$t('record.setup.teamBFirst')">
-      <USelect
-        v-model="bFirstPlayerId"
-        :items="bPlayers.map(p => ({ label: p.name, value: p.playerId }))"
-        data-testid="b-first"
-      />
-    </UFormField>
+      <UFormField :label="$t('record.setup.teamBFirst')">
+        <USelect
+          v-model="bFirstPlayerId"
+          :items="bPlayers.map(p => ({ label: p.name, value: p.playerId }))"
+          data-testid="b-first"
+        />
+      </UFormField>
+    </template>
 
     <UButton
       type="submit"
