@@ -103,6 +103,8 @@ const shotMock = {
     right: { count: 0, breakdown: [] }, back: { count: 0, breakdown: [] }
   }),
   heatmapTotal: ref(0),
+  svRows: ref([]),
+  filteredSvRows: ref([]),
   isEmpty: ref(false)
 }
 vi.mock('~/composables/useShotStatsView', () => ({ useShotStatsView: () => shotMock }))
@@ -127,6 +129,7 @@ const stubs = {
   StatsSetFlowChart: { props: ['points'], emits: ['select'], template: '<div data-testid="flow-chart" />' },
   StatsShotFilterBar: { props: ['hitterIds', 'setNumbers', 'playerFilter', 'setNumber', 'nameOf'], template: '<div data-testid="shot-filter" />' },
   StatsWeaknessMaps: { props: ['missCells', 'lost'], template: '<div data-testid="weakness-maps" />' },
+  StatsShotValuePanel: { props: ['rows'], template: '<div data-testid="sv-panel" />' },
   StatsEndingsChart: { props: ['entries', 'ranking'], template: '<div data-testid="endings-chart" />' },
   StatsEndingsCourtMap: { props: ['won', 'lost'], template: '<div data-testid="endings-map" />' },
   StatsServeTypeChart: { props: ['rows', 'nameOf'], template: '<div data-testid="serve-chart" />' },
