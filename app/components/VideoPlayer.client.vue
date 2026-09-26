@@ -19,8 +19,11 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { PlaybackRate, VideoPlayerProps, VideoPlayerSlotProps } from '~/types/video-playback'
 import { PLAYBACK_RATES, VIDEO_PLAYER_ERROR_CODE } from '~/types/video-playback'
+import { isTextEntryTarget } from '~/utils/keyboard-target'
 
-const props = defineProps<VideoPlayerProps>()
+// skipKeys は既定 true。Vue は boolean prop 未指定を false に解決するため、
+// withDefaults なしだと「渡していないページでは J/L が常に無効」になっていた（2026-09-26 修正）
+const props = withDefaults(defineProps<VideoPlayerProps>(), { skipKeys: true })
 
 const emit = defineEmits<{
   reselectFile: [file: File]
@@ -79,6 +82,13 @@ function onSeekInput(event: Event): void {
   controls.seekToMs(Math.round(ratio * state.value.durationMs))
 }
 
+// シーク操作の完了（マウス/タッチを離した）でフォーカスを外す。
+// range にフォーカスが残ると矢印キーが動画スクラブに化けて紛らわしいため。
+// Space/J/K/L 自体は isTextEntryTarget が range を許可するのでフォーカスが残っても効く。
+function onSeekChange(event: Event): void {
+  (event.target as HTMLElement).blur()
+}
+
 // 再選択は必ずユーザ操作起点（NFR-101）。自動でファイルへ再アクセスしない。
 function onReselect(event: Event): void {
   const file = (event.target as HTMLInputElement).files?.[0]
@@ -94,12 +104,17 @@ function formatMs(ms: number | null): string {
   return `${mm}:${ss}`
 }
 
-// 10 秒スキップ/戻し (YouTube と同じ J=-10s / L=+10s)。
-// skipKeys=false で無効化 (注釈の種別/打点モードは L がサーブ入力キー、2026-08-03)
+// 10 秒スキップ/戻し + 再生/一時停止 (YouTube と同じ J=-10s / L=+10s / K=トグル)。
+// skipKeys=false で無効化 (注釈の種別/打点モードは L がサーブ入力キー等と衝突、2026-08-03)
 function onKeydown(e: KeyboardEvent): void {
   if (props.skipKeys === false) return
-  const target = e.target as HTMLElement | null
-  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+  if (isTextEntryTarget(e.target)) return
+  if (e.code === 'KeyK') {
+    e.preventDefault()
+    e.stopPropagation()
+    toggle()
+    return
+  }
   if (e.code !== 'KeyL' && e.code !== 'KeyJ') return
   const cur = controls.getCurrentTimeMs()
   if (cur == null) return
@@ -245,6 +260,7 @@ onBeforeUnmount(() => {
           :disabled="state.durationMs == null"
           :aria-label="t('videoPlayer.controls.seek')"
           @input="onSeekInput"
+          @change="onSeekChange"
         >
         <slot
           name="timeline"

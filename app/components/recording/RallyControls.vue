@@ -5,6 +5,7 @@
  * 関連: TASK-0014 / REQ-006 / REQ-102 / REQ-103 / NFR-201 / ui-design.md
  */
 import { onBeforeUnmount, onMounted } from 'vue'
+import { isTextEntryTarget } from '~/utils/keyboard-target'
 import type { Team } from '~/utils/rule-engine/types'
 
 const props = defineProps<{
@@ -19,8 +20,7 @@ const emit = defineEmits<{
 
 function onKeydown(e: KeyboardEvent) {
   if (props.disabled) return
-  const target = e.target as HTMLElement | null
-  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+  if (isTextEntryTarget(e.target)) return
   const map: Record<string, () => void> = {
     KeyV: () => emit('point', 'A'),
     KeyN: () => emit('point', 'B'),
