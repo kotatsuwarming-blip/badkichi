@@ -15,6 +15,20 @@ import { roleScore } from '~/utils/shot-value/weights'
 /** n < この値で薄表示 + 本数不足（REQ-007） */
 export const SV_LOW_SAMPLE_N = 5
 
+/**
+ * SV 集計から除外する球種（2026-09-26 ユーザ指示）。
+ * サーブは全ラリーに必ず 1 本あり中央ゾーンの分母を膨らませるため除外
+ * （サーブの得失分析は探針 C = サーブ周りタブが担当。service_fault の −1 もそちらで読む）。
+ * レシーブ系は「守備から崩す価値」（interview Q4）を拾うため除外しない。
+ * 迷ったら変えられるよう定数 1 箇所に置く。
+ */
+export const SV_EXCLUDED_SHOT_TYPES: readonly string[] = ['serve_short', 'serve_long', 'serve_drive']
+
+/** SV 対象外の球種（サーブ 3 種）を落とす。全 SV ビュー（セル・合計・内訳）の上流で 1 回だけ適用する */
+export function excludeNonSvTypes(rows: ShotValueRow[]): ShotValueRow[] {
+  return rows.filter(r => !SV_EXCLUDED_SHOT_TYPES.includes(r.shot_type))
+}
+
 function emptyCounts(): SvRoleCounts {
   return { n: 0, kime: 0, yuhatsu: 0, fuseki1: 0, fuseki2: 0, miss: 0, yurushi1: 0, yurushi2: 0 }
 }
