@@ -3,7 +3,7 @@
  * 検算例: docs/spec/shot-value/requirements.md「採点の検算例」
  */
 import { describe, expect, it } from 'vitest'
-import { aggregateRoles, filterByZones, toAggregate, typeBreakdown, zoneCells, SV_LOW_SAMPLE_N } from '~/utils/shot-value/score'
+import { aggregateRoles, excludeNonSvTypes, filterByZones, toAggregate, typeBreakdown, zoneCells, SV_LOW_SAMPLE_N } from '~/utils/shot-value/score'
 import { SV_WEIGHTS, roleScore } from '~/utils/shot-value/weights'
 import type { ShotValueRow, SvWeights } from '~/types/shot-value'
 
@@ -135,5 +135,22 @@ describe('zoneCells（REQ-004）', () => {
     expect(c00.n).toBe(4)
     expect(c00.sv100).toBeCloseTo(50)
     expect(cells.filter(c => c.n > 0)).toHaveLength(1)
+  })
+})
+
+describe('excludeNonSvTypes（サーブ除外, 2026-09-26）', () => {
+  it('サーブ 3 種を落とし、レシーブ・通常球種は残す', () => {
+    const rows = [
+      row({ shot_type: 'serve_short', n: 5, miss: 1 }),
+      row({ shot_type: 'serve_long', n: 3 }),
+      row({ shot_type: 'serve_drive', n: 2 }),
+      row({ shot_type: 'receive_short', n: 4, fuseki1: 1 }),
+      row({ shot_type: 'smash', n: 6, kime: 2 })
+    ]
+    const kept = excludeNonSvTypes(rows)
+    expect(kept.map(r => r.shot_type)).toEqual(['receive_short', 'smash'])
+    // 分母からも消える（サーブの service_fault miss が SV に混ざらない）
+    expect(aggregateRoles(kept).n).toBe(10)
+    expect(aggregateRoles(kept).miss).toBe(0)
   })
 })

@@ -19,6 +19,7 @@ import type { StatsViewScope } from '~/composables/useStatsView'
 import { callStatsRpc } from '~/utils/stats-dashboard/stats-rpc'
 import { buildDecisiveRanking, buildEndingEntries, buildLandZones } from '~/utils/shot-stats/endings'
 import { buildDestCells, buildDestExtras, buildOriginCells } from '~/utils/shot-stats/placement'
+import { excludeNonSvTypes } from '~/utils/shot-value/score'
 
 export function useShotStatsView(
   scope: StatsViewScope,
@@ -174,9 +175,10 @@ export function useShotStatsView(
         : cell
   }
 
-  // SV（強み・課題タブ）: 選手・hand はクライアント側絞り込み（NFR-001, shot-value REQ-202）
+  // SV（強み・課題タブ）: 選手・hand はクライアント側絞り込み（NFR-001, shot-value REQ-202）。
+  // サーブ 3 種は SV 対象外（excludeNonSvTypes, 2026-09-26。サーブ分析は探針 C）
   const filteredSvRows = computed(() =>
-    svRows.value.filter(r =>
+    excludeNonSvTypes(svRows.value).filter(r =>
       (subjectPlayerIds.value === null || subjectPlayerIds.value.includes(r.hit_player_id))
       && (handFilter.value === null || r.hand === handFilter.value)
     )
