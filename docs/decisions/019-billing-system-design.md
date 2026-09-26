@@ -313,7 +313,7 @@ C は公開時まで寝かせる (仲間内ローンチは制限なし — ADR-0
 - ADR-013 (収益化方針 — 本 ADR の上位方針)
 - ADR-006 (single group per user — owner 概念の追加先)
 - ADR-010 (SSR/CSR 境界 — server route は Nitro 側で完結)
-- ADR-016 (法務ページ — 特商法表記の追加先の兄弟ページ)
+- 法務ページ `/privacy` `/terms` (PR #39 で追加。特商法表記の追加先の兄弟ページ)
 - Stripe Checkout: https://docs.stripe.com/payments/checkout
 - Stripe Customer Portal: https://docs.stripe.com/customer-management
 - Stripe Webhooks (順序保証なし・冪等性): https://docs.stripe.com/webhooks
