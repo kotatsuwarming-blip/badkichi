@@ -43,6 +43,22 @@ describe('ShotButton', () => {
     expect(w.emitted('shot')).toHaveLength(1)
   })
 
+  it('シークバー (input[type=range]) フォーカス中でも Space が効く / テキスト入力中は効かない (2026-09-26 バグ修正)', () => {
+    const w = mount(ShotButton, { props: { shotCount: 0 }, global })
+    const range = document.createElement('input')
+    range.type = 'range'
+    document.body.appendChild(range)
+    range.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true }))
+    expect(w.emitted('shot')).toHaveLength(1)
+    const text = document.createElement('input')
+    text.type = 'text'
+    document.body.appendChild(text)
+    text.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true }))
+    expect(w.emitted('shot')).toHaveLength(1) // 増えない
+    range.remove()
+    text.remove()
+  })
+
   it('disabled の場合は emit しない', async () => {
     const w = mount(ShotButton, { props: { shotCount: 0, disabled: true }, global })
     await w.find('[data-testid="shot-button"]').trigger('click')

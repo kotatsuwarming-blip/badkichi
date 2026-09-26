@@ -20,8 +20,7 @@ function fire() {
 }
 
 function onKeydown(e: KeyboardEvent) {
-  const target = e.target as HTMLElement | null
-  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+  if (isTextEntryTarget(e.target)) return
   if (e.key === 'Backspace') {
     e.preventDefault()
     e.stopPropagation()
