@@ -156,6 +156,52 @@
     "rosterTypeOptions": {
       "member": "自チーム",
       "opponent": "対戦相手"
+    },
+    "profile": {
+      "sectionTitle": "詳細プロフィール（任意）",
+      "unset": "未設定",
+      "sexLabel": "性別",
+      "sexOptions": {
+        "unspecified": "未設定",
+        "male": "男性",
+        "female": "女性"
+      },
+      "heightLabel": "身長 (cm)",
+      "weightLabel": "体重 (kg)",
+      "birthdateLabel": "生年月日",
+      "agePreview": "{age} 歳",
+      "sinceLabel": "バドミントン開始時期",
+      "sinceHelp": "開始年月か「歴（年数）」のどちらで入力しても OK。歴は毎年自動で上がります",
+      "yearsPlaceholder": "歴(年)",
+      "careerPreview": "歴 {years} 年",
+      "careerUnderOne": "歴 1 年未満",
+      "frequencyLabel": "練習頻度",
+      "frequencyOptions": {
+        "daily": "ほぼ毎日",
+        "several_per_week": "週に数回",
+        "weekly": "週に1回",
+        "monthly": "月に数回",
+        "rarely": "まれに"
+      },
+      "stylesLabel": "プレースタイル（複数選択可）",
+      "styleOptions": {
+        "attacker": "攻撃型",
+        "defender": "守備型",
+        "all_round": "オールラウンド",
+        "front_player": "前衛型",
+        "rear_player": "後衛型",
+        "rally_oriented": "ラリー型",
+        "speed_oriented": "スピード型",
+        "technical": "テクニック型",
+        "power": "パワー型"
+      },
+      "errors": {
+        "birthdate": "生年月日が正しくありません（未来日・1920 年より前は入力できません）",
+        "since": "開始時期が正しくありません（未来は入力できません）",
+        "sinceBeforeBirth": "開始時期が生年月日より前になっています",
+        "height": "身長は 100〜250 cm で入力してください",
+        "weight": "体重は 30〜150 kg で入力してください"
+      }
     }
   },
   "matches": {

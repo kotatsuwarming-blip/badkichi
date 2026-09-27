@@ -229,34 +229,55 @@ export type Database = {
       }
       players: {
         Row: {
+          badminton_since: string | null
+          birthdate: string | null
           created_at: string
           deleted_at: string | null
           group_id: string
           handedness: string
+          height_cm: number | null
           id: string
           name: string
+          play_styles: string[]
+          practice_frequency: string | null
           roster_type: string
+          sex: string
           updated_at: string
+          weight_kg: number | null
         }
         Insert: {
+          badminton_since?: string | null
+          birthdate?: string | null
           created_at?: string
           deleted_at?: string | null
           group_id: string
           handedness?: string
+          height_cm?: number | null
           id?: string
           name: string
+          play_styles?: string[]
+          practice_frequency?: string | null
           roster_type?: string
+          sex?: string
           updated_at?: string
+          weight_kg?: number | null
         }
         Update: {
+          badminton_since?: string | null
+          birthdate?: string | null
           created_at?: string
           deleted_at?: string | null
           group_id?: string
           handedness?: string
+          height_cm?: number | null
           id?: string
           name?: string
+          play_styles?: string[]
+          practice_frequency?: string | null
           roster_type?: string
+          sex?: string
           updated_at?: string
+          weight_kg?: number | null
         }
         Relationships: [
           {
