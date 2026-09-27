@@ -38,7 +38,7 @@ const memberPlayerIds = computed<string[] | null>(() => {
   return list.filter(p => p.roster_type === 'member').map(p => p.id)
 })
 
-// 3 タブ（サーブ周り / 強み・課題 / ラリー展開, shot-value REQ-201 で強み+弱点を統合）
+// 3 タブ（サーブ周り / ラリー展開 / 強み・課題の順。強み・課題は内容が高度なため最後, 2026-09-29）
 type StatsTab = 'serve' | 'strengths' | 'rallyflow'
 const activeTab = ref<StatsTab>('serve')
 const coverage = useAnnotationCoverage(() => ({
@@ -200,19 +200,19 @@ function backToPair(): void {
       </UButton>
       <UButton
         size="sm"
-        :variant="activeTab === 'strengths' ? 'solid' : 'ghost'"
-        data-testid="tab-strengths"
-        @click="activeTab = 'strengths'"
-      >
-        {{ $t('shotStats.tabs.strengths') }}
-      </UButton>
-      <UButton
-        size="sm"
         :variant="activeTab === 'rallyflow' ? 'solid' : 'ghost'"
         data-testid="tab-rallyflow"
         @click="activeTab = 'rallyflow'"
       >
         {{ $t('shotStats.tabs.rallyflow') }}
+      </UButton>
+      <UButton
+        size="sm"
+        :variant="activeTab === 'strengths' ? 'solid' : 'ghost'"
+        data-testid="tab-strengths"
+        @click="activeTab = 'strengths'"
+      >
+        {{ $t('shotStats.tabs.strengths') }}
       </UButton>
       <UButton
         size="sm"
@@ -308,6 +308,7 @@ function backToPair(): void {
             <StatsShotValuePanel :rows="shot.filteredSvRows.value" />
             <StatsWeaknessMaps
               :miss-cells="shot.missOriginCells.value"
+              :shot-totals="shot.originCells.value"
               :lost="shot.landZonesLost.value"
             />
           </template>

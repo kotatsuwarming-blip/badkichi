@@ -13,14 +13,16 @@ const props = withDefaults(defineProps<{
   cells: ZoneCell[]
   zones?: number
   showCounts?: boolean
-  /** 本数でなく全体比 % を表示 (stats-miss-out-detail REQ-001) */
+  /** 本数でなく % を表示 (stats-miss-out-detail REQ-001)。分母は percentDenominators (セル別) */
   percent?: boolean
+  /** % の分母 (キー = "row:col")。未指定セルは全セル合計を分母にする */
+  percentDenominators?: Record<string, number>
   /** セルをクリック選択可能にする (REQ-002)。selected と select emit で完全制御 */
   selectable?: boolean
   selected?: { row: number, col: number } | null
   /** セルのホバーツールチップ (SVG title)。キー = "row:col" */
   cellTitles?: Record<string, string>
-}>(), { zones: 3, showCounts: true, percent: false, selectable: false, selected: null, cellTitles: undefined })
+}>(), { zones: 3, showCounts: true, percent: false, percentDenominators: undefined, selectable: false, selected: null, cellTitles: undefined })
 
 const emit = defineEmits<{ select: [cell: { row: number, col: number }] }>()
 
@@ -28,8 +30,9 @@ const totalCount = computed(() => props.cells.reduce((s, c) => s + c.count, 0))
 
 function cellLabel(cell: ZoneCell): string {
   if (!props.percent) return String(cell.count)
-  if (totalCount.value === 0) return ''
-  return `${Math.round((cell.count / totalCount.value) * 100)}%`
+  const denom = props.percentDenominators?.[`${cell.row}:${cell.col}`] ?? totalCount.value
+  if (denom === 0) return ''
+  return `${Math.round((cell.count / denom) * 100)}%`
 }
 
 function isSelected(cell: ZoneCell): boolean {

@@ -248,6 +248,9 @@ describe('試合単位 stats ページ', () => {
     for (const tid of ['endings-chart', 'endings-map', 'mix-chart', 'mix-scatter', 'hand-chart', 'shot-filter']) {
       expect(w.find(`[data-testid="${tid}"]`).exists(), tid).toBe(false)
     }
+    // タブ順: サーブ周り → ラリー展開 → 強み・課題（内容が高度なため最後, 2026-09-29）
+    const tabIds = w.findAll('[data-testid^="tab-"]').map(b => b.attributes('data-testid'))
+    expect(tabIds.slice(0, 3)).toEqual(['tab-serve', 'tab-rallyflow', 'tab-strengths'])
     // 強み・課題タブ (v-show): SV パネル → 弱点マップの順で同居（shot-value REQ-201）。弱点タブは廃止
     const strengths = w.find('[data-testid="panel-strengths"]')
     expect(strengths.find('[data-testid="sv-panel"]').exists()).toBe(true)
