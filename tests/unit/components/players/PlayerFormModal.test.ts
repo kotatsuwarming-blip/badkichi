@@ -60,9 +60,9 @@ import PlayerFormModal from '~/components/players/PlayerFormModal.vue'
 const stubs = {
   UModal: {
     inheritAttrs: false,
-    props: ['open'],
+    props: ['open', 'title'],
     emits: ['update:open'],
-    template: '<div v-if="open"><slot name="content" /></div>'
+    template: '<div v-if="open">{{ title }}<slot name="body" /><slot name="footer" /></div>'
   },
   UForm: {
     inheritAttrs: false,
@@ -135,7 +135,7 @@ describe('PlayerFormModal.vue', () => {
     await wrapper.find('input').setValue('山田')
     await wrapper.find('form').trigger('submit')
     await flushPromises()
-    expect(createPlayer).toHaveBeenCalledWith({ name: '山田', handedness: 'unknown', rosterType: 'member' })
+    expect(createPlayer).toHaveBeenCalledWith({ name: '山田', handedness: 'unknown', rosterType: 'member', profile: { sex: 'unspecified', heightCm: null, weightKg: null, birthdate: null, badmintonSince: null, practiceFrequency: null, playStyles: [] } })
   })
 
   // TC3b: 区分セグメント → opponent 選択で rosterType=opponent 送信 (player-profile REQ-002)
@@ -145,7 +145,35 @@ describe('PlayerFormModal.vue', () => {
     await wrapper.find('[data-testid="roster-type-opponent"]').trigger('click')
     await wrapper.find('form').trigger('submit')
     await flushPromises()
-    expect(createPlayer).toHaveBeenCalledWith({ name: '相手A', handedness: 'unknown', rosterType: 'opponent' })
+    expect(createPlayer).toHaveBeenCalledWith({ name: '相手A', handedness: 'unknown', rosterType: 'opponent', profile: { sex: 'unspecified', heightCm: null, weightKg: null, birthdate: null, badmintonSince: null, practiceFrequency: null, playStyles: [] } })
+  })
+
+  // プロフィール入力 (player-profile PR ②, REQ-101/103)
+  it('プロフィール入力 (身長・生年月日・スタイル複数) が profile として送信される', async () => {
+    const wrapper = mountModal()
+    await wrapper.find('input').setValue('山田')
+    await wrapper.find('[data-testid="profile-toggle"]').trigger('click')
+    await wrapper.find('[data-testid="profile-height"] input, input[data-testid="profile-height"]').setValue('170')
+    await wrapper.find('[data-testid="profile-birthdate"] input, input[data-testid="profile-birthdate"]').setValue('2000-01-15')
+    await wrapper.find('[data-testid="profile-style-attacker"]').trigger('click')
+    await wrapper.find('[data-testid="profile-style-power"]').trigger('click')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    expect(createPlayer).toHaveBeenCalledWith(expect.objectContaining({
+      name: '山田',
+      profile: expect.objectContaining({ heightCm: 170, birthdate: '2000-01-15', playStyles: ['attacker', 'power'] })
+    }))
+  })
+
+  it('不正なプロフィール (未来の生年月日) は送信せずエラー表示 (EDGE-001)', async () => {
+    const wrapper = mountModal()
+    await wrapper.find('input').setValue('山田')
+    await wrapper.find('[data-testid="profile-toggle"]').trigger('click')
+    await wrapper.find('[data-testid="profile-birthdate"] input, input[data-testid="profile-birthdate"]').setValue('2099-01-01')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    expect(createPlayer).not.toHaveBeenCalled()
+    expect(wrapper.find('[data-testid="profile-error"]').exists()).toBe(true)
   })
 
   // TC4: 保存成功 → saved emit (dataflow.md 機能2 成功分岐)
@@ -170,12 +198,16 @@ describe('PlayerFormModal.vue', () => {
 
   // TC6: edit モードでプリフィルされ updatePlayer を呼ぶ (TC-003-01 / dataflow.md 機能3)
   it('edit モードでプリフィルされ updatePlayer を呼ぶ (TC-003-01)', async () => {
-    const player = { id: 'p1', name: '旧名', handedness: 'left' as const, roster_type: 'member' as const }
+    const player = {
+      id: 'p1', name: '旧名', handedness: 'left' as const, roster_type: 'member' as const,
+      sex: 'unspecified' as const, height_cm: null, weight_kg: null, birthdate: null,
+      badminton_since: null, practice_frequency: null, play_styles: []
+    }
     const wrapper = mountModal({ mode: 'edit', player })
     // name を '新名' に変更
     await wrapper.find('input').setValue('新名')
     await wrapper.find('form').trigger('submit')
     await flushPromises()
-    expect(updatePlayer).toHaveBeenCalledWith('p1', { name: '新名', handedness: 'left', rosterType: 'member' })
+    expect(updatePlayer).toHaveBeenCalledWith('p1', { name: '新名', handedness: 'left', rosterType: 'member', profile: { sex: 'unspecified', heightCm: null, weightKg: null, birthdate: null, badmintonSince: null, practiceFrequency: null, playStyles: [] } })
   })
 })

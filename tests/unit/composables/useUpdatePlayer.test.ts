@@ -57,8 +57,8 @@ describe('useUpdatePlayer', () => {
   // ===================================================================
   it('TC-003-01: name/handedness 更新を eq(id) で反映する', async () => {
     const { updatePlayer } = useUpdatePlayer()
-    const r = await updatePlayer('p1', { name: '佐藤', handedness: 'left' })
-    expect(updateMock).toHaveBeenCalledWith({ name: '佐藤', handedness: 'left' })
+    const r = await updatePlayer('p1', { name: '佐藤', handedness: 'left', rosterType: 'member', profile: { sex: 'unspecified' as const, heightCm: null, weightKg: null, birthdate: null, badmintonSince: null, practiceFrequency: null, playStyles: [] } })
+    expect(updateMock).toHaveBeenCalledWith({ name: '佐藤', handedness: 'left', roster_type: 'member', sex: 'unspecified', height_cm: null, weight_kg: null, birthdate: null, badminton_since: null, practice_frequency: null, play_styles: [] })
     expect(eqMock).toHaveBeenCalledWith('id', 'p1')
     expect(r.data).toEqual({ id: 'p1', name: '佐藤', handedness: 'left' })
     expect(r.error).toBeNull()
@@ -71,7 +71,7 @@ describe('useUpdatePlayer', () => {
     const err = { message: 'players_name_length_check' }
     singleMock.mockResolvedValue({ data: null, error: err })
     const { updatePlayer, pending } = useUpdatePlayer()
-    const r = await updatePlayer('p1', { name: '', handedness: 'unknown' })
+    const r = await updatePlayer('p1', { name: '', handedness: 'unknown', rosterType: 'member', profile: { sex: 'unspecified' as const, heightCm: null, weightKg: null, birthdate: null, badmintonSince: null, practiceFrequency: null, playStyles: [] } })
     expect(r.data).toBeNull()
     expect(r.error).toBe(err)
     expect(pending.value).toBe(false)

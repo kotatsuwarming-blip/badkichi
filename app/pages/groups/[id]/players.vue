@@ -19,6 +19,7 @@ import { usePlayers } from '~/composables/usePlayers'
 import { useDeletePlayer } from '~/composables/useDeletePlayer'
 import { useToastErrors } from '~/composables/useToastErrors'
 import type { Player } from '~/types/player'
+import { deriveAge, deriveCareerYears } from '~/utils/players/profile'
 
 // 【i18n 初期化】: 全 UI 文言は locales/ja.json 経由。コードに文字列リテラルを直書きしない (NFR-204) 🔵
 const { t } = useI18n()
@@ -31,6 +32,17 @@ const { deletePlayer, pending: deletePending } = useDeletePlayer()
 
 // 【エラートースト】: 取得失敗・削除失敗を toast で通知 (error-handling §6④) 🔵
 const { showError } = useToastErrors()
+
+/** プロフィールバッジ (年齢・歴・スタイル, player-profile REQ-104)。未入力項目は出さない */
+function profileBadges(player: Player): string[] {
+  const badges: string[] = []
+  const age = deriveAge(player.birthdate)
+  if (age !== null) badges.push(t('players.profile.agePreview', { age }))
+  const years = deriveCareerYears(player.badminton_since)
+  if (years !== null) badges.push(years === 0 ? t('players.profile.careerUnderOne') : t('players.profile.careerPreview', { years }))
+  for (const style of player.play_styles) badges.push(t(`players.profile.styleOptions.${style}`))
+  return badges
+}
 
 // 【区分グループ】: 自チーム → 対戦相手の 2 グループ表示 (player-profile REQ-003)。
 //   見出しは対象グループに選手がいる場合のみ表示する 🔵
@@ -166,6 +178,13 @@ watch(error, (e) => {
                 <span class="text-sm text-gray-500">
                   {{ t(`players.handednessOptions.${player.handedness}`) }}
                 </span>
+                <!-- 【プロフィールバッジ】: 年齢・歴・スタイル (入力済みのみ, player-profile REQ-104) -->
+                <span
+                  v-for="badge in profileBadges(player)"
+                  :key="badge"
+                  class="rounded-full border border-gray-200 px-2 py-0.5 text-xs text-gray-500"
+                  data-testid="profile-badge"
+                >{{ badge }}</span>
                 <!-- 【編集ボタン】: aria-label で読み上げ対応 (NFR-301) / edit mode でモーダルを開く 🔵 -->
                 <UButton
                   color="neutral"

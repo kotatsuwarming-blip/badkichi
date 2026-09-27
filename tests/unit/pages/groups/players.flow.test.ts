@@ -59,7 +59,9 @@ vi.mock('~/composables/useCreatePlayer', () => ({
         id: String(nextId++),
         name: input.name,
         handedness: (input.handedness ?? 'unknown') as Player['handedness'],
-        roster_type: (input.rosterType ?? 'member') as Player['roster_type']
+        roster_type: (input.rosterType ?? 'member') as Player['roster_type'],
+        sex: 'unspecified', height_cm: null, weight_kg: null, birthdate: null,
+        badminton_since: null, practice_frequency: null, play_styles: []
       }
       store.push(player)
       return Promise.resolve({ data: player, error: null })
@@ -121,9 +123,9 @@ const stubs = {
   UModal: {
     // open prop に関わらず常時 #content slot を描画（DOM でフォームを操作するため）
     inheritAttrs: false,
-    props: ['open'],
+    props: ['open', 'title'],
     emits: ['update:open'],
-    template: '<div data-modal :data-open="open"><slot name="content" /></div>'
+    template: '<div data-modal :data-open="open"><slot name="body" /><slot name="footer" /></div>'
   },
   UForm: {
     inheritAttrs: false,
