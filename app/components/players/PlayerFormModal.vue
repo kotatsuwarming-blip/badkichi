@@ -165,17 +165,16 @@ async function onSubmit() {
 <template>
   <UModal
     :open="open"
+    :title="mode === 'edit' ? t('players.modalEditTitle') : t('players.modalCreateTitle')"
     @update:open="emit('update:open', $event)"
   >
-    <template #content>
+    <!-- 本文（プロフィール展開で縦長になるため #body でスクロール、ボタンは #footer 固定。
+         MatchFormModal と同構造, 2026-09-28 スクロール不能バグ修正） -->
+    <template #body>
       <UForm
         :state="{ name, handedness }"
         @submit.prevent="onSubmit"
       >
-        <h2 class="text-lg font-semibold mb-4">
-          {{ mode === 'edit' ? t('players.modalEditTitle') : t('players.modalCreateTitle') }}
-        </h2>
-
         <UFormField
           :label="t('players.nameLabel')"
           name="name"
@@ -354,23 +353,25 @@ async function onSubmit() {
             </UFormField>
           </div>
         </div>
-
-        <div class="mt-6 flex justify-end gap-2">
-          <UButton
-            color="neutral"
-            variant="ghost"
-            :label="t('players.cancel')"
-            :disabled="pending"
-            @click="emit('update:open', false)"
-          />
-          <UButton
-            type="submit"
-            :label="t('players.save')"
-            :loading="pending"
-            :disabled="pending"
-          />
-        </div>
       </UForm>
+    </template>
+    <template #footer>
+      <div class="flex w-full justify-end gap-2">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          :label="t('players.cancel')"
+          :disabled="pending"
+          @click="emit('update:open', false)"
+        />
+        <UButton
+          :label="t('players.save')"
+          :loading="pending"
+          :disabled="pending"
+          data-testid="player-save"
+          @click="onSubmit"
+        />
+      </div>
     </template>
   </UModal>
 </template>
