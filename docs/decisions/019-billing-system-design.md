@@ -207,6 +207,12 @@ export const ENTITLEMENTS = {
 - DB テーブル化が勝つのは「デプロイなしで値を切り替えたい」「グループ個別の override が
   要る」段階。その時に移行すればよい (定数の形は上記のままテーブルに写せる)
 - フロントは `useEntitlements()` composable (`usePlan()` + `can(feature)`) でこの定数を引く
+- **確定マトリクス (2026-09-27 追記、ユーザー決定)**: ADR-013 §4 のたたき台から次を変更する。
+  Free / Trial は同じ上限 (累計試合 10・選手 10・メンバー 4) で**Trial も広告あり**。
+  Trial と Free の差は**ショット注釈と詳細統計の有無だけ**。動画連携 (YouTube / ローカル) は
+  全プランで開放。Pro / Team は上限なし・広告なし。代行入力は Team のみ (契約枠)。
+  上限は書き込み系 3 経路 (`matches` INSERT / `players` INSERT / `join_group_with_code`) で
+  DB 側ガード。詳細は `docs/spec/billing/requirements.md` REQ-007
 
 ### 7. 制限の強制は 2 層 (UI ゲート + サーバー側ガード)
 
