@@ -24,6 +24,8 @@ export function useRallyFlowView(
     setNumber: Ref<number | null>
     entity: () => StatsEntity
     nameOf: (id: string) => string
+    /** 「全体」時の対象選手の制限（Group 統計 = 自チームのみ）。null/未指定 = 制限なし */
+    restrictPlayerIds?: Ref<string[] | null>
   }
 ) {
   const client = useSupabaseClient()
@@ -75,7 +77,14 @@ export function useRallyFlowView(
   )
 
   /** J: 局面別得点率（entity=all は選手ごと） */
-  const phaseEntries = computed(() => buildPhaseEntries(targetRows.value, subject.value, opts.nameOf))
+  // 「全体」の選手別リストは restrictPlayerIds で絞る（'all' 時の entry は選手単位, player-profile REQ-004 改訂）
+  const phaseEntries = computed(() => {
+    const entries = buildPhaseEntries(targetRows.value, subject.value, opts.nameOf)
+    const restrict = opts.restrictPlayerIds?.value
+    if (subject.value.kind !== 'all' || !restrict) return entries
+    const allowed = new Set(restrict)
+    return entries.filter(e => allowed.has(e.subjectId))
+  })
 
   /** K: テンポサンプル + 除外数（REQ-106） */
   const tempo = computed(() => toTempoSamples(targetRows.value, subject.value))

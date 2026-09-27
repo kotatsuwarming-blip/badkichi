@@ -135,7 +135,17 @@ describe('PlayerFormModal.vue', () => {
     await wrapper.find('input').setValue('山田')
     await wrapper.find('form').trigger('submit')
     await flushPromises()
-    expect(createPlayer).toHaveBeenCalledWith({ name: '山田', handedness: 'unknown' })
+    expect(createPlayer).toHaveBeenCalledWith({ name: '山田', handedness: 'unknown', rosterType: 'member' })
+  })
+
+  // TC3b: 区分セグメント → opponent 選択で rosterType=opponent 送信 (player-profile REQ-002)
+  it('区分で対戦相手を選ぶと rosterType=opponent で createPlayer 呼出 (player-profile REQ-002)', async () => {
+    const wrapper = mountModal()
+    await wrapper.find('input').setValue('相手A')
+    await wrapper.find('[data-testid="roster-type-opponent"]').trigger('click')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    expect(createPlayer).toHaveBeenCalledWith({ name: '相手A', handedness: 'unknown', rosterType: 'opponent' })
   })
 
   // TC4: 保存成功 → saved emit (dataflow.md 機能2 成功分岐)
@@ -160,12 +170,12 @@ describe('PlayerFormModal.vue', () => {
 
   // TC6: edit モードでプリフィルされ updatePlayer を呼ぶ (TC-003-01 / dataflow.md 機能3)
   it('edit モードでプリフィルされ updatePlayer を呼ぶ (TC-003-01)', async () => {
-    const player = { id: 'p1', name: '旧名', handedness: 'left' as const }
+    const player = { id: 'p1', name: '旧名', handedness: 'left' as const, roster_type: 'member' as const }
     const wrapper = mountModal({ mode: 'edit', player })
     // name を '新名' に変更
     await wrapper.find('input').setValue('新名')
     await wrapper.find('form').trigger('submit')
     await flushPromises()
-    expect(updatePlayer).toHaveBeenCalledWith('p1', { name: '新名', handedness: 'left' })
+    expect(updatePlayer).toHaveBeenCalledWith('p1', { name: '新名', handedness: 'left', rosterType: 'member' })
   })
 })

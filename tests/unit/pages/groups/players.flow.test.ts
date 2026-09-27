@@ -54,11 +54,12 @@ vi.mock('~/composables/usePlayers', () => ({
 
 vi.mock('~/composables/useCreatePlayer', () => ({
   useCreatePlayer: () => ({
-    createPlayer: vi.fn().mockImplementation((input: { name: string, handedness: string }) => {
+    createPlayer: vi.fn().mockImplementation((input: { name: string, handedness: string, rosterType?: string }) => {
       const player: Player = {
         id: String(nextId++),
         name: input.name,
-        handedness: (input.handedness ?? 'unknown') as Player['handedness']
+        handedness: (input.handedness ?? 'unknown') as Player['handedness'],
+        roster_type: (input.rosterType ?? 'member') as Player['roster_type']
       }
       store.push(player)
       return Promise.resolve({ data: player, error: null })

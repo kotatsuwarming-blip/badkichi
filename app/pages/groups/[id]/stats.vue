@@ -30,6 +30,14 @@ onMounted(() => capture('stats_viewed', { scope: 'group', group_id: groupId }))
 const view = useStatsView({ kind: 'group', groupId })
 const { data: players } = usePlayers()
 
+// Group 統計は自チーム (member) のみが分析対象 (player-profile REQ-004 改訂 2026-09-27)。
+// 選択肢からも「全体」の集計・一覧からも対戦相手を除外する。読み込み前 (null) は制限なし
+const memberPlayerIds = computed<string[] | null>(() => {
+  const list = players.value
+  if (!list) return null
+  return list.filter(p => p.roster_type === 'member').map(p => p.id)
+})
+
 // 3 タブ（サーブ周り / 強み・課題 / ラリー展開, shot-value REQ-201 で強み+弱点を統合）
 type StatsTab = 'serve' | 'strengths' | 'rallyflow'
 const activeTab = ref<StatsTab>('serve')
@@ -42,13 +50,15 @@ const flow = useRallyFlowView({ kind: 'group', groupId }, {
   includedMatchIds: view.includedMatchIds,
   setNumber: globalSetNumber,
   entity: () => view.entity.value,
-  nameOf: view.nameOf
+  nameOf: view.nameOf,
+  restrictPlayerIds: memberPlayerIds
 })
 const shot = useShotStatsView({ kind: 'group', groupId }, {
   includedMatchIds: view.includedMatchIds,
   setNumber: globalSetNumber,
   entity: () => view.entity.value,
-  nameOf: view.nameOf
+  nameOf: view.nameOf,
+  restrictPlayerIds: memberPlayerIds
 })
 // 既定タブ（サーブ周り）が注釈データを使うため、注釈系は初期ロード。ラリー展開のみ遅延
 onMounted(() => {
@@ -62,13 +72,23 @@ watch(activeTab, (tab) => {
 watch(view.includedMatchIds, () => {
   if (coverage.loaded.value || coverage.pending.value) coverage.execute()
 })
-const playerOptions = computed(() => (players.value ?? []).map(p => ({ id: p.id, name: p.name })))
+// Group 統計の選択肢は自チームのみ (player-profile REQ-004 改訂 2026-09-27。対戦相手は選択不可)
+const playerOptions = computed(() => (players.value ?? [])
+  .filter(p => p.roster_type === 'member')
+  .map(p => ({ id: p.id, name: p.name })))
 
-const overviewEntries = computed<(PlayerRate | PairRate)[]>(() =>
-  view.globalFilter.value.subjectMode === 'pair'
+const overviewEntries = computed<(PlayerRate | PairRate)[]>(() => {
+  const entries = view.globalFilter.value.subjectMode === 'pair'
     ? (view.overview.value?.pairRates ?? [])
     : (view.overview.value?.playerRates ?? [])
-)
+  // 「全体」一覧から対戦相手を除外 (player-profile REQ-004 改訂)。ペアは両選手が自チームのもののみ
+  const ids = memberPlayerIds.value
+  if (ids === null) return entries
+  const allowed = new Set(ids)
+  return entries.filter(e =>
+    'playerId' in e ? allowed.has(e.playerId) : allowed.has(e.player1Id) && allowed.has(e.player2Id)
+  )
+})
 const isEntity = computed(() => view.entity.value.kind !== 'all')
 
 // 別試合のラリー再生 → ソース切替（youtube 即時 / local 再選択）

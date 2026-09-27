@@ -22,7 +22,7 @@ const view = {
   includedMatchIds: ref<string[] | null>(['m1']),
   knownSetNumbers: ref<number[]>([1, 2]),
   namesMap: ref<Record<string, string>>({ p0: '田中' }),
-  overview: ref<unknown>({ playerRates: [{ playerId: 'p0', playerName: '田中', serve: { rate: 0.5, denominator: 2, numerator: 1 }, receive: { rate: null, denominator: 0, numerator: 0 } }], pairRates: [] }),
+  overview: ref<unknown>({ playerRates: [{ playerId: 'p0', playerName: '田中', serve: { rate: 0.5, denominator: 2, numerator: 1 }, receive: { rate: null, denominator: 0, numerator: 0 } }, { playerId: 'opp1', playerName: '相手X', serve: { rate: 1, denominator: 1, numerator: 1 }, receive: { rate: null, denominator: 0, numerator: 0 } }], pairRates: [] }),
   entityRates: ref<unknown>([]),
   subjectIds: ref<string[]>([]),
   rallyLengthBins: ref([]),
@@ -35,7 +35,7 @@ const view = {
 }
 
 vi.mock('~/composables/useStatsView', () => ({ useStatsView: () => view }))
-vi.mock('~/composables/usePlayers', () => ({ usePlayers: () => ({ data: ref([{ id: 'p0', name: '田中' }]) }) }))
+vi.mock('~/composables/usePlayers', () => ({ usePlayers: () => ({ data: ref([{ id: 'p0', name: '田中', roster_type: 'member' }, { id: 'opp1', name: '相手X', roster_type: 'opponent' }]) }) }))
 
 const coverageExecute = vi.fn()
 const coverageMock = {
@@ -187,5 +187,15 @@ describe('Group 横断 stats ページ', () => {
     expect(w.find('[data-testid="tempo-chart"]').exists()).toBe(true)
     expect(w.find('[data-testid="flow-chart"]').exists()).toBe(false)
     flowMock.loaded.value = false
+  })
+
+  it('Group 統計は自チームのみ: 選択肢と全体一覧から対戦相手を除外 (player-profile REQ-004 改訂)', () => {
+    const w = mountPage()
+    // 選手選択の選択肢 (FilterBar players prop) に opponent (opp1) が渡らない
+    const barPlayers = w.findComponent(FilterBarStub).props('players') as { id: string }[]
+    expect(barPlayers.map(p => p.id)).toEqual(['p0'])
+    // 全体一覧 (RateChart entries) からも除外される
+    const entries = w.findComponent(stubs.StatsRateChart).props('entries') as { playerId?: string }[]
+    expect(entries.map(e => e.playerId)).toEqual(['p0'])
   })
 })

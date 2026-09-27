@@ -44,11 +44,12 @@ export function useCreatePlayer(): UseCreatePlayerReturn {
       const gid = currentGroup.data.value?.group_id
       if (!gid) return { data: null, error: new Error('no_current_group') }
 
-      // 【insert 実行】: handedness 省略時は 'unknown' を送信 (EDGE-003)。同名でも成功 (REQ-102/EDGE-004) 🔵
+      // 【insert 実行】: handedness 省略時は 'unknown' (EDGE-003)、roster_type 省略時は 'member'
+      //   (player-profile REQ-002)。同名でも成功 (REQ-102/EDGE-004) 🔵
       const { data, error } = await client
         .from('players')
-        .insert({ group_id: gid, name: input.name, handedness: input.handedness ?? 'unknown' })
-        .select('id, name, handedness')
+        .insert({ group_id: gid, name: input.name, handedness: input.handedness ?? 'unknown', roster_type: input.rosterType ?? 'member' })
+        .select('id, name, handedness, roster_type')
         .single()
 
       // 【エラー処理】: RLS 拒否 / PostgREST / 通信エラーは ActionResult.error に詰めて返す (表示は page 側 toast) 🔵

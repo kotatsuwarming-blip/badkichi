@@ -24,12 +24,14 @@ export function usePlayers() {
     if (!gid) return []
 
     // 【players SELECT】: 自 Group・未削除のみを name 昇順で取得。
-    //   eq('group_id', gid) を明示 (RLS と二重)、is('deleted_at', null) で部分インデックス対象 (NFR-001, EDGE-005)。 🔵
+    //   eq('group_id', gid) を明示 (RLS と二重)、is('deleted_at', null) で部分インデックス対象 (NFR-001, EDGE-005)。
+    //   並びは自チーム (member) → 対戦相手 (opponent) → name (player-profile REQ-003)。 🔵
     const { data, error } = await client
       .from('players')
-      .select('id, name, handedness')
+      .select('id, name, handedness, roster_type')
       .eq('group_id', gid)
       .is('deleted_at', null)
+      .order('roster_type')
       .order('name')
 
     // 【エラー処理】: クエリエラーは throw して error.vue グローバルフォールバックに委ねる 🔵
