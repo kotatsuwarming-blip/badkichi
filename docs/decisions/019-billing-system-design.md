@@ -71,8 +71,16 @@ ALTER TABLE group_members
 | 支払い失敗の再試行・督促 | Stripe Smart Retries + 督促メール | なし |
 | 課金状態の DB 反映 | **Webhook → Supabase 同期** | Webhook ハンドラ 1 本 |
 
-- Product / Price は Stripe ダッシュボードで管理: Product「Pro」× Price 1 本
+- Product / Price は Stripe ダッシュボードで管理: Product「Pro」× **標準 Price 1 本**
   (月額 JPY、`lookup_key: 'pro_monthly'`)。**金額はローンチ時に決定** (本 ADR では未定のまま)
+- **チーム別価格 (2026-09-27 追記、ユーザー決定)**: 契約チームによって月額を変える。
+  同じ Product「Pro」配下に追加 Price (`lookup_key: 'pro_monthly_<チーム識別子>'`) を作り、
+  グループ → Price の割当を Supabase 側テーブル (`billing_price_assignments`) に持つ。
+  Checkout Session 作成時に「割当があればその Price、なければ標準 Price」で解決する。
+  **変えるのは金額のみで機能差は付けない** (プラン判定は Price を見ず `status` だけで pro を
+  決めるため、どの Price でも同じ Pro)。機能差の個別 override は複雑化するため採らない。
+  割当の管理はアプリ内 UI を作らず運営者が SQL で行う。契約中の金額変更は Stripe
+  ダッシュボードで subscription の Price を差し替え、Webhook で同期する
 - Checkout はホスト型なのでフロントに Stripe.js / publishable key は不要
   (サーバーで作った session の URL にリダイレクトするだけ)
 - 決済 UI 3 方式の比較は §理由 2 を参照
@@ -305,6 +313,8 @@ C は公開時まで寝かせる (仲間内ローンチは制限なし — ADR-0
 | Supabase Edge Functions で Webhook | §理由 3 |
 | プラン判定のたびに Stripe API を参照 | §理由 4 |
 | エンタイトルメントの DB テーブル化 | 現規模ではコード定数が単純・型安全。リモート切替や個別 override が要る段階で移行 (§6) |
+| チーム別の機能差 (エンタイトルメントの個別 override) | 金額調整と機能差を同時に持つと複雑になりすぎる。チーム別に変えるのは金額 (Price) のみ (§2、2026-09-27) |
+| チーム別価格をクーポン / プロモーションコードで表現 | 値上げ方向に使えず、割引の期限管理が要る。Price を分ければ `price_lookup_key` で契約の種別が DB に残る (§2) |
 | Stripe の trial 機能 (trial_period_days) | Trial にカード登録を要求してしまう。ADR-013 の Trial は「登録から 30 日」の計算で足り、Stripe 非依存にできる (§4) |
 | stripe-sync-engine 等の全量ミラー | Stripe の全オブジェクトを同期するのは過剰。必要なのは subscription の状態だけ |
 
