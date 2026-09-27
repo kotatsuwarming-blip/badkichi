@@ -208,7 +208,7 @@ function ringFill(total: number): string {
         </h4>
         <svg
           class="course-court"
-          :viewBox="`${-RBOX - RGAP - 8} ${-RBOX - RGAP - 8} ${CW + (RBOX + RGAP + 8) * 2} ${CH + RBOX + RGAP + 24}`"
+          :viewBox="`${-RBOX - RGAP - 8} ${-RBOX - RGAP - 8} ${CW + RBOX + RGAP + 8 + 230} ${CH + RBOX + RGAP + 56}`"
           role="img"
         >
           <g
@@ -312,20 +312,22 @@ function ringFill(total: number): string {
                 pointer-events="none"
               >{{ courses.ring[r.slot].total }}</text>
             </g>
+            <!-- ネットは点線 (ネットライン) の右横に単枠表示 (配球ヒートマップと同形式, 2026-09-29) -->
+            <text
+              v-if="courses.net.total > 0"
+              :x="CW + 20"
+              :y="CH"
+              text-anchor="start"
+              dominant-baseline="central"
+              font-size="40"
+              fill="currentColor"
+              data-testid="course-net"
+            >
+              {{ $t('shotStats.heatmap.net') }} {{ courses.net.total }}
+              <title>{{ rateText(courses.net.total, courses.net.won) }}</title>
+            </text>
           </g>
         </svg>
-        <p
-          class="course-extras"
-          data-testid="course-extras"
-        >
-          {{ $t('shotStats.heatmap.net') }} {{ courses.net.total }} /
-          {{ $t('shotStats.heatmap.outRing') }} {{ courses.ringTotal }} /
-          {{ $t('shotStats.receive.unknownCourse') }} {{ courses.unknown.total }}
-          ({{ $t('shotStats.combo.rate') }} {{ rateText(courses.unknown.total, courses.unknown.won) }})
-        </p>
-        <p class="course-hint">
-          {{ $t('shotStats.receive.courseHint') }}
-        </p>
       </div>
     </template>
   </div>
@@ -340,6 +342,4 @@ function ringFill(total: number): string {
 .chart { width: 100%; height: 260px; }
 .course-block { display: flex; flex-direction: column; gap: 0.375rem; }
 .course-court { width: 100%; max-width: 300px; height: auto; display: block; }
-.course-extras { font-size: 0.75rem; opacity: 0.75; }
-.course-hint { font-size: 0.75rem; opacity: 0.6; }
 </style>

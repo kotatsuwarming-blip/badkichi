@@ -618,8 +618,7 @@
       "profileTitle": "Shots from this zone",
       "middleNote": "Middle zone shows only shot types actually hit (no fixed candidate list)",
       "legendOk": "In play / decisive",
-      "legendMiss": "Miss (net / out)",
-      "outRing": "Out total"
+      "legendMiss": "Miss (net / out)"
     },
     "receive": {
       "title": "Receive analysis (serve type → return → course)",
@@ -627,9 +626,7 @@
       "drilled": "Showing returns against {serve} (tap again to clear)",
       "returnsTitle": "Returns against {serve} (by shot type)",
       "courseTitleAll": "Return courses (all returns)",
-      "courseTitle": "Return courses ({type})",
-      "unknownCourse": "Unknown course",
-      "courseHint": "Opponent court (receiver perspective, net at bottom). Number = count, below = win rate for that course"
+      "courseTitle": "Return courses ({type})"
     },
     "combo": {
       "count": "Count",
