@@ -647,9 +647,10 @@
       "playerNote": "",
       "followupNote": "Tracing back 'broken-down' rallies (e.g. weak smash receive leading to the losing shot) is under design",
       "missEntry": "{type} {n} (net {net} / out {out})",
-      "missPercentNote": "Cell numbers = share of all {total} misses. Tap for breakdown",
+      "missPercentNote": "Cell numbers = share of shots from that spot that ended in a miss ({total} misses in total). Tap for breakdown",
       "missDetailTitle": "Miss breakdown for selected cell",
-      "missDetailEmpty": "No misses in this cell"
+      "missDetailEmpty": "No misses in this cell",
+      "missDetailSummary": "{miss} of {total} shots from this spot were misses ({pct}%)"
     },
     "value": {
       "title": "Shot value (which shots pay off, by position)",

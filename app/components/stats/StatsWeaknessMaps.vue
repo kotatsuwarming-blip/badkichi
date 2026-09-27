@@ -18,6 +18,8 @@ import type { LandZoneResult, PlacementBreakdown, PlacementDestCell } from '~/ty
 const props = defineProps<{
   /** ミス打点（自陣半面 3×3 の origin セル。breakdown に net 内訳あり） */
   missCells: PlacementDestCell[]
+  /** 同フィルタでの打点セル別の総打数（% の分母 = その地点から打った本数, 2026-09-29 修正） */
+  shotTotals: PlacementDestCell[]
   /** 被決定点（buildLandZones の lost 側） */
   lost: LandZoneResult
   /** シングルス試合なら true (被決定点の注記を選手単位の文言に、REQ-302) */
@@ -63,6 +65,20 @@ const selectedBreakdown = computed<PlacementBreakdown[] | null>(() => {
 })
 
 const missTotal = computed(() => props.missCells.reduce((s, c) => s + c.count, 0))
+
+/** % の分母: その地点から打った総本数（キー = "row:col"） */
+const missDenominators = computed<Record<string, number>>(() =>
+  Object.fromEntries(props.shotTotals.map(c => [`${c.row}:${c.col}`, c.count]))
+)
+
+/** 選択セルのサマリ（ミス n / 打った total, ミス率） */
+const selectedSummary = computed<{ miss: number, total: number, pct: number } | null>(() => {
+  const sel = selectedMiss.value
+  if (sel === null) return null
+  const miss = props.missCells.find(c => c.row === sel.row && c.col === sel.col)?.count ?? 0
+  const total = missDenominators.value[`${sel.row}:${sel.col}`] ?? miss
+  return { miss, total, pct: total > 0 ? Math.round((miss / total) * 100) : 0 }
+})
 </script>
 
 <template>
@@ -77,6 +93,7 @@ const missTotal = computed(() => props.missCells.reduce((s, c) => s + c.count, 0
       <StatsCourtZones
         :cells="missCells"
         percent
+        :percent-denominators="missDenominators"
         selectable
         :selected="selectedMiss"
         :cell-titles="missTitles"
@@ -98,6 +115,13 @@ const missTotal = computed(() => props.missCells.reduce((s, c) => s + c.count, 0
         <h4 class="sub-title">
           {{ $t('shotStats.weakness.missDetailTitle') }}
         </h4>
+        <p
+          v-if="selectedSummary !== null"
+          class="map-note"
+          data-testid="miss-detail-summary"
+        >
+          {{ $t('shotStats.weakness.missDetailSummary', selectedSummary) }}
+        </p>
         <p
           v-if="selectedBreakdown.length === 0"
           class="map-note"

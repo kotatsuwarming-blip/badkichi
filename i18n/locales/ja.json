@@ -647,9 +647,10 @@
       "playerNote": "選手単位の集計です（シングルス）",
       "followupNote": "「崩され」の遡り分析（例: スマッシュレシーブが甘くなり最終的に決められたケースの起点特定）は集計方法を検討中です",
       "missEntry": "{type} {n}本（ネット{net} / アウト{out}）",
-      "missPercentNote": "セルの数字 = 全ミス {total} 本に占める割合。タップで内訳",
+      "missPercentNote": "セルの数字 = その位置から打った本数のうちミスになった割合（全ミス {total} 本）。タップで内訳",
       "missDetailTitle": "選択セルのミス内訳",
-      "missDetailEmpty": "このセルにミスはありません"
+      "missDetailEmpty": "このセルにミスはありません",
+      "missDetailSummary": "この位置から {total} 本中 {miss} 本ミス（{pct}%）"
     },
     "value": {
       "title": "ショット収支（どこから打つ球が効いているか）",
