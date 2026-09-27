@@ -60,9 +60,9 @@ import PlayerFormModal from '~/components/players/PlayerFormModal.vue'
 const stubs = {
   UModal: {
     inheritAttrs: false,
-    props: ['open'],
+    props: ['open', 'title'],
     emits: ['update:open'],
-    template: '<div v-if="open"><slot name="content" /></div>'
+    template: '<div v-if="open">{{ title }}<slot name="body" /><slot name="footer" /></div>'
   },
   UForm: {
     inheritAttrs: false,

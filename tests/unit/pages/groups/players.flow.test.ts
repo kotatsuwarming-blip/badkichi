@@ -123,9 +123,9 @@ const stubs = {
   UModal: {
     // open prop に関わらず常時 #content slot を描画（DOM でフォームを操作するため）
     inheritAttrs: false,
-    props: ['open'],
+    props: ['open', 'title'],
     emits: ['update:open'],
-    template: '<div data-modal :data-open="open"><slot name="content" /></div>'
+    template: '<div data-modal :data-open="open"><slot name="body" /><slot name="footer" /></div>'
   },
   UForm: {
     inheritAttrs: false,
