@@ -29,6 +29,9 @@ export function useShotStatsView(
     setNumber: Ref<number | null>
     entity: () => StatsEntity
     nameOf: (id: string) => string
+    /** 「全体」時の対象選手の制限（Group 統計 = 自チームのみ, player-profile REQ-004 改訂 2026-09-27）。
+     *  null/未指定 = 制限なし（試合単位）。選手/ペア選択時は entity が優先される */
+    restrictPlayerIds?: Ref<string[] | null>
   }
 ) {
   const client = useSupabaseClient()
@@ -39,12 +42,13 @@ export function useShotStatsView(
   const typeFilter = ref<ShotType | null>(null) // 球種（F/D 対象）
   const handFilter = ref<Hand | null>(null) // C/D/G 用（grain 内絞り込み）
 
-  /** 対象選手（グローバル対象フィルタ由来）。null = 全員。ペアは両選手 */
+  /** 対象選手（グローバル対象フィルタ由来）。null = 制限なし。ペアは両選手。
+   *  「全体」は restrictPlayerIds（Group 統計 = 自チームのみ）があればそれに制限 */
   const subjectPlayerIds = computed<string[] | null>(() => {
     const e = opts.entity()
     if (e.kind === 'player') return [e.playerId]
     if (e.kind === 'pair') return [e.player1Id, e.player2Id]
-    return null
+    return opts.restrictPlayerIds?.value ?? null
   })
 
   const typeRows = ref<ShotTypeStatRow[]>([])
@@ -131,7 +135,14 @@ export function useShotStatsView(
   )
 
   // ---- A: 決着分析 ----
-  const endingEntries = computed(() => buildEndingEntries(endingRows.value, subject.value, opts.nameOf))
+  // 「全体」の選手別リストは restrictPlayerIds で絞る（'all' 時の entry は選手単位, subjectId = 選手 UUID）
+  const endingEntries = computed(() => {
+    const entries = buildEndingEntries(endingRows.value, subject.value, opts.nameOf)
+    const restrict = opts.restrictPlayerIds?.value
+    if (subject.value.kind !== 'all' || !restrict) return entries
+    const allowed = new Set(restrict)
+    return entries.filter(e => allowed.has(e.subjectId))
+  })
   const decisiveRanking = computed(() => buildDecisiveRanking(endingRows.value))
   const landZonesWon = computed(() => buildLandZones(endingRows.value, subject.value, 'won'))
   const landZonesLost = computed(() => buildLandZones(endingRows.value, subject.value, 'lost'))
