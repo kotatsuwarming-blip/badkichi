@@ -2,13 +2,15 @@
 /**
  * PositionControls.vue — 左右入れ替わり (A入替/B入替) + 次のセットへ (決着時のみ活性)。
  * 関連: TASK-0014 / REQ-105 / REQ-107 / ui-design.md
+ * singles ではペアの左右入れ替わりが存在しないため showOverride=false で入替ボタンを出さない。
  */
 import type { Team } from '~/utils/rule-engine/types'
 
-defineProps<{
+withDefaults(defineProps<{
   disabled?: boolean
   canAdvance?: boolean // セット決着時のみ「次のセットへ」を活性
-}>()
+  showOverride?: boolean // doubles のみ true (singles は左右入替の概念なし)
+}>(), { showOverride: true })
 
 const emit = defineEmits<{
   override: [team: Team]
@@ -21,7 +23,10 @@ const emit = defineEmits<{
     class="position-controls"
     data-testid="position-controls"
   >
-    <div class="override-row">
+    <div
+      v-if="showOverride"
+      class="override-row"
+    >
       <UButton
         block
         variant="outline"

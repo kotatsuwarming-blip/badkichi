@@ -85,6 +85,7 @@ const matchWithName = {
   id: '1',
   name: '横浜大会',
   matchDate: '2026-06-01',
+  matchType: 'doubles',
   teamA: [{ id: 'p1', name: '山田' }, { id: 'p2', name: '佐藤' }],
   teamB: [{ id: 'p3', name: '鈴木' }, { id: 'p4', name: '田中' }],
   videoSourceType: 'local',
@@ -122,13 +123,36 @@ describe('matches.vue', () => {
     expect(btnByText(wrapper, 'matches.add')).toBeTruthy()
   })
 
-  it('TC4: 選手 4 人未満で追加 disabled + 導線 (REQ-203)', () => {
-    playersData.value = [{ id: 'p1' }, { id: 'p2' }, { id: 'p3' }]
+  it('TC4: 選手 2 人未満で追加 disabled + 導線 (REQ-203 / singles 最小人数)', () => {
+    playersData.value = [{ id: 'p1' }]
     const wrapper = mountPage()
     const add = btnByText(wrapper, 'matches.add')
     expect((add!.element as HTMLButtonElement).disabled).toBe(true)
     expect(wrapper.text()).toContain('matches.notEnoughPlayers')
     expect(wrapper.text()).toContain('matches.goToPlayers')
+  })
+
+  it('TC4b: 選手 2 人なら追加できる (singles)', () => {
+    playersData.value = [{ id: 'p1' }, { id: 'p2' }]
+    const wrapper = mountPage()
+    const add = btnByText(wrapper, 'matches.add')
+    expect((add!.element as HTMLButtonElement).disabled).toBe(false)
+    expect(wrapper.text()).not.toContain('matches.notEnoughPlayers')
+  })
+
+  it('TC4c: singles 試合は 1 人ずつの対戦カード + 形式バッジ', () => {
+    matchesData.value = [{
+      ...matchWithName,
+      name: null,
+      matchType: 'singles',
+      teamA: [{ id: 'p1', name: '山田' }],
+      teamB: [{ id: 'p3', name: '鈴木' }]
+    }]
+    const wrapper = mountPage()
+    expect(wrapper.text()).toContain('山田')
+    expect(wrapper.text()).toContain('鈴木')
+    expect(wrapper.text()).not.toContain('・')
+    expect(wrapper.text()).toContain('matches.matchTypeOptions.singles')
   })
 
   it('TC5: 削除ボタン → 確認ダイアログ → 承認で deleteMatch + refresh (REQ-105)', async () => {

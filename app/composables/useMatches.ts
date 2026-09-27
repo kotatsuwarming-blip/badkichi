@@ -7,7 +7,7 @@
  * interfaces.ts UseMatchesReturn / REQ-001 / REQ-201 / NFR-001 / NFR-203
  */
 import type { Database } from '~/types/supabase'
-import type { MatchListItem, VideoSourceType } from '~/types/match'
+import type { MatchListItem, MatchType, VideoSourceType } from '~/types/match'
 import { useCurrentGroup } from '~/composables/useCurrentGroup'
 
 export function useMatches() {
@@ -23,7 +23,7 @@ export function useMatches() {
     //   するため players 側に deleted_at フィルタをかけない (EDGE-007)。
     const { data, error } = await client
       .from('matches')
-      .select('id, name, match_date, created_at, video_source_type, video_source_url, completed_at, ta1:players!matches_group_id_team_a_player1_id_fkey(id, name), ta2:players!matches_group_id_team_a_player2_id_fkey(id, name), tb1:players!matches_group_id_team_b_player1_id_fkey(id, name), tb2:players!matches_group_id_team_b_player2_id_fkey(id, name), sets(winner, deleted_at)')
+      .select('id, name, match_date, match_type, created_at, video_source_type, video_source_url, completed_at, ta1:players!matches_group_id_team_a_player1_id_fkey(id, name), ta2:players!matches_group_id_team_a_player2_id_fkey(id, name), tb1:players!matches_group_id_team_b_player1_id_fkey(id, name), tb2:players!matches_group_id_team_b_player2_id_fkey(id, name), sets(winner, deleted_at)')
       .eq('group_id', gid)
       .is('deleted_at', null)
       .order('match_date', { ascending: false })
@@ -44,8 +44,10 @@ export function useMatches() {
         id: row.id,
         name: row.name,
         matchDate: row.match_date,
-        teamA: [{ id: row.ta1.id, name: row.ta1.name }, { id: row.ta2.id, name: row.ta2.name }],
-        teamB: [{ id: row.tb1.id, name: row.tb1.name }, { id: row.tb2.id, name: row.tb2.name }],
+        matchType: row.match_type as MatchType,
+        // singles は player2 の埋め込みが null → 1 人構成
+        teamA: [row.ta1, row.ta2].flatMap(p => (p ? [{ id: p.id, name: p.name }] : [])),
+        teamB: [row.tb1, row.tb2].flatMap(p => (p ? [{ id: p.id, name: p.name }] : [])),
         videoSourceType: row.video_source_type as VideoSourceType,
         videoSourceUrl: row.video_source_url,
         recordingStatus,

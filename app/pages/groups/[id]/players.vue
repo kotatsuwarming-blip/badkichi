@@ -13,12 +13,13 @@
  * 🔵 REQ-001 / REQ-103 / REQ-104 / REQ-201 / REQ-403 / NFR-001 / EDGE-005
  */
 
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePlayers } from '~/composables/usePlayers'
 import { useDeletePlayer } from '~/composables/useDeletePlayer'
 import { useToastErrors } from '~/composables/useToastErrors'
 import type { Player } from '~/types/player'
+import { deriveAge, deriveCareerYears } from '~/utils/players/profile'
 
 // 【i18n 初期化】: 全 UI 文言は locales/ja.json 経由。コードに文字列リテラルを直書きしない (NFR-204) 🔵
 const { t } = useI18n()
@@ -31,6 +32,23 @@ const { deletePlayer, pending: deletePending } = useDeletePlayer()
 
 // 【エラートースト】: 取得失敗・削除失敗を toast で通知 (error-handling §6④) 🔵
 const { showError } = useToastErrors()
+
+/** プロフィールバッジ (年齢・歴・スタイル, player-profile REQ-104)。未入力項目は出さない */
+function profileBadges(player: Player): string[] {
+  const badges: string[] = []
+  const age = deriveAge(player.birthdate)
+  if (age !== null) badges.push(t('players.profile.agePreview', { age }))
+  const years = deriveCareerYears(player.badminton_since)
+  if (years !== null) badges.push(years === 0 ? t('players.profile.careerUnderOne') : t('players.profile.careerPreview', { years }))
+  for (const style of player.play_styles) badges.push(t(`players.profile.styleOptions.${style}`))
+  return badges
+}
+
+// 【区分グループ】: 自チーム → 対戦相手の 2 グループ表示 (player-profile REQ-003)。
+//   見出しは対象グループに選手がいる場合のみ表示する 🔵
+const rosterGroups = computed(() => (['member', 'opponent'] as const)
+  .map(type => ({ type, players: (players.value ?? []).filter(p => p.roster_type === type) }))
+  .filter(g => g.players.length > 0))
 
 // 【モーダル状態】: open / mode / 編集対象 player 🔵
 const modalOpen = ref(false)
@@ -132,47 +150,67 @@ watch(error, (e) => {
         />
       </div>
 
-      <!-- 【選手一覧】: 1 件以上の場合に name / handedness + 操作ボタンを表示 (REQ-001) 🔵 -->
-      <ul
+      <!-- 【選手一覧】: 自チーム → 対戦相手のグループ順に name / handedness + 操作ボタンを表示
+           (REQ-001 + player-profile REQ-003) 🔵 -->
+      <div
         v-else
-        class="flex flex-col gap-2"
+        class="flex flex-col gap-4"
       >
-        <li
-          v-for="player in players"
-          :key="player.id"
-          class="flex items-center justify-between rounded-lg border border-gray-200 p-3"
+        <section
+          v-for="group in rosterGroups"
+          :key="group.type"
+          :data-testid="`roster-group-${group.type}`"
         >
-          <!-- 【選手名】: name を表示 (REQ-001) 🔵 -->
-          <span class="font-medium">{{ player.name }}</span>
-          <div class="flex items-center gap-2">
-            <!-- 【利き手ラベル】: t('players.handednessOptions.{handedness}') (TASK-0006 と 1:1) 🔵 -->
-            <span class="text-sm text-gray-500">
-              {{ t(`players.handednessOptions.${player.handedness}`) }}
-            </span>
-            <!-- 【編集ボタン】: aria-label で読み上げ対応 (NFR-301) / edit mode でモーダルを開く 🔵 -->
-            <UButton
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              icon="i-lucide-pencil"
-              :aria-label="t('players.edit')"
-              :label="t('players.edit')"
-              @click="openEdit(player)"
-            />
-            <!-- 【削除ボタン】: aria-label で読み上げ対応 (NFR-301) / 確認なし即実行 (REQ-103) 🔵 -->
-            <UButton
-              color="error"
-              variant="ghost"
-              size="sm"
-              icon="i-lucide-trash-2"
-              :aria-label="t('players.delete')"
-              :label="t('players.delete')"
-              :disabled="deletePending"
-              @click="onDelete(player.id)"
-            />
-          </div>
-        </li>
-      </ul>
+          <h2 class="mb-2 text-sm font-semibold text-gray-500">
+            {{ t(`players.rosterTypeOptions.${group.type}`) }}
+            <span class="font-normal">({{ group.players.length }})</span>
+          </h2>
+          <ul class="flex flex-col gap-2">
+            <li
+              v-for="player in group.players"
+              :key="player.id"
+              class="flex items-center justify-between rounded-lg border border-gray-200 p-3"
+            >
+              <!-- 【選手名】: name を表示 (REQ-001) 🔵 -->
+              <span class="font-medium">{{ player.name }}</span>
+              <div class="flex items-center gap-2">
+                <!-- 【利き手ラベル】: t('players.handednessOptions.{handedness}') (TASK-0006 と 1:1) 🔵 -->
+                <span class="text-sm text-gray-500">
+                  {{ t(`players.handednessOptions.${player.handedness}`) }}
+                </span>
+                <!-- 【プロフィールバッジ】: 年齢・歴・スタイル (入力済みのみ, player-profile REQ-104) -->
+                <span
+                  v-for="badge in profileBadges(player)"
+                  :key="badge"
+                  class="rounded-full border border-gray-200 px-2 py-0.5 text-xs text-gray-500"
+                  data-testid="profile-badge"
+                >{{ badge }}</span>
+                <!-- 【編集ボタン】: aria-label で読み上げ対応 (NFR-301) / edit mode でモーダルを開く 🔵 -->
+                <UButton
+                  color="neutral"
+                  variant="ghost"
+                  size="sm"
+                  icon="i-lucide-pencil"
+                  :aria-label="t('players.edit')"
+                  :label="t('players.edit')"
+                  @click="openEdit(player)"
+                />
+                <!-- 【削除ボタン】: aria-label で読み上げ対応 (NFR-301) / 確認なし即実行 (REQ-103) 🔵 -->
+                <UButton
+                  color="error"
+                  variant="ghost"
+                  size="sm"
+                  icon="i-lucide-trash-2"
+                  :aria-label="t('players.delete')"
+                  :label="t('players.delete')"
+                  :disabled="deletePending"
+                  @click="onDelete(player.id)"
+                />
+              </div>
+            </li>
+          </ul>
+        </section>
+      </div>
     </div>
 
     <!-- 【PlayerFormModal】: create / edit 共通モーダル。open/mode/player/saved を制御 (TASK-0007) 🔵 -->

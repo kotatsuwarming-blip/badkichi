@@ -41,6 +41,8 @@ export function createYouTubeAdapter(
   let status: PlayerStatus = 'unstarted'
   let durationMs: number | null = null
   let lastError: VideoPlayerError | null = null
+  /** mount 時に確定した動画 ID（未再生シークの loadVideoById 用） */
+  let mountedVideoId = ''
 
   /** イベントリスナー管理 */
   const listeners: Map<PlayerEvent, Array<() => void>> = new Map()
@@ -97,6 +99,7 @@ export function createYouTubeAdapter(
 
   async function mount(el: HTMLElement): Promise<void> {
     const videoId = extractYouTubeId(source.url)
+    mountedVideoId = videoId ?? ''
 
     // API ロード完了を待ってから YT.Player を生成する（正しい順序）。
     // ensureApiLoaded() が解決するまで YT グローバルは存在しないため、
@@ -143,6 +146,13 @@ export function createYouTubeAdapter(
   function seekToMs(ms: number): void {
     if (!player) return
     const clamped = clampMs(ms, durationMs)
+    // 未再生 (cued) のプレーヤーへ seekTo すると黒画面のまま固まり、以後
+    // playVideo も無効になる (IFrame API の癖、ドッグフーディング 2026-08-03)。
+    // 実ロードに切り替えて、後続の play を成立させる。
+    if (status === 'unstarted') {
+      player.loadVideoById({ videoId: mountedVideoId, startSeconds: clamped / 1000 })
+      return
+    }
     player.seekTo(clamped / 1000, true)
   }
 

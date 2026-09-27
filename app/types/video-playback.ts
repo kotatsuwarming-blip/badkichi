@@ -187,6 +187,12 @@ export interface UseVideoPlayerReturn {
 export interface VideoPlayerProps {
   /** 親が useVideoPlayer(source) で生成したインスタンス 🔵 */
   player: UseVideoPlayerReturn
+  /**
+   * J/K/L (±10 秒スキップ / 再生トグル) を有効にするか (既定 true)。
+   * 2026-09-27: 注釈の L 割当 (serve_long/lob_low) を R/P へ移し衝突を解消したため
+   * 全ページ有効。将来キー衝突するページが出たときの逃げ道として残す。
+   */
+  skipKeys?: boolean
 }
 
 /**

@@ -26,12 +26,15 @@ const {
   eqMock,
   isMock,
   orderMock,
+  orderNameMock,
   useAsyncDataMock,
   groupRef
 } = vi.hoisted(() => {
-  const orderMock = vi.fn()
-  // 【クエリチェーン】: usePlayers のクエリ順 from → select → eq → is → order を構築
-  // 末端 orderMock が { data, error } を resolve する (TASK-0002.md 実装スケルトン参照) 🔵
+  // 【クエリチェーン】: usePlayers のクエリ順 from → select → eq → is → order → order を構築
+  // order('roster_type') はチェーン継続、末端 order('name') が { data, error } を resolve
+  // (player-profile REQ-003 で 2 段 order になった) 🔵
+  const orderNameMock = vi.fn()
+  const orderMock = vi.fn(() => ({ order: orderNameMock }))
   const isMock = vi.fn(() => ({ order: orderMock }))
   const eqMock = vi.fn(() => ({ is: isMock }))
   const _selectMock = vi.fn(() => ({ eq: eqMock }))
@@ -61,7 +64,7 @@ const {
     }
   })
 
-  return { fromMock, eqMock, isMock, orderMock, useAsyncDataMock, groupRef }
+  return { fromMock, eqMock, isMock, orderMock, orderNameMock, useAsyncDataMock, groupRef }
 })
 
 // 【#imports mock】: Nuxt auto-import (#imports) を丸ごと差し替える
@@ -113,9 +116,10 @@ describe('usePlayers', () => {
     vi.clearAllMocks()
     // 【groupRef 初期化】: デフォルト所属あり (group_id: 'g1') の状態に戻す 🔵
     groupRef.value = { group_id: 'g1' }
-    // 【orderMock 初期化】: clearAllMocks で消えた mockResolvedValue を TC 冒頭で再設定
-    // 末端 order が { data: [Player行], error: null } を resolve する (testcases.md §5) 🔵
-    orderMock.mockResolvedValue({ data: [{ id: 'p1', name: 'A', handedness: 'right' }], error: null })
+    // 【orderMock 初期化】: clearAllMocks で消えたチェーン/resolve を TC 冒頭で再設定
+    // order('roster_type') はチェーン継続、末端 order('name') が { data, error } を resolve 🔵
+    orderMock.mockReturnValue({ order: orderNameMock })
+    orderNameMock.mockResolvedValue({ data: [{ id: 'p1', name: 'A', handedness: 'right', roster_type: 'member' }], error: null })
   })
 
   // ===================================================================
@@ -134,7 +138,7 @@ describe('usePlayers', () => {
     // 【結果検証】: from('players') 呼出 + eq('group_id','g1') 呼出 + 取得行配列返却
     expect(fromMock).toHaveBeenCalledWith('players') // 【確認内容】: players テーブルへの SELECT 発行 🔵
     expect(eqMock).toHaveBeenCalledWith('group_id', 'g1') // 【確認内容】: 自 Group 絞り込み列名・値の正確性 🔵
-    expect(data.value).toEqual([{ id: 'p1', name: 'A', handedness: 'right' }]) // 【確認内容】: SELECT 結果素通し 🔵
+    expect(data.value).toEqual([{ id: 'p1', name: 'A', handedness: 'right', roster_type: 'member' }]) // 【確認内容】: SELECT 結果素通し 🔵
   })
 
   // ===================================================================
@@ -149,9 +153,10 @@ describe('usePlayers', () => {
     // 【実際の処理実行】: usePlayers() → useAsyncData スタブ経由で handler を即時解決
     await usePlayers()
 
-    // 【結果検証】: is('deleted_at', null) 呼出 + order('name') 呼出
+    // 【結果検証】: is('deleted_at', null) 呼出 + order('roster_type') → order('name') 呼出
     expect(isMock).toHaveBeenCalledWith('deleted_at', null) // 【確認内容】: 未削除フィルタ EDGE-005 🔵
-    expect(orderMock).toHaveBeenCalledWith('name') // 【確認内容】: name 昇順ソート 🔵
+    expect(orderMock).toHaveBeenCalledWith('roster_type') // 【確認内容】: 自チーム優先 (player-profile REQ-003) 🔵
+    expect(orderNameMock).toHaveBeenCalledWith('name') // 【確認内容】: name 昇順ソート 🔵
   })
 
   // ===================================================================

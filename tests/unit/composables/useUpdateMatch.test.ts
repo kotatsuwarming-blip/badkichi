@@ -31,6 +31,7 @@ vi.mock('#supabase-client', () => ({
 import { useUpdateMatch } from '~/composables/useUpdateMatch'
 
 const input = {
+  matchType: 'doubles' as const,
   name: '更新後',
   matchDate: '2026-06-06',
   teamAPlayer1Id: 'p1',
@@ -51,6 +52,7 @@ describe('useUpdateMatch', () => {
     const { updateMatch } = useUpdateMatch()
     const r = await updateMatch('m1', input)
     const arg = updateMock.mock.calls[0]![0] as Record<string, unknown>
+    expect(arg.match_type).toBe('doubles')
     expect(arg).toMatchObject({
       name: '更新後',
       match_date: '2026-06-06',

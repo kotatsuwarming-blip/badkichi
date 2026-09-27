@@ -37,12 +37,12 @@ describe('StatsRallyLengthChart', () => {
   it('未選択の棒クリックでビンキーを追加 emit', () => {
     const w = mount(StatsRallyLengthChart, { props: { bins, selectedKeys: [] }, global })
     ;(w.vm as unknown as { onChartClick: (p: { dataIndex: number }) => void }).onChartClick({ dataIndex: 0 })
-    expect(w.emitted('selectBins')![0][0]).toEqual(['1-3'])
+    expect(w.emitted('selectBins')![0][0]).toEqual(['1'])
   })
 
   it('選択済みの棒クリックでトグル解除（和集合から除外）', () => {
-    const w = mount(StatsRallyLengthChart, { props: { bins, selectedKeys: ['1-3', '4-7'] }, global })
+    const w = mount(StatsRallyLengthChart, { props: { bins, selectedKeys: ['1', '3-7'] }, global })
     ;(w.vm as unknown as { onChartClick: (p: { dataIndex: number }) => void }).onChartClick({ dataIndex: 0 })
-    expect(w.emitted('selectBins')![0][0]).toEqual(['4-7'])
+    expect(w.emitted('selectBins')![0][0]).toEqual(['3-7'])
   })
 })

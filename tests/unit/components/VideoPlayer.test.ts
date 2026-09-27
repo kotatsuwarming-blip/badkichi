@@ -137,4 +137,46 @@ describe('VideoPlayer.client.vue', () => {
     wrapper.unmount()
     expect(player.detach).toHaveBeenCalledTimes(1)
   })
+
+  // ケース: キーボードショートカット (J/K/L, 2026-09-26 K 追加 + シークバーフォーカスでも有効)
+  it('K で再生/一時停止トグル、J/L で 10 秒シーク。シークバー (range) フォーカス中も効く', async () => {
+    const player = createMockPlayer({ status: 'paused' })
+    player.controls.getCurrentTimeMs = vi.fn(() => 30000)
+    const wrapper = mountPlayer(player)
+    await flushPromises()
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyK' }))
+    expect(player.controls.play).toHaveBeenCalledTimes(1)
+
+    // range にフォーカスがあっても効く（旧ガードは INPUT を一律弾いてバグっていた）
+    const range = document.createElement('input')
+    range.type = 'range'
+    document.body.appendChild(range)
+    range.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyL', bubbles: true }))
+    expect(player.controls.seekToMs).toHaveBeenCalledWith(40000)
+    range.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyJ', bubbles: true }))
+    expect(player.controls.seekToMs).toHaveBeenCalledWith(20000)
+    range.remove()
+
+    // テキスト入力中は効かない
+    const text = document.createElement('input')
+    text.type = 'text'
+    document.body.appendChild(text)
+    text.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyK', bubbles: true }))
+    expect(player.controls.play).toHaveBeenCalledTimes(1)
+    text.remove()
+    wrapper.unmount()
+  })
+
+  it('skipKeys=false で J/K/L を無効化 (注釈パスとの衝突回避)', async () => {
+    const player = createMockPlayer({ status: 'paused' })
+    player.controls.getCurrentTimeMs = vi.fn(() => 30000)
+    const wrapper = mount(VideoPlayer, { props: { player, skipKeys: false }, global: { stubs } })
+    await flushPromises()
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyK' }))
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyL' }))
+    expect(player.controls.play).not.toHaveBeenCalled()
+    expect(player.controls.seekToMs).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
 })

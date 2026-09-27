@@ -178,9 +178,8 @@ describe('MatchFormModal.vue', () => {
     // 既定 youtube: text input は name + youtubeUrl の 2 個、file input なし
     expect(textInputs(wrapper).length).toBe(2)
     expect(wrapper.find('input[type=file]').exists()).toBe(false)
-    // local に切替
-    const radios = wrapper.findAll('input[type=radio]')
-    await radios[1]!.trigger('change') // local
+    // local に切替 (対戦形式のラジオも並ぶため value で特定する)
+    await wrapper.find('input[type=radio][value=local]').trigger('change')
     await flushPromises()
     // text input は name のみ、file input が出現
     expect(textInputs(wrapper).length).toBe(1)
@@ -219,6 +218,7 @@ describe('MatchFormModal.vue', () => {
       id: 'm1',
       name: '旧名',
       matchDate: '2026-06-01',
+      matchType: 'doubles' as const,
       teamA: [{ id: P1, name: 'A' }, { id: P2, name: 'B' }],
       teamB: [{ id: P3, name: 'C' }, { id: P4, name: 'D' }],
       videoSourceType: 'youtube' as const,
@@ -233,5 +233,48 @@ describe('MatchFormModal.vue', () => {
     expect(updateMatch).toHaveBeenCalledTimes(1)
     expect(updateMatch.mock.calls[0]![0]).toBe('m1')
     expect(updateMatch.mock.calls[0]![1]).toMatchObject({ teamAPlayer2Id: P5 })
+  })
+  it('TC10: singles 切替で各チーム 1 枠になり、2 人で createMatch (player2=null)', async () => {
+    playersRef.value = [
+      { id: P1, name: 'A' },
+      { id: P2, name: 'B' }
+    ]
+    const wrapper = mountModal()
+    expect(wrapper.findAll('select').length).toBe(4)
+    await wrapper.find('input[type=radio][value=singles]').trigger('change')
+    await flushPromises()
+    expect(wrapper.findAll('select').length).toBe(2)
+    await wrapper.findAll('select')[0]!.setValue(P1)
+    await wrapper.findAll('select')[1]!.setValue(P2)
+    await textInputs(wrapper)[1]!.setValue('https://youtu.be/abcdefghijk')
+    await clickSave(wrapper)
+    await flushPromises()
+    expect(createMatch).toHaveBeenCalledTimes(1)
+    expect(createMatch).toHaveBeenCalledWith(expect.objectContaining({
+      matchType: 'singles',
+      teamAPlayer1Id: P1,
+      teamAPlayer2Id: null,
+      teamBPlayer1Id: P2,
+      teamBPlayer2Id: null
+    }))
+  })
+
+  it('TC11: singles の edit は 1 人構成でプリフィルされる', async () => {
+    const match = {
+      id: 'm2',
+      name: null,
+      matchDate: '2026-06-01',
+      matchType: 'singles' as const,
+      teamA: [{ id: P1, name: 'A' }],
+      teamB: [{ id: P3, name: 'C' }],
+      videoSourceType: 'youtube' as const,
+      videoSourceUrl: 'abcdefghijk'
+    }
+    const wrapper = mountModal({ mode: 'edit', match })
+    await flushPromises()
+    const selects = wrapper.findAll('select')
+    expect(selects.length).toBe(2)
+    expect((selects[0]!.element as HTMLSelectElement).value).toBe(P1)
+    expect((selects[1]!.element as HTMLSelectElement).value).toBe(P3)
   })
 })

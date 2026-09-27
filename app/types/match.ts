@@ -4,6 +4,12 @@ import type { Database } from '~/types/supabase'
  *  video_source_type CHECK IN ('youtube','local')。REQ-302: 将来拡張余地あり。 */
 export type VideoSourceType = 'youtube' | 'local'
 
+/** 対戦形式。matches.match_type CHECK と 1:1。singles = 各チーム 1 選手 (player2 は null)。 */
+export type MatchType = 'singles' | 'doubles'
+
+/** 形式ごとのチーム人数。ロスター検証・選手不足判定に使う。 */
+export const PLAYERS_PER_TEAM: Record<MatchType, 1 | 2> = { singles: 1, doubles: 2 }
+
 /** 一覧の 1 行で名前解決済みの選手参照 (PostgREST 埋め込み、EDGE-007)。 */
 export interface MatchPlayerRef {
   id: Database['public']['Tables']['players']['Row']['id']
@@ -16,8 +22,10 @@ export interface MatchListItem {
   id: Database['public']['Tables']['matches']['Row']['id']
   name: string | null
   matchDate: string // REQ-008 'YYYY-MM-DD'
-  teamA: [MatchPlayerRef, MatchPlayerRef]
-  teamB: [MatchPlayerRef, MatchPlayerRef]
+  matchType: MatchType
+  /** チーム構成 (singles=1 人 / doubles=2 人)。index 0 が player1。 */
+  teamA: MatchPlayerRef[]
+  teamB: MatchPlayerRef[]
   videoSourceType: VideoSourceType
   videoSourceUrl: string // NOT NULL: local=ファイル名ラベル / youtube=抽出後ID
   // 録画状態 (match-recording): sets.winner から導出。'done'=試合勝者確定(2セット先取) /
@@ -31,10 +39,12 @@ export interface MatchListItem {
 export interface CreateMatchInput {
   name?: string | null
   matchDate: string
+  matchType: MatchType
   teamAPlayer1Id: MatchPlayerRef['id']
-  teamAPlayer2Id: MatchPlayerRef['id']
+  /** singles では null (DB CHECK matches_match_type_players_check と一致) */
+  teamAPlayer2Id: MatchPlayerRef['id'] | null
   teamBPlayer1Id: MatchPlayerRef['id']
-  teamBPlayer2Id: MatchPlayerRef['id']
+  teamBPlayer2Id: MatchPlayerRef['id'] | null
   videoSourceType: VideoSourceType
   videoSourceUrl: string
 }

@@ -83,3 +83,64 @@ describe('CourtDiagram', () => {
     expect(w.find('[data-testid="serve-arrow"]').exists()).toBe(true)
   })
 })
+
+describe('CourtDiagram singles (REQ-107)', () => {
+  const singlesPositions: TeamPositions = {
+    teamA: { left: 'A1', right: 'A1' },
+    teamB: { left: 'B1', right: 'B1' }
+  }
+  const singlesNames = { A1: '佐藤', B1: '高橋' }
+
+  function mountSingles(serverPosition: 'left' | 'right') {
+    return mount(CourtDiagram, {
+      props: {
+        positions: singlesPositions,
+        servingTeam: 'A',
+        server: 'A1',
+        receiver: 'B1',
+        cameraNearTeam: 'A',
+        names: singlesNames,
+        singles: true,
+        serverPosition
+      },
+      global: { stubs: {}, mocks: { $t: (k: string) => k } }
+    })
+  }
+
+  it('偶数 (right): サービスコート側のセルにだけ選手、反対側は空セル (TC-107-01)', () => {
+    const w = mountSingles('right')
+    // 同じ選手が 2 セルに出ない (cell-A1 は 1 個)
+    expect(w.findAll('[data-testid="cell-A1"]')).toHaveLength(1)
+    expect(w.findAll('[data-testid="cell-B1"]')).toHaveLength(1)
+    expect(w.find('[data-testid="cell-empty-A-left"]').exists()).toBe(true)
+    expect(w.find('[data-testid="cell-empty-B-left"]').exists()).toBe(true)
+    expect(w.find('[data-testid="cell-A1"]').classes()).toContain('is-server')
+    expect(w.find('[data-testid="cell-B1"]').classes()).toContain('is-receiver')
+  })
+
+  it('奇数 (left): 左サービスコートに移動する (TC-107-02)', () => {
+    const w = mountSingles('left')
+    expect(w.find('[data-testid="cell-empty-A-right"]').exists()).toBe(true)
+    expect(w.find('[data-testid="cell-A1"]').classes()).toContain('is-server')
+  })
+
+  it('TC-301-04: ダブルスロングサービスラインは形式問わず常に描く', () => {
+    const s = mountSingles('right')
+    expect(s.findAll('[data-testid="doubles-long-service-line"]')).toHaveLength(2)
+    const d = mount(CourtDiagram, {
+      props: { positions, servingTeam: 'A', server: 'A2', receiver: 'B1', cameraNearTeam: 'A', names },
+      global: { stubs: {}, mocks: { $t: (k: string) => k } }
+    })
+    expect(d.findAll('[data-testid="doubles-long-service-line"]')).toHaveLength(2)
+  })
+
+  it('TC-301-03: singles はシングルスサイドラインを描く (doubles では描かない)', () => {
+    const w = mountSingles('right')
+    expect(w.findAll('[data-testid="singles-sideline"]')).toHaveLength(2)
+    const d = mount(CourtDiagram, {
+      props: { positions, servingTeam: 'A', server: 'A2', receiver: 'B1', cameraNearTeam: 'A', names },
+      global: { stubs: {}, mocks: { $t: (k: string) => k } }
+    })
+    expect(d.findAll('[data-testid="singles-sideline"]')).toHaveLength(0)
+  })
+})

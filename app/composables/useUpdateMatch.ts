@@ -31,8 +31,9 @@ export function useUpdateMatch(): UseUpdateMatchReturn {
         .update({
           name: input.name ?? null,
           match_date: input.matchDate,
+          match_type: input.matchType,
           team_a_player1_id: input.teamAPlayer1Id,
-          team_a_player2_id: input.teamAPlayer2Id,
+          team_a_player2_id: input.teamAPlayer2Id, // singles は null
           team_b_player1_id: input.teamBPlayer1Id,
           team_b_player2_id: input.teamBPlayer2Id,
           video_source_type: input.videoSourceType,

@@ -145,11 +145,12 @@ export type Database = {
           group_id: string
           id: string
           match_date: string
+          match_type: string
           name: string | null
           team_a_player1_id: string
-          team_a_player2_id: string
+          team_a_player2_id: string | null
           team_b_player1_id: string
-          team_b_player2_id: string
+          team_b_player2_id: string | null
           updated_at: string
           video_source_type: string
           video_source_url: string
@@ -161,11 +162,12 @@ export type Database = {
           group_id: string
           id?: string
           match_date?: string
+          match_type?: string
           name?: string | null
           team_a_player1_id: string
-          team_a_player2_id: string
+          team_a_player2_id?: string | null
           team_b_player1_id: string
-          team_b_player2_id: string
+          team_b_player2_id?: string | null
           updated_at?: string
           video_source_type: string
           video_source_url: string
@@ -177,11 +179,12 @@ export type Database = {
           group_id?: string
           id?: string
           match_date?: string
+          match_type?: string
           name?: string | null
           team_a_player1_id?: string
-          team_a_player2_id?: string
+          team_a_player2_id?: string | null
           team_b_player1_id?: string
-          team_b_player2_id?: string
+          team_b_player2_id?: string | null
           updated_at?: string
           video_source_type?: string
           video_source_url?: string
@@ -226,31 +229,55 @@ export type Database = {
       }
       players: {
         Row: {
+          badminton_since: string | null
+          birthdate: string | null
           created_at: string
           deleted_at: string | null
           group_id: string
           handedness: string
+          height_cm: number | null
           id: string
           name: string
+          play_styles: string[]
+          practice_frequency: string | null
+          roster_type: string
+          sex: string
           updated_at: string
+          weight_kg: number | null
         }
         Insert: {
+          badminton_since?: string | null
+          birthdate?: string | null
           created_at?: string
           deleted_at?: string | null
           group_id: string
           handedness?: string
+          height_cm?: number | null
           id?: string
           name: string
+          play_styles?: string[]
+          practice_frequency?: string | null
+          roster_type?: string
+          sex?: string
           updated_at?: string
+          weight_kg?: number | null
         }
         Update: {
+          badminton_since?: string | null
+          birthdate?: string | null
           created_at?: string
           deleted_at?: string | null
           group_id?: string
           handedness?: string
+          height_cm?: number | null
           id?: string
           name?: string
+          play_styles?: string[]
+          practice_frequency?: string | null
+          roster_type?: string
+          sex?: string
           updated_at?: string
+          weight_kg?: number | null
         }
         Relationships: [
           {
@@ -305,9 +332,13 @@ export type Database = {
           camera_near_team: string | null
           created_at: string
           deleted_at: string | null
+          end_reason: string | null
           id: string
           is_let: boolean
           is_point_confirmed: boolean
+          land_x: number | null
+          land_y: number | null
+          out_direction: string | null
           point_winner: string | null
           rally_number: number
           receiver_player_id: string
@@ -322,9 +353,13 @@ export type Database = {
           camera_near_team?: string | null
           created_at?: string
           deleted_at?: string | null
+          end_reason?: string | null
           id?: string
           is_let?: boolean
           is_point_confirmed?: boolean
+          land_x?: number | null
+          land_y?: number | null
+          out_direction?: string | null
           point_winner?: string | null
           rally_number: number
           receiver_player_id: string
@@ -339,9 +374,13 @@ export type Database = {
           camera_near_team?: string | null
           created_at?: string
           deleted_at?: string | null
+          end_reason?: string | null
           id?: string
           is_let?: boolean
           is_point_confirmed?: boolean
+          land_x?: number | null
+          land_y?: number | null
+          out_direction?: string | null
           point_winner?: string | null
           rally_number?: number
           receiver_player_id?: string
@@ -523,36 +562,73 @@ export type Database = {
       }
       shots: {
         Row: {
+          ai_confidence: number | null
+          ai_model_version: string | null
+          annotated_timestamp_ms: number | null
+          annotated_timestamp_precision: string | null
+          annotation_source: string | null
           created_at: string
           deleted_at: string | null
+          hand: string | null
+          hit_player_id: string | null
+          hit_x: number | null
+          hit_y: number | null
           id: string
           input_source: string
           rally_id: string
           shot_number: number
+          shot_type: string | null
           updated_at: string
           video_timestamp_ms: number | null
         }
         Insert: {
+          ai_confidence?: number | null
+          ai_model_version?: string | null
+          annotated_timestamp_ms?: number | null
+          annotated_timestamp_precision?: string | null
+          annotation_source?: string | null
           created_at?: string
           deleted_at?: string | null
+          hand?: string | null
+          hit_player_id?: string | null
+          hit_x?: number | null
+          hit_y?: number | null
           id?: string
           input_source?: string
           rally_id: string
           shot_number: number
+          shot_type?: string | null
           updated_at?: string
           video_timestamp_ms?: number | null
         }
         Update: {
+          ai_confidence?: number | null
+          ai_model_version?: string | null
+          annotated_timestamp_ms?: number | null
+          annotated_timestamp_precision?: string | null
+          annotation_source?: string | null
           created_at?: string
           deleted_at?: string | null
+          hand?: string | null
+          hit_player_id?: string | null
+          hit_x?: number | null
+          hit_y?: number | null
           id?: string
           input_source?: string
           rally_id?: string
           shot_number?: number
+          shot_type?: string | null
           updated_at?: string
           video_timestamp_ms?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "shots_hit_player_id_fkey"
+            columns: ["hit_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "shots_rally_id_fkey"
             columns: ["rally_id"]
@@ -574,11 +650,30 @@ export type Database = {
       }
       is_member_of: { Args: { target_group_id: string }; Returns: boolean }
       join_group_with_code: { Args: { invite_code: string }; Returns: string }
+      stats_annotation_coverage: {
+        Args: {
+          p_group_id?: string
+          p_match_id?: string
+          p_match_ids?: string[]
+        }
+        Returns: {
+          match_id: string
+          rallies_ended: number
+          rallies_fully_timed: number
+          rallies_total: number
+          shots_attributed: number
+          shots_handed: number
+          shots_pointed: number
+          shots_total: number
+          shots_typed: number
+        }[]
+      }
       stats_pair_rates: {
         Args: {
           p_group_id?: string
           p_match_id?: string
           p_match_ids?: string[]
+          p_set_number?: number
         }
         Returns: {
           player1_id: string
@@ -594,6 +689,7 @@ export type Database = {
           p_group_id?: string
           p_match_id?: string
           p_match_ids?: string[]
+          p_set_number?: number
         }
         Returns: {
           player_id: string
@@ -616,6 +712,7 @@ export type Database = {
           p_receiver_player_id?: string
           p_role?: string
           p_server_player_id?: string
+          p_set_number?: number
           p_shot_ranges?: Json
         }
         Returns: {
@@ -625,9 +722,12 @@ export type Database = {
           match_id: string
           match_name: string
           point_winner: string
+          rally_duration_ms: number
           rally_id: string
           rally_number: number
           receiver_player_id: string
+          score_a: number
+          score_b: number
           server_player_id: string
           server_position: string
           serving_team: string
@@ -638,16 +738,203 @@ export type Database = {
           video_start_timestamp_ms: number
         }[]
       }
+      stats_rally_endings: {
+        Args: {
+          p_group_id?: string
+          p_match_id?: string
+          p_match_ids?: string[]
+          p_set_number?: number
+        }
+        Returns: {
+          camera_near_team: string
+          decisive_hit_player_id: string
+          decisive_shot_type: string
+          end_reason: string
+          land_x: number
+          land_y: number
+          last_hitter_team: string
+          match_id: string
+          out_direction: string
+          point_winner: string
+          rally_id: string
+          rally_number: number
+          serving_team: string
+          set_number: number
+          team_a_player1_id: string
+          team_a_player2_id: string
+          team_b_player1_id: string
+          team_b_player2_id: string
+        }[]
+      }
       stats_rally_length: {
         Args: {
           p_group_id?: string
           p_match_id?: string
           p_match_ids?: string[]
+          p_set_number?: number
         }
         Returns: {
           rallies: number
           serve_won: number
           shot_count: number
+        }[]
+      }
+      stats_rally_tempo: {
+        Args: {
+          p_group_id?: string
+          p_match_id?: string
+          p_match_ids?: string[]
+          p_set_number?: number
+        }
+        Returns: {
+          duration_ms: number
+          is_precise: boolean
+          last3_avg_interval_ms: number
+          last4_avg_interval_ms: number
+          match_id: string
+          point_winner: string
+          rally_id: string
+          rally_number: number
+          serving_team: string
+          set_number: number
+          shot_count: number
+          team_a_player1_id: string
+          team_a_player2_id: string
+          team_b_player1_id: string
+          team_b_player2_id: string
+          timed_count: number
+        }[]
+      }
+      stats_receive_detail: {
+        Args: {
+          p_group_id?: string
+          p_match_id?: string
+          p_match_ids?: string[]
+          p_set_number?: number
+        }
+        Returns: {
+          dest_col: number
+          dest_kind: string
+          dest_out: string
+          dest_row: number
+          receive_type: string
+          receiver_player_id: string
+          serve_type: string
+          server_position: string
+          total: number
+          won: number
+        }[]
+      }
+      stats_receive_types: {
+        Args: {
+          p_group_id?: string
+          p_match_id?: string
+          p_match_ids?: string[]
+          p_set_number?: number
+        }
+        Returns: {
+          receiver_player_id: string
+          server_position: string
+          shot_type: string
+          total: number
+          won: number
+        }[]
+      }
+      stats_serve_types: {
+        Args: {
+          p_group_id?: string
+          p_match_id?: string
+          p_match_ids?: string[]
+          p_set_number?: number
+        }
+        Returns: {
+          server_player_id: string
+          server_position: string
+          shot_type: string
+          total: number
+          won: number
+        }[]
+      }
+      stats_shot_placement: {
+        Args: {
+          p_group_id?: string
+          p_hand?: string
+          p_match_id?: string
+          p_match_ids?: string[]
+          p_set_number?: number
+          p_zones?: number
+        }
+        Returns: {
+          dest_col: number
+          dest_kind: string
+          dest_out: string
+          dest_row: number
+          hit_player_id: string
+          origin_col: number
+          origin_row: number
+          shot_type: string
+          shots: number
+        }[]
+      }
+      stats_shot_types: {
+        Args: {
+          p_group_id?: string
+          p_match_id?: string
+          p_match_ids?: string[]
+          p_set_number?: number
+        }
+        Returns: {
+          decisive_won: number
+          hand: string
+          hit_player_id: string
+          miss_lost: number
+          rallies: number
+          rallies_won: number
+          serve_first_shots: number
+          serve_won: number
+          shot_type: string
+          shots: number
+        }[]
+      }
+      stats_shot_value: {
+        Args: {
+          p_group_id?: string
+          p_match_id?: string
+          p_match_ids?: string[]
+          p_set_number?: number
+          p_zones?: number
+        }
+        Returns: {
+          fuseki1: number
+          fuseki2: number
+          hand: string
+          hit_player_id: string
+          kime: number
+          miss: number
+          n: number
+          shot_type: string
+          yuhatsu: number
+          yurushi1: number
+          yurushi2: number
+          zone_col: number
+          zone_row: number
+        }[]
+      }
+      stats_shot_zones: {
+        Args: {
+          p_group_id?: string
+          p_hand?: string
+          p_match_id?: string
+          p_match_ids?: string[]
+          p_set_number?: number
+          p_zones?: number
+        }
+        Returns: {
+          hit_player_id: string
+          shot_type: string
+          shots: number
+          zone_col: number
+          zone_row: number
         }[]
       }
       test_force_collision_invitation_code: {

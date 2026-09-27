@@ -15,7 +15,7 @@ vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k: string) => k }) }))
 vi.mock('vue-router', () => ({ useRoute: () => ({ params: { id: 'g1' } }) }))
 
 const { store, showError } = vi.hoisted(() => ({
-  store: { value: [] as { id: string, name: string | null, matchDate: string, teamA: { id: string, name: string }[], teamB: { id: string, name: string }[], videoSourceType: string, videoSourceUrl: string }[] },
+  store: { value: [] as { id: string, name: string | null, matchDate: string, matchType: string, teamA: { id: string, name: string }[], teamB: { id: string, name: string }[], videoSourceType: string, videoSourceUrl: string }[] },
   showError: vi.fn()
 }))
 
@@ -59,6 +59,7 @@ const stubs = {
     template: '<button :disabled="disabled" @click="$emit(\'click\')"><slot />{{ label }}</button>'
   },
   UAlert: { props: ['title', 'color', 'variant'], template: '<div>{{ title }}<slot name="actions" /></div>' },
+  UBadge: { props: ['color', 'variant', 'size'], template: '<span class="badge"><slot /></span>' },
   USkeleton: { template: '<div />' },
   UModal: {
     inheritAttrs: false,
@@ -82,6 +83,7 @@ const match1 = {
   id: '1',
   name: '横浜大会',
   matchDate: '2026-06-01',
+  matchType: 'doubles',
   teamA: [{ id: 'p1', name: '山' }, { id: 'p2', name: '田' }],
   teamB: [{ id: 'p3', name: '佐' }, { id: 'p4', name: '藤' }],
   videoSourceType: 'youtube',

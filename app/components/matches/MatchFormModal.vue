@@ -7,7 +7,8 @@
  *
  * 設計方針:
  *   - mode prop（'create' | 'edit'）で挙動を分岐。edit 時は match prop でプリフィル。
- *   - 4 選手は usePlayers（未削除ロスター）を選択肢に。他枠の選手を選ぶと入れ替え（スワップ）して
+ *   - 対戦形式（singles/doubles）を URadioGroup で選択。singles は各チーム 1 枠、player2 は null で保存。
+ *   - 選手は usePlayers（未削除ロスター）を選択肢に。他枠の選手を選ぶと入れ替え（スワップ）して
  *     重複を防ぐ（NFR-202 / EDGE-001）。選手ちょうど 4 人でも編集で入れ替え可能。
  *   - 動画ソースは URadioGroup（youtube/local）+ 条件付きフィールド。local=file.name、youtube=URL。
  *   - matchFormSchema でクライアント検証し、エラーは UFormField inline（EDGE-009）。
@@ -25,7 +26,7 @@ import { usePlayers } from '~/composables/usePlayers'
 import { useCreateMatch } from '~/composables/useCreateMatch'
 import { useUpdateMatch } from '~/composables/useUpdateMatch'
 import { useToastErrors } from '~/composables/useToastErrors'
-import type { MatchListItem, CreateMatchInput, UpdateMatchInput, VideoSourceType } from '~/types/match'
+import type { MatchListItem, MatchType, CreateMatchInput, UpdateMatchInput, VideoSourceType } from '~/types/match'
 
 const props = defineProps<{
   mode: 'create' | 'edit'
@@ -52,6 +53,7 @@ const pending = computed(() => createPending.value || updatePending.value)
 // フォーム state
 const name = ref('')
 const matchDate = ref('') // YYYY-MM-DD
+const matchType = ref<MatchType>('doubles')
 const teamAPlayer1Id = ref<string | undefined>()
 const teamAPlayer2Id = ref<string | undefined>()
 const teamBPlayer1Id = ref<string | undefined>()
@@ -70,15 +72,17 @@ function resetForm() {
     const m = props.match
     name.value = m.name ?? ''
     matchDate.value = m.matchDate
-    teamAPlayer1Id.value = m.teamA[0].id
-    teamAPlayer2Id.value = m.teamA[1].id
-    teamBPlayer1Id.value = m.teamB[0].id
-    teamBPlayer2Id.value = m.teamB[1].id
+    matchType.value = m.matchType
+    teamAPlayer1Id.value = m.teamA[0]?.id
+    teamAPlayer2Id.value = m.teamA[1]?.id // singles は undefined
+    teamBPlayer1Id.value = m.teamB[0]?.id
+    teamBPlayer2Id.value = m.teamB[1]?.id
     videoSourceType.value = m.videoSourceType
     videoSourceUrl.value = m.videoSourceUrl
   } else {
     name.value = ''
     matchDate.value = todayIso()
+    matchType.value = 'doubles'
     teamAPlayer1Id.value = undefined
     teamAPlayer2Id.value = undefined
     teamBPlayer1Id.value = undefined
@@ -114,6 +118,14 @@ const onSelectA2 = makeSelectHandler(teamAPlayer2Id)
 const onSelectB1 = makeSelectHandler(teamBPlayer1Id)
 const onSelectB2 = makeSelectHandler(teamBPlayer2Id)
 
+const isSingles = computed(() => matchType.value === 'singles')
+const matchTypeItems = computed(() =>
+  (['doubles', 'singles'] as const).map(v => ({
+    value: v,
+    label: t(`matches.matchTypeOptions.${v}`)
+  }))
+)
+
 const videoSourceItems = computed(() =>
   (['youtube', 'local'] as const).map(v => ({
     value: v,
@@ -142,6 +154,7 @@ async function onSubmit() {
   const parsed = matchFormSchema.safeParse({
     name: name.value,
     matchDate: matchDate.value,
+    matchType: matchType.value,
     teamAPlayer1Id: teamAPlayer1Id.value,
     teamAPlayer2Id: teamAPlayer2Id.value,
     teamBPlayer1Id: teamBPlayer1Id.value,
@@ -211,9 +224,21 @@ async function onSubmit() {
         </UFormField>
 
         <UFormField
-          :label="t('matches.teamALabel')"
+          :label="t('matches.matchTypeLabel')"
+          name="matchType"
+        >
+          <URadioGroup
+            v-model="matchType"
+            orientation="horizontal"
+            :items="matchTypeItems"
+            data-testid="match-type"
+          />
+        </UFormField>
+
+        <UFormField
+          :label="isSingles ? t('matches.playerALabel') : t('matches.teamALabel')"
           name="teamA"
-          :error="fieldErrors.form"
+          :error="fieldErrors.form ?? fieldErrors.teamAPlayer1Id ?? fieldErrors.teamAPlayer2Id"
         >
           <div class="flex flex-col gap-2">
             <USelectMenu
@@ -225,6 +250,7 @@ async function onSubmit() {
               @update:model-value="onSelectA1"
             />
             <USelectMenu
+              v-if="!isSingles"
               :model-value="teamAPlayer2Id"
               value-key="value"
               class="w-full"
@@ -236,8 +262,9 @@ async function onSubmit() {
         </UFormField>
 
         <UFormField
-          :label="t('matches.teamBLabel')"
+          :label="isSingles ? t('matches.playerBLabel') : t('matches.teamBLabel')"
           name="teamB"
+          :error="fieldErrors.teamBPlayer1Id ?? fieldErrors.teamBPlayer2Id"
         >
           <div class="flex flex-col gap-2">
             <USelectMenu
@@ -249,6 +276,7 @@ async function onSubmit() {
               @update:model-value="onSelectB1"
             />
             <USelectMenu
+              v-if="!isSingles"
               :model-value="teamBPlayer2Id"
               value-key="value"
               class="w-full"

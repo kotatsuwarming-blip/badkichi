@@ -6,17 +6,20 @@ import type { RallyLengthRow, RallyRow } from '~/types/stats-dashboard'
 
 describe('toRallyLengthBins', () => {
   const rows: RallyLengthRow[] = [
-    { shot_count: 2, rallies: 4, serve_won: 1 }, // 1-3
-    { shot_count: 3, rallies: 2, serve_won: 2 }, // 1-3
-    { shot_count: 5, rallies: 2, serve_won: 1 }, // 4-7
+    { shot_count: 2, rallies: 4, serve_won: 1 }, // 2 (レシーブ決着)
+    { shot_count: 3, rallies: 2, serve_won: 2 }, // 3-7
+    { shot_count: 5, rallies: 2, serve_won: 1 }, // 3-7
     { shot_count: 15, rallies: 1, serve_won: 0 } // 13+
   ]
 
   it('区間へ集約し本数合計と勝率を算出', () => {
     const bins = toRallyLengthBins(rows)
-    const b13 = bins.find(b => b.bin.key === '1-3')!
-    expect(b13.rallies).toBe(6) // 4 + 2
-    expect(b13.serveWinRate).toBeCloseTo(3 / 6)
+    const b2 = bins.find(b => b.bin.key === '2')!
+    expect(b2.rallies).toBe(4)
+    expect(b2.serveWinRate).toBeCloseTo(1 / 4)
+    const b37 = bins.find(b => b.bin.key === '3-7')!
+    expect(b37.rallies).toBe(4) // 2 + 2
+    expect(b37.serveWinRate).toBeCloseTo(3 / 4)
     const b13plus = bins.find(b => b.bin.key === '13+')!
     expect(b13plus.rallies).toBe(1)
     expect(b13plus.serveWinRate).toBe(0)
@@ -24,6 +27,9 @@ describe('toRallyLengthBins', () => {
 
   it('区間内 0 件は serveWinRate=null', () => {
     const bins = toRallyLengthBins(rows)
+    const b1 = bins.find(b => b.bin.key === '1')! // 該当行なし（サーブ決着 0 件）
+    expect(b1.rallies).toBe(0)
+    expect(b1.serveWinRate).toBeNull()
     const b8 = bins.find(b => b.bin.key === '8-12')! // 該当行なし
     expect(b8.rallies).toBe(0)
     expect(b8.serveWinRate).toBeNull()
@@ -32,9 +38,10 @@ describe('toRallyLengthBins', () => {
 
 describe('binsToRanges', () => {
   it('選択ビンキー → OR 範囲（複数選択の和集合）', () => {
-    expect(binsToRanges(['1-3', '4-7'])).toEqual([
-      { min: 1, max: 3 },
-      { min: 4, max: 7 }
+    expect(binsToRanges(['1', '2', '3-7'])).toEqual([
+      { min: 1, max: 1 },
+      { min: 2, max: 2 },
+      { min: 3, max: 7 }
     ])
   })
 
@@ -58,14 +65,18 @@ describe('ralliesToLengthBins', () => {
   }
   it('ラリー行から直接ビン集約（確定のみ・shot0/レット除外、サーブ側勝率）', () => {
     const rows: RallyRow[] = [
-      rr(2, 'A'), rr(3, 'B'), // 1-3: 2本, サーブ側勝1
+      rr(2, 'A'), // 2: 1本, サーブ側勝1
+      rr(3, 'B'), // 3-7: 1本, サーブ側勝0
       rr(0, 'A'), // shot0 除外
       rr(2, null, true) // レット除外
     ]
     const bins = ralliesToLengthBins(rows)
-    const b13 = bins.find(b => b.bin.key === '1-3')!
-    expect(b13.rallies).toBe(2)
-    expect(b13.serveWinRate).toBeCloseTo(0.5)
+    const b2 = bins.find(b => b.bin.key === '2')!
+    expect(b2.rallies).toBe(1)
+    expect(b2.serveWinRate).toBe(1)
+    const b37 = bins.find(b => b.bin.key === '3-7')!
+    expect(b37.rallies).toBe(1)
+    expect(b37.serveWinRate).toBe(0)
   })
 })
 
@@ -74,8 +85,9 @@ describe('toRallyLengthSeries', () => {
     const bins = toRallyLengthBins([{ shot_count: 2, rallies: 4, serve_won: 1 }])
     const series = toRallyLengthSeries(bins)
     expect(series.keys).toEqual(RALLY_LENGTH_BINS.map(b => b.key))
-    expect(series.counts[0]).toBe(4)
-    expect(series.winRatesPct[0]).toBe(25) // 1/4 = 25%
-    expect(series.winRatesPct[1]).toBeNull() // 4-7 は 0 件
+    expect(series.counts[1]).toBe(4) // key '2'
+    expect(series.winRatesPct[1]).toBe(25) // 1/4 = 25%
+    expect(series.winRatesPct[0]).toBeNull() // '1' は 0 件
+    expect(series.winRatesPct[2]).toBeNull() // '3-7' は 0 件
   })
 })

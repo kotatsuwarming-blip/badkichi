@@ -41,4 +41,23 @@ describe('SetSetupForm', () => {
     expect(payload.setup.firstServingTeam).toBe('B') // suggested を既定
     expect(payload.positions).toHaveLength(4)
   })
+
+  it('singles (各チーム 1 人): ファースト欄なしで right 2 行を emit (REQ-104)', async () => {
+    const singlesRoster = [
+      { playerId: 'A1', name: '佐藤', team: 'A' as const },
+      { playerId: 'B1', name: '高橋', team: 'B' as const }
+    ]
+    const w = mount(SetSetupForm, {
+      props: { roster: singlesRoster, setNumber: 1 },
+      global: { mocks: { $t: (k: string) => k }, stubs }
+    })
+    expect(w.find('[data-testid="positions-title"]').exists()).toBe(false)
+    expect(w.find('[data-testid="a-first"]').exists()).toBe(false)
+    await w.find('[data-testid="set-setup-form"]').trigger('submit')
+    const payload = w.emitted('submit')?.[0]?.[0] as { positions: unknown[] }
+    expect(payload.positions).toEqual([
+      { playerId: 'A1', team: 'A', position: 'right' },
+      { playerId: 'B1', team: 'B', position: 'right' }
+    ])
+  })
 })

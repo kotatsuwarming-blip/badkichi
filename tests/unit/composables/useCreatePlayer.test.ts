@@ -68,7 +68,7 @@ describe('useCreatePlayer', () => {
   it('TC-002-01: name のみ → handedness=unknown で insert する (EDGE-003)', async () => {
     const { createPlayer } = useCreatePlayer()
     const r = await createPlayer({ name: '田中' })
-    expect(insertMock).toHaveBeenCalledWith({ group_id: 'g1', name: '田中', handedness: 'unknown' })
+    expect(insertMock).toHaveBeenCalledWith({ group_id: 'g1', name: '田中', handedness: 'unknown', roster_type: 'member', sex: 'unspecified', height_cm: null, weight_kg: null, birthdate: null, badminton_since: null, practice_frequency: null, play_styles: [] })
     expect(r.data).toEqual({ id: 'p1', name: '田中', handedness: 'unknown' })
     expect(r.error).toBeNull()
   })
@@ -80,7 +80,7 @@ describe('useCreatePlayer', () => {
     singleMock.mockResolvedValue({ data: { id: 'p2', name: '田中', handedness: 'left' }, error: null })
     const { createPlayer } = useCreatePlayer()
     const r = await createPlayer({ name: '田中', handedness: 'left' })
-    expect(insertMock).toHaveBeenCalledWith({ group_id: 'g1', name: '田中', handedness: 'left' })
+    expect(insertMock).toHaveBeenCalledWith({ group_id: 'g1', name: '田中', handedness: 'left', roster_type: 'member', sex: 'unspecified', height_cm: null, weight_kg: null, birthdate: null, badminton_since: null, practice_frequency: null, play_styles: [] })
     expect(r.error).toBeNull()
     expect(r.data).toMatchObject({ name: '田中', handedness: 'left' })
   })

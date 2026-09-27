@@ -37,8 +37,8 @@ const { refresh, deletePlayer, showError } = vi.hoisted(() => {
 
 // playersData は vi.mock ファクトリ内で参照できるよう module スコープで管理
 // vi.mock はホイスティングされるため、ref はファクトリ内で生成する
-let playersDataValue: Array<{ id: string, name: string, handedness: string }> = [
-  { id: '1', name: '山田', handedness: 'right' }
+let playersDataValue: Array<Record<string, unknown>> = [
+  { id: '1', name: '山田', handedness: 'right', roster_type: 'member', sex: 'unspecified', height_cm: null, weight_kg: null, birthdate: null, badminton_since: null, practice_frequency: null, play_styles: [] }
 ]
 
 vi.mock('~/composables/usePlayers', () => ({
@@ -89,7 +89,7 @@ describe('players.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     // デフォルト: 1 件の一覧
-    playersDataValue = [{ id: '1', name: '山田', handedness: 'right' }]
+    playersDataValue = [{ id: '1', name: '山田', handedness: 'right', roster_type: 'member', sex: 'unspecified', height_cm: null, weight_kg: null, birthdate: null, badminton_since: null, practice_frequency: null, play_styles: [] }]
     deletePlayer.mockResolvedValue({ data: null, error: null })
   })
 

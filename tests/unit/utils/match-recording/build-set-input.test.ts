@@ -37,7 +37,29 @@ describe('buildSetInput', () => {
     expect(setup.cameraNearTeamAtStart).toBeNull()
   })
 
-  it('チーム人数が 2 でないロスターは例外', () => {
+  it('チーム人数が偏ったロスター (A×2 / B×1) は例外', () => {
     expect(() => buildSetInput(roster.slice(0, 3), base)).toThrow()
+  })
+
+  // ---- singles-support: 各チーム 1 人 ----
+  const singlesRoster = [
+    { playerId: 'A1', name: '佐藤', team: 'A' as const },
+    { playerId: 'B1', name: '高橋', team: 'B' as const }
+  ]
+
+  it('singles: 各チーム right の 1 行だけを組み立てる (left は rule-engine が同一選手で埋める)', () => {
+    const { positions } = buildSetInput(singlesRoster, base)
+    expect(positions).toEqual([
+      { playerId: 'A1', team: 'A', position: 'right' },
+      { playerId: 'B1', team: 'B', position: 'right' }
+    ])
+  })
+
+  it('singles: ファーストがチーム外の選手なら例外', () => {
+    expect(() => buildSetInput(singlesRoster, { ...base, aFirstPlayerId: 'X' })).toThrow()
+  })
+
+  it('空ロスターは例外', () => {
+    expect(() => buildSetInput([], base)).toThrow()
   })
 })

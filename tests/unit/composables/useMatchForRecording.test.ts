@@ -59,6 +59,7 @@ import { useMatchForRecording } from '~/composables/useMatchForRecording'
 const rowFixture = {
   id: 'm1',
   name: 'XX練習会',
+  match_type: 'doubles',
   video_source_type: 'youtube',
   video_source_url: 'https://youtu.be/abc',
   completed_at: null,
@@ -86,6 +87,16 @@ describe('useMatchForRecording', () => {
       { playerId: 'p2', name: '鈴木', team: 'A' },
       { playerId: 'p3', name: '高橋', team: 'B' },
       { playerId: 'p4', name: '田中', team: 'B' }
+    ])
+  })
+
+  it('TC1b: singles は roster 2 人 + matchType (REQ-109)', async () => {
+    singleMock.mockResolvedValue({ data: { ...rowFixture, match_type: 'singles', ta2: null, tb2: null }, error: null })
+    const { data } = await useMatchForRecording('m1')
+    expect(data.value?.matchType).toBe('singles')
+    expect(data.value?.roster).toEqual([
+      { playerId: 'p1', name: '佐藤', team: 'A' },
+      { playerId: 'p3', name: '高橋', team: 'B' }
     ])
   })
 

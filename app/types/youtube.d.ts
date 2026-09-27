@@ -13,6 +13,7 @@ interface YTPlayer {
   playVideo(): void
   pauseVideo(): void
   seekTo(seconds: number, allowSeekAhead: boolean): void
+  loadVideoById(opts: { videoId: string, startSeconds?: number }): void
   setPlaybackRate(suggestedRate: number): void
   getCurrentTime(): number
   getDuration(): number
@@ -40,6 +41,7 @@ declare namespace YT {
     playVideo(): void
     pauseVideo(): void
     seekTo(seconds: number, allowSeekAhead: boolean): void
+    loadVideoById(opts: { videoId: string, startSeconds?: number }): void
     setPlaybackRate(suggestedRate: number): void
     getCurrentTime(): number
     getDuration(): number

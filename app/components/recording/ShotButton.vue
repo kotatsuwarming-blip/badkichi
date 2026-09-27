@@ -4,6 +4,7 @@
  * 関連: TASK-0014 / REQ-005 / NFR-201 / ui-design.md
  */
 import { onBeforeUnmount, onMounted } from 'vue'
+import { isTextEntryTarget } from '~/utils/keyboard-target'
 
 const props = defineProps<{
   shotCount: number
@@ -18,8 +19,7 @@ function fire() {
 }
 
 function onKeydown(e: KeyboardEvent) {
-  const target = e.target as HTMLElement | null
-  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+  if (isTextEntryTarget(e.target)) return
   if (e.code === 'Space' || e.key === ' ') {
     // capture + stopPropagation で、フォーカス中のボタン/セレクトに Space を奪われないようにする
     e.preventDefault()

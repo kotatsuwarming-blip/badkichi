@@ -43,6 +43,22 @@ describe('ShotButton', () => {
     expect(w.emitted('shot')).toHaveLength(1)
   })
 
+  it('シークバー (input[type=range]) フォーカス中でも Space が効く / テキスト入力中は効かない (2026-09-26 バグ修正)', () => {
+    const w = mount(ShotButton, { props: { shotCount: 0 }, global })
+    const range = document.createElement('input')
+    range.type = 'range'
+    document.body.appendChild(range)
+    range.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true }))
+    expect(w.emitted('shot')).toHaveLength(1)
+    const text = document.createElement('input')
+    text.type = 'text'
+    document.body.appendChild(text)
+    text.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true }))
+    expect(w.emitted('shot')).toHaveLength(1) // 増えない
+    range.remove()
+    text.remove()
+  })
+
   it('disabled の場合は emit しない', async () => {
     const w = mount(ShotButton, { props: { shotCount: 0, disabled: true }, global })
     await w.find('[data-testid="shot-button"]').trigger('click')
@@ -85,6 +101,13 @@ describe('PositionControls', () => {
     await w.find('[data-testid="override-a"]').trigger('click')
     expect(w.emitted('override')?.[0]).toEqual(['A'])
     expect((w.find('[data-testid="next-set"]').element as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('showOverride=false (singles) は入替ボタンなし、next-set は残る (REQ-106)', () => {
+    const w = mount(PositionControls, { props: { canAdvance: true, showOverride: false }, global })
+    expect(w.find('[data-testid="override-a"]').exists()).toBe(false)
+    expect(w.find('[data-testid="override-b"]').exists()).toBe(false)
+    expect(w.find('[data-testid="next-set"]').exists()).toBe(true)
   })
 
   it('canAdvance=true で next-set が活性 → emit', async () => {
