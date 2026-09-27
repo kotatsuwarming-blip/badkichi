@@ -98,10 +98,7 @@ const shotMock = {
   originCells: ref([]),
   destCells: ref([]),
   missOriginCells: ref([]),
-  destExtras: ref({
-    net: { count: 0, breakdown: [] }, left: { count: 0, breakdown: [] },
-    right: { count: 0, breakdown: [] }, back: { count: 0, breakdown: [] }
-  }),
+  outRing: ref({ net: { count: 0, breakdown: [] }, ring: {}, ringTotal: 0 }),
   heatmapTotal: ref(0),
   svRows: ref([]),
   filteredSvRows: ref([]),
@@ -137,7 +134,7 @@ const stubs = {
   StatsShotMixChart: { props: ['rows'], template: '<div data-testid="mix-chart" />' },
   StatsShotMixScatter: { props: ['rows'], template: '<div data-testid="mix-scatter" />' },
   StatsHandChart: { props: ['rows'], template: '<div data-testid="hand-chart" />' },
-  StatsShotHeatmap: { props: ['originCells', 'destCells', 'destExtras', 'selected', 'total', 'pointedTotal'], template: '<div data-testid="heatmap" />' }
+  StatsShotHeatmap: { props: ['originCells', 'destCells', 'outRing', 'selected', 'total', 'pointedTotal'], template: '<div data-testid="heatmap" />' }
 }
 
 function mountPage() {

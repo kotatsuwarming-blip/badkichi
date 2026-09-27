@@ -48,8 +48,10 @@ describe('buildCourses (Level 3)', () => {
   it('選択サーブのコース別 本数・得点率 + ネット/不明を分離', () => {
     const courses = buildCourses(rows, { serveType: 'serve_short' })
     expect(courses.cells.find(c => c.row === 0 && c.col === 0)).toMatchObject({ total: 3, won: 2 })
+    // 返球種別の内訳 (ホバー表示用, 2026-09-29)
+    expect(courses.cells.find(c => c.row === 0 && c.col === 0)!.types).toEqual([{ type: 'hairpin', total: 3 }])
     expect(courses.cells.find(c => c.row === 2 && c.col === 1)).toMatchObject({ total: 2, won: 0 })
-    expect(courses.net).toEqual({ total: 1, won: 0 })
+    expect(courses.net).toMatchObject({ total: 1, won: 0, types: [{ type: 'hairpin', total: 1 }] })
     expect(courses.unknown.total).toBe(0)
   })
   it('返球種別でさらに絞り込める（ドリルダウン）', () => {

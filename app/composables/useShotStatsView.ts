@@ -18,7 +18,7 @@ import type { ShotValueRow } from '~/types/shot-value'
 import type { StatsViewScope } from '~/composables/useStatsView'
 import { callStatsRpc } from '~/utils/stats-dashboard/stats-rpc'
 import { buildDecisiveRanking, buildEndingEntries, buildLandZones } from '~/utils/shot-stats/endings'
-import { buildDestCells, buildDestExtras, buildOriginCells } from '~/utils/shot-stats/placement'
+import { buildDestCells, buildOriginCells, buildOutRing } from '~/utils/shot-stats/placement'
 import { excludeNonSvTypes } from '~/utils/shot-value/score'
 
 export function useShotStatsView(
@@ -170,12 +170,11 @@ export function useShotStatsView(
     buildOriginCells(filteredPlacement.value.filter(r => r.dest_kind === 'net' || r.dest_kind === 'out'))
   )
 
-  /** コート外の行き先（ネット / 左右アウト / バックアウト。寄せずに別枠表示, #4） */
-  const destExtras = computed(() => buildDestExtras(filteredPlacement.value, selectedOrigin.value))
+  /** コート外の行き先（ネット単枠 + アウト位置リング 11 枠, stats-miss-out-detail REQ-102/106） */
+  const outRing = computed(() => buildOutRing(filteredPlacement.value, selectedOrigin.value))
   const heatmapTotal = computed(() =>
     destCells.value.reduce((s, c) => s + c.count, 0)
-    + destExtras.value.net.count + destExtras.value.left.count
-    + destExtras.value.right.count + destExtras.value.back.count
+    + outRing.value.net.count + outRing.value.ringTotal
   )
 
   function selectOrigin(cell: { row: number, col: number } | null): void {
@@ -209,7 +208,7 @@ export function useShotStatsView(
     // A
     endingEntries, decisiveRanking, landZonesWon, landZonesLost,
     // F
-    selectedOrigin, selectOrigin, originCells, destCells, destExtras, heatmapTotal, missOriginCells,
+    selectedOrigin, selectOrigin, originCells, destCells, outRing, heatmapTotal, missOriginCells,
     // SV（強み・課題）
     svRows, filteredSvRows,
     isEmpty

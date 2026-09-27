@@ -10,29 +10,36 @@ vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k: string, p?: Record<string,
 
 // eslint-disable-next-line import/first
 import StatsShotHeatmap from '~/components/stats/StatsShotHeatmap.vue'
+
 // eslint-disable-next-line import/first
-import type { PlacementDestCell, PlacementExtras } from '~/types/shot-stats'
+import { OUT_RING_SLOTS } from '~/types/shot-stats'
+// eslint-disable-next-line import/first
+import type { PlacementDestCell, PlacementOutRing } from '~/types/shot-stats'
 
 const global = { mocks: { $t: (k: string, p?: Record<string, unknown>) => p ? `${k}:${JSON.stringify(p)}` : k } }
 
 const originCells: PlacementDestCell[] = [
-  { row: 2, col: 0, count: 4, ratio: 1, breakdown: [{ type: 'smash', count: 3, miss: 1 }, { type: 'hairpin', count: 1, miss: 0 }] },
-  { row: 0, col: 2, count: 2, ratio: 0.5, breakdown: [{ type: 'clear_high', count: 2, miss: 0 }] }
+  { row: 2, col: 0, count: 4, ratio: 1, breakdown: [{ type: 'smash', count: 3, miss: 1, net: 0 }, { type: 'hairpin', count: 1, miss: 0, net: 0 }] },
+  { row: 0, col: 2, count: 2, ratio: 0.5, breakdown: [{ type: 'clear_high', count: 2, miss: 0, net: 0 }] }
 ]
-const destExtras: PlacementExtras = {
-  net: { count: 2, breakdown: [{ type: 'hairpin', count: 2, miss: 2 }] },
-  left: { count: 1, breakdown: [{ type: 'smash', count: 1, miss: 1 }] },
-  right: { count: 0, breakdown: [] },
-  back: { count: 0, breakdown: [] }
+const emptyRing = () => Object.fromEntries(OUT_RING_SLOTS.map(slot => [slot, { count: 0, breakdown: [] }])) as PlacementOutRing['ring']
+const outRing: PlacementOutRing = {
+  net: { count: 2, breakdown: [{ type: 'hairpin', count: 2, miss: 2, net: 2 }] },
+  ring: {
+    ...emptyRing(),
+    left_0: { count: 1, breakdown: [{ type: 'smash', count: 1, miss: 1, net: 0 }] },
+    left_back: { count: 2, breakdown: [{ type: 'clear_high', count: 2, miss: 2, net: 0 }] }
+  },
+  ringTotal: 3
 }
 const destCells: PlacementDestCell[] = [
-  { row: 2, col: 1, count: 5, ratio: 1, breakdown: [{ type: 'smash', count: 3, miss: 0 }, { type: 'clear_high', count: 2, miss: 0 }] },
-  { row: 0, col: 0, count: 1, ratio: 0.2, breakdown: [{ type: 'hairpin', count: 1, miss: 0 }] }
+  { row: 2, col: 1, count: 5, ratio: 1, breakdown: [{ type: 'smash', count: 3, miss: 0, net: 0 }, { type: 'clear_high', count: 2, miss: 0, net: 0 }] },
+  { row: 0, col: 0, count: 1, ratio: 0.2, breakdown: [{ type: 'hairpin', count: 1, miss: 0, net: 0 }] }
 ]
 
 function mountMap(selected: { row: number, col: number } | null = null) {
   return mount(StatsShotHeatmap, {
-    props: { originCells, destCells, destExtras, selected, total: 8, pointedTotal: 9 },
+    props: { originCells, destCells, outRing, selected, total: 8, pointedTotal: 9 },
     global
   })
 }
@@ -80,16 +87,19 @@ describe('StatsShotHeatmap', () => {
     expect(title).toContain('annotation.shotType.hairpin 1')
   })
 
-  it('ネット/アウトはコート外に別枠表示され、ホバーで内訳が出る (#4)', () => {
+  it('アウトは位置つきリング枠 (11 枠) + ネット単枠で表示され、ホバーで内訳が出る (stats-miss-out-detail REQ-102/103)', () => {
     const w = mountMap()
-    const net = w.find('[data-testid="extra-net"]')
-    expect(net.exists()).toBe(true)
-    expect(net.text()).toContain('2')
-    expect(net.find('title').text()).toContain('annotation.shotType.hairpin 2')
-    expect(w.find('[data-testid="extra-left"]').text()).toContain('1')
-    // 0 件の方向は表示しない
-    expect(w.find('[data-testid="extra-right"]').exists()).toBe(false)
-    expect(w.find('[data-testid="extra-back"]').exists()).toBe(false)
+    // 全 11 枠が描画される（0 本は淡色で存在は見える）
+    for (const slot of OUT_RING_SLOTS) {
+      expect(w.find(`[data-testid="out-${slot}"]`).exists(), slot).toBe(true)
+    }
+    // 本数あり枠は内訳ツールチップ
+    expect(w.find('[data-testid="out-left_0"] title').text()).toContain('annotation.shotType.smash 1')
+    expect(w.find('[data-testid="out-left_back"]').attributes('opacity')).toBe('1')
+    expect(w.find('[data-testid="out-right_2"]').attributes('opacity')).toBe('0.35')
+    // ネットは単枠のまま (REQ-105)
+    expect(w.find('[data-testid="extra-net"]').text()).toContain('2')
+    expect(w.find('[data-testid="extra-net"] title').text()).toContain('annotation.shotType.hairpin 2')
   })
 
   it('選択時に横のプロファイルグラフが出て、候補の 0 本も表示される (#5)', async () => {

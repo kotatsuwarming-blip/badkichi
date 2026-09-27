@@ -98,6 +98,7 @@ describe.skipIf(skip)('shot-stats 集計 RPC 統合テスト', () => {
   let groupId: string
   let p: string[] // [p0, p1] = team A / [p2, p3] = team B
   let matchId: string
+  let matchId2: string
 
   beforeAll(async () => {
     const { userA, userB } = inject('users')
@@ -181,6 +182,32 @@ describe.skipIf(skip)('shot-stats 集計 RPC 統合テスト', () => {
       rallyNumber: 6, servingTeam: 'A', server: p[0], receiver: p[2], pointWinner: 'B',
       endReason: 'service_fault',
       shots: [{ hitPlayerId: p[0], shotType: 'serve_short', videoMs: 1000 }]
+    })
+    // 角アウト検証用の別試合 (stats-miss-out-detail REQ-104)。母数系アサーションへの波及を避けるため隔離
+    const { data: match2, error: m2Err } = await serviceClient.from('matches').insert({
+      group_id: groupId,
+      team_a_player1_id: p[0],
+      team_a_player2_id: p[1],
+      team_b_player1_id: p[2],
+      team_b_player2_id: p[3],
+      video_source_type: 'youtube',
+      video_source_url: 'https://youtu.be/out-ring-test'
+    }).select('id').single()
+    if (m2Err || !match2) throw new Error(`insertMatch2 failed: ${m2Err?.message}`)
+    matchId2 = match2.id
+    const { data: set2, error: s2Err } = await serviceClient.from('sets')
+      .insert({ match_id: matchId2, set_number: 1, first_serving_team: 'A' })
+      .select('id').single()
+    if (s2Err || !set2) throw new Error(`insertSet2 failed: ${s2Err?.message}`)
+    // land 生値 (-0.2, 1.15)、打者 p1 (チームA, cam=B) → x のみ反転 → (1.2, 1.15) = 右奥角 (right_back)
+    await insertAnnotatedRally(serviceClient, set2.id, {
+      rallyNumber: 1, servingTeam: 'A', server: p[0], receiver: p[2], pointWinner: 'B',
+      endReason: 'floor', landX: -0.2, landY: 1.15,
+      shots: [
+        { hitPlayerId: p[0], shotType: 'serve_long', videoMs: 1000 },
+        { hitPlayerId: p[2], shotType: 'lob_high', videoMs: 1500 },
+        { hitPlayerId: p[1], shotType: 'clear_driven', hitX: 0.5, hitY: 0.8, videoMs: 2000 }
+      ]
     })
   }, 30000)
 
@@ -353,11 +380,21 @@ describe.skipIf(skip)('shot-stats 集計 RPC 統合テスト', () => {
     expect(Number(smash.shots)).toBe(1)
     // R1 s2 (p2, rn=2) はレシーブのため対象外 (#5: 3打目以降のみ)
     expect(rows.find(r => r.hit_player_id === p[2] && r.shot_type === null)).toBeUndefined()
-    // R3 s3 (p1 smash): floor × land (1.2, 0.5) 範囲外 → x 反転で (-0.2, 0.5) = 左アウト。寄せない (#4)
+    // R3 s3 (p1 smash): floor × land (1.2, 0.5) 範囲外 → x 反転で (-0.2, 0.5) = 左アウト。
+    // stats-miss-out-detail REQ-104: サイドアウトは dest_row = 相手半面の行 (0.5 → ネット側 = 0)
     const outRow = rows.find(r => r.hit_player_id === p[1] && r.shot_type === 'smash')!
     expect(outRow.dest_kind).toBe('out')
     expect(outRow.dest_out).toBe('left')
-    expect(outRow.dest_row).toBeNull()
+    expect(Number(outRow.dest_row)).toBe(0)
+    expect(outRow.dest_col).toBeNull()
+    // 別試合の角アウト: land (-0.2, 1.15) → x 反転 (1.2, 1.15) = 右奥角 (REQ-104 角の分離)
+    const { data: data2 } = await userAClient.rpc('stats_shot_placement', { p_match_id: matchId2 })
+    const rows2 = data2 as Array<Record<string, number | string | null>>
+    const cornerRow = rows2.find(r => r.hit_player_id === p[1] && r.shot_type === 'clear_driven')!
+    expect(cornerRow.dest_kind).toBe('out')
+    expect(cornerRow.dest_out).toBe('right_back')
+    expect(cornerRow.dest_row).toBeNull()
+    expect(cornerRow.dest_col).toBeNull()
     // R2 s2 (p2 hairpin): ネット決着の最終打 → dest_kind='net' (従来は集計から消えていた)
     const netRow = rows.find(r => r.hit_player_id === p[2] && r.shot_type === 'hairpin')!
     expect(netRow.dest_kind).toBe('net')
