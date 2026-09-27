@@ -6,13 +6,39 @@
  * 座標系は選手視点固定（下 = 対象選手の自陣バック側, REQ-105）。
  * コート実寸比: 幅 6.1m × 全長 13.4m（cm 単位の viewBox）。
  */
+import { computed } from 'vue'
 import type { ZoneCell } from '~/types/shot-stats'
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   cells: ZoneCell[]
   zones?: number
   showCounts?: boolean
-}>(), { zones: 3, showCounts: true })
+  /** 本数でなく全体比 % を表示 (stats-miss-out-detail REQ-001) */
+  percent?: boolean
+  /** セルをクリック選択可能にする (REQ-002)。selected と select emit で完全制御 */
+  selectable?: boolean
+  selected?: { row: number, col: number } | null
+  /** セルのホバーツールチップ (SVG title)。キー = "row:col" */
+  cellTitles?: Record<string, string>
+}>(), { zones: 3, showCounts: true, percent: false, selectable: false, selected: null, cellTitles: undefined })
+
+const emit = defineEmits<{ select: [cell: { row: number, col: number }] }>()
+
+const totalCount = computed(() => props.cells.reduce((s, c) => s + c.count, 0))
+
+function cellLabel(cell: ZoneCell): string {
+  if (!props.percent) return String(cell.count)
+  if (totalCount.value === 0) return ''
+  return `${Math.round((cell.count / totalCount.value) * 100)}%`
+}
+
+function isSelected(cell: ZoneCell): boolean {
+  return props.selected?.row === cell.row && props.selected?.col === cell.col
+}
+
+function onCellClick(cell: ZoneCell): void {
+  if (props.selectable) emit('select', { row: cell.row, col: cell.col })
+}
 
 const W = 610
 const H = 1340
@@ -35,7 +61,7 @@ function cellY(row: number, zones: number): number {
     role="img"
     data-testid="court-zones"
   >
-    <!-- ゾーンヒート -->
+    <!-- ゾーンヒート（selectable 時はクリックで選択, REQ-002） -->
     <g>
       <rect
         v-for="cell in cells"
@@ -45,8 +71,14 @@ function cellY(row: number, zones: number): number {
         :width="W / zones"
         :height="H / (zones * 2)"
         :fill="`rgba(59, 130, 246, ${0.1 + cell.ratio * 0.55})`"
+        :stroke="isSelected(cell) ? 'currentColor' : 'none'"
+        :stroke-width="isSelected(cell) ? 10 : 0"
+        :style="selectable ? 'cursor: pointer' : undefined"
         :data-testid="`zone-${cell.row}-${cell.col}`"
-      />
+        @click="onCellClick(cell)"
+      >
+        <title v-if="cellTitles?.[`${cell.row}:${cell.col}`]">{{ cellTitles[`${cell.row}:${cell.col}`] }}</title>
+      </rect>
     </g>
     <!-- コートライン -->
     <g
@@ -136,7 +168,8 @@ function cellY(row: number, zones: number): number {
         font-size="52"
         fill="currentColor"
         opacity="0.85"
-      >{{ cell.count }}</text>
+        pointer-events="none"
+      >{{ cellLabel(cell) }}</text>
     </g>
   </svg>
 </template>

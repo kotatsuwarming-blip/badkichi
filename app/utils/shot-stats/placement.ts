@@ -7,26 +7,28 @@
  * - コート外の行き先（ネット / 左右アウト / バックアウト。寄せずに別枠表示, #4）
  * を導出する。
  */
+import { OUT_RING_SLOTS } from '~/types/shot-stats'
 import type {
-  PlacementBreakdown, PlacementDestCell, PlacementExtra, PlacementExtras,
+  OutRingSlot, PlacementBreakdown, PlacementDestCell, PlacementExtra, PlacementOutRing,
   ShotPlacementRow
 } from '~/types/shot-stats'
 import type { ShotType } from '~/types/shot-annotation'
 
-interface TypeAcc { count: number, miss: number }
+interface TypeAcc { count: number, miss: number, net: number }
 
 function toBreakdown(types: Map<string, TypeAcc>): PlacementBreakdown[] {
   return [...types.entries()]
-    .map(([tkey, acc]) => ({ type: tkey === '__null__' ? null : tkey as ShotType, count: acc.count, miss: acc.miss }))
+    .map(([tkey, acc]) => ({ type: tkey === '__null__' ? null : tkey as ShotType, count: acc.count, miss: acc.miss, net: acc.net }))
     .sort((a, b) => b.count - a.count)
 }
 
 function addType(types: Map<string, TypeAcc>, row: ShotPlacementRow): void {
   const tkey = row.shot_type ?? '__null__'
-  const acc = types.get(tkey) ?? { count: 0, miss: 0 }
+  const acc = types.get(tkey) ?? { count: 0, miss: 0, net: 0 }
   acc.count += row.shots
-  // ミス = ネット/アウトで終わった配球（#7 赤表示用）
+  // ミス = ネット/アウトで終わった配球（#7 赤表示用）。net はミス内訳表示用（REQ-002）
   if (row.dest_kind === 'net' || row.dest_kind === 'out') acc.miss += row.shots
+  if (row.dest_kind === 'net') acc.net += row.shots
   types.set(tkey, acc)
 }
 
@@ -81,27 +83,46 @@ export function buildDestCells(
   })
 }
 
-/** コート外の行き先（ネット / 左右アウト / バックアウト）。selected 連動（#4） */
-export function buildDestExtras(
+/** out 行 → リング枠キー（stats-miss-out-detail REQ-102/104） */
+export function outRingSlotOf(r: ShotPlacementRow): OutRingSlot | null {
+  if (r.dest_kind !== 'out' || r.dest_out === null) return null
+  if (r.dest_out === 'left_back' || r.dest_out === 'right_back') return r.dest_out
+  if (r.dest_out === 'back') return `back_${r.dest_col ?? 1}` as OutRingSlot
+  return `${r.dest_out}_${r.dest_row ?? 0}` as OutRingSlot
+}
+
+/** アウト位置リング（11 枠）+ ネット単枠。selected 連動（REQ-102/105/106） */
+export function buildOutRing(
   rows: ShotPlacementRow[],
   selected: { row: number, col: number } | null
-): PlacementExtras {
-  const maps = {
-    net: new Map<string, TypeAcc>(),
-    left: new Map<string, TypeAcc>(),
-    right: new Map<string, TypeAcc>(),
-    back: new Map<string, TypeAcc>()
-  }
+): PlacementOutRing {
+  const net = new Map<string, TypeAcc>()
+  const slots = new Map<OutRingSlot, Map<string, TypeAcc>>()
   for (const r of rows) {
     if (!matchesOrigin(r, selected)) continue
-    if (r.dest_kind === 'net') addType(maps.net, r)
-    else if (r.dest_kind === 'out' && r.dest_out !== null) addType(maps[r.dest_out], r)
+    if (r.dest_kind === 'net') {
+      addType(net, r)
+      continue
+    }
+    const slot = outRingSlotOf(r)
+    if (slot === null) continue
+    let m = slots.get(slot)
+    if (!m) {
+      m = new Map()
+      slots.set(slot, m)
+    }
+    addType(m, r)
   }
-  const toExtra = (m: Map<string, TypeAcc>): PlacementExtra => ({
-    count: [...m.values()].reduce((s, v) => s + v.count, 0),
-    breakdown: toBreakdown(m)
+  const toExtra = (m: Map<string, TypeAcc> | undefined): PlacementExtra => ({
+    count: m ? [...m.values()].reduce((s, v) => s + v.count, 0) : 0,
+    breakdown: m ? toBreakdown(m) : []
   })
-  return { net: toExtra(maps.net), left: toExtra(maps.left), right: toExtra(maps.right), back: toExtra(maps.back) }
+  const ring = Object.fromEntries(OUT_RING_SLOTS.map(slot => [slot, toExtra(slots.get(slot))])) as Record<OutRingSlot, PlacementExtra>
+  return {
+    net: toExtra(net),
+    ring,
+    ringTotal: OUT_RING_SLOTS.reduce((s, slot) => s + ring[slot].count, 0)
+  }
 }
 
 /**
@@ -133,7 +154,7 @@ export function buildOriginProfile(
   if (candidates === null) return breakdown
   const byType = new Map(breakdown.map(b => [b.type ?? '__null__', b] as const))
   const listed: PlacementBreakdown[] = candidates.map(type =>
-    byType.get(type) ?? { type, count: 0, miss: 0 }
+    byType.get(type) ?? { type, count: 0, miss: 0, net: 0 }
   )
   const extras = breakdown
     .filter(b => !candidates.includes(b.type as ShotType))
