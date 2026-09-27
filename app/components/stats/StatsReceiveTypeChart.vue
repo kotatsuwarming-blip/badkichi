@@ -157,6 +157,11 @@ function ringFill(total: number): string {
   if (total === 0) return 'transparent'
   return `rgba(239, 68, 68, ${0.18 + (total / ringMax()) * 0.45})`
 }
+
+/** 返球種別の内訳ツールチップ文字列（配球ヒートマップと同形式, 2026-09-29） */
+function typesText(types: { type: ShotType | null, total: number }[]): string {
+  return types.map(e => `${typeLabel(e.type)} ${e.total}`).join(' / ')
+}
 </script>
 
 <template>
@@ -215,6 +220,7 @@ function ringFill(total: number): string {
             v-for="cell in courses.cells"
             :key="`${cell.row}:${cell.col}`"
           >
+            <title>{{ typesText(cell.types) }}</title>
             <rect
               :x="(CW / 3) * cell.col"
               :y="courseCellY(cell.row)"
@@ -299,7 +305,9 @@ function ringFill(total: number): string {
                 stroke-width="3"
                 :opacity="courses.ring[r.slot].total > 0 ? 1 : 0.35"
                 :data-testid="`course-out-${r.slot}`"
-              />
+              >
+                <title v-if="courses.ring[r.slot].total > 0">{{ typesText(courses.ring[r.slot].types) }}</title>
+              </rect>
               <text
                 v-if="courses.ring[r.slot].total > 0"
                 :x="r.x + r.w / 2"
@@ -324,7 +332,7 @@ function ringFill(total: number): string {
               data-testid="course-net"
             >
               {{ $t('shotStats.heatmap.net') }} {{ courses.net.total }}
-              <title>{{ rateText(courses.net.total, courses.net.won) }}</title>
+              <title>{{ typesText(courses.net.types) }}</title>
             </text>
           </g>
         </svg>
