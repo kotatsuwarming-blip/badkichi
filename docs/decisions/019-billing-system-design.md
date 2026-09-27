@@ -73,14 +73,7 @@ ALTER TABLE group_members
 
 - Product / Price は Stripe ダッシュボードで管理: Product「Pro」× **標準 Price 1 本**
   (月額 JPY、`lookup_key: 'pro_monthly'`)。**金額はローンチ時に決定** (本 ADR では未定のまま)
-- **チーム別価格 (2026-09-27 追記、ユーザー決定)**: 契約チームによって月額を変える。
-  同じ Product「Pro」配下に追加 Price (`lookup_key: 'pro_monthly_<チーム識別子>'`) を作り、
-  グループ → Price の割当を Supabase 側テーブル (`billing_price_assignments`) に持つ。
-  Checkout Session 作成時に「割当があればその Price、なければ標準 Price」で解決する。
-  **変えるのは金額のみで機能差は付けない** (プラン判定は Price を見ず `status` だけで pro を
-  決めるため、どの Price でも同じ Pro)。機能差の個別 override は複雑化するため採らない。
-  割当の管理はアプリ内 UI を作らず運営者が SQL で行う。契約中の金額変更は Stripe
-  ダッシュボードで subscription の Price を差し替え、Webhook で同期する
+- 個別価格のチームは Pro の Price を増やすのではなく **Team プラン** (§11) として扱う
 - Checkout はホスト型なのでフロントに Stripe.js / publishable key は不要
   (サーバーで作った session の URL にリダイレクトするだけ)
 - 決済 UI 3 方式の比較は §理由 2 を参照
@@ -259,6 +252,24 @@ export const ENTITLEMENTS = {
 A は Stripe なしで完結するため、課金を始める前でも「トライアル残り日数の表示」等に使える。
 C は公開時まで寝かせる (仲間内ローンチは制限なし — ADR-013 §理由 4)。
 
+### 11. Team プラン: 直接契約・個別価格・機能無制限・代行枠 (2026-09-27 追記、ユーザー決定)
+
+ADR-013 の Free / Trial / Pro に **Team** を 4 つ目のプランとして追加する。
+
+| | Pro | Team |
+|---|---|---|
+| 契約 | 野良ユーザーが UI から自己契約 (Checkout) | 運営者と直接契約 (アプリ外で合意・請求) |
+| 価格 | 標準 Price 1 本 | チームごとに個別。DB の契約記録に金額を残す (Stripe Price は作らない) |
+| 機能 | マトリクスの Pro 列 | 基本的に無制限 (Team 列は全開放。チーム間で機能差は付けない) |
+| 代行入力 | なし | 契約枠として N 試合分。運営者が記録・注釈を肩代わり (ADR-018 §4 の有料メニュー化) |
+| 判定 | `billing_subscriptions` (Stripe ミラー) | `billing_team_contracts` (運営者が SQL で管理)。Stripe 非依存 |
+
+- `get_group_plan()` の判定順: Team 契約 → Pro subscription → Trial → Free (Team が最優先)
+- 代行は「既存の試合 (YouTube URL・選手あり) を選んで依頼」する最小構成。依頼は `concierge_requests`
+  に保存し、残枠の検査と INSERT を RPC で原子的に行う。運営者は招待リンクでグループに参加し
+  通常メンバーとして入力する (特別なロールは作らない)。管理画面・依頼フォームは依頼が続いてから
+- 詳細は `docs/spec/billing/` の要件定義に落とす
+
 ## 理由
 
 ### 1. 課金主体の比較 (ユーザー決定の記録)
@@ -313,8 +324,9 @@ C は公開時まで寝かせる (仲間内ローンチは制限なし — ADR-0
 | Supabase Edge Functions で Webhook | §理由 3 |
 | プラン判定のたびに Stripe API を参照 | §理由 4 |
 | エンタイトルメントの DB テーブル化 | 現規模ではコード定数が単純・型安全。リモート切替や個別 override が要る段階で移行 (§6) |
-| チーム別の機能差 (エンタイトルメントの個別 override) | 金額調整と機能差を同時に持つと複雑になりすぎる。チーム別に変えるのは金額 (Price) のみ (§2、2026-09-27) |
-| チーム別価格をクーポン / プロモーションコードで表現 | 値上げ方向に使えず、割引の期限管理が要る。Price を分ければ `price_lookup_key` で契約の種別が DB に残る (§2) |
+| Pro のチーム別 Price / クーポンで個別価格を表現 | 個別価格は直接契約 = Team プラン (§11) の領域。Stripe の Price を増やすと Checkout の価格解決と表示が複雑になる |
+| Team ごとの機能差 (エンタイトルメントの個別 override) | 金額調整と機能差を同時に持つと複雑になりすぎる。Team 列は全チーム共通で無制限、契約で変わるのは金額と代行枠のみ (§11、2026-09-27) |
+| Team の請求を Stripe subscription で行う | 個別条件 (金額・期間・代行枠) を Stripe オブジェクトに写す手間に見合わない。契約記録を DB に持ち、請求はアプリ外 (Stripe Invoicing / 振込) (§11) |
 | Stripe の trial 機能 (trial_period_days) | Trial にカード登録を要求してしまう。ADR-013 の Trial は「登録から 30 日」の計算で足り、Stripe 非依存にできる (§4) |
 | stripe-sync-engine 等の全量ミラー | Stripe の全オブジェクトを同期するのは過剰。必要なのは subscription の状態だけ |
 
