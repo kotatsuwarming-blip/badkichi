@@ -21,7 +21,7 @@ import { playerNameSchema } from '~/schemas/player-name'
 import { useCreatePlayer } from '~/composables/useCreatePlayer'
 import { useUpdatePlayer } from '~/composables/useUpdatePlayer'
 import { useToastErrors } from '~/composables/useToastErrors'
-import type { Player, Handedness, CreatePlayerInput, UpdatePlayerInput } from '~/types/player'
+import type { Player, Handedness, RosterType, CreatePlayerInput, UpdatePlayerInput } from '~/types/player'
 
 const props = defineProps<{
   mode: 'create' | 'edit'
@@ -45,6 +45,7 @@ const { showError } = useToastErrors()
 // フォーム state
 const name = ref('')
 const handedness = ref<Handedness>('unknown')
+const rosterType = ref<RosterType>('member') // player-profile REQ-002: 新規時から選択可・既定は自チーム
 const nameError = ref<string | null>(null) // UFormField inline 用
 
 // pending = createPending || updatePending
@@ -54,9 +55,11 @@ function resetForm() {
   if (props.mode === 'edit' && props.player) {
     name.value = props.player.name
     handedness.value = props.player.handedness
+    rosterType.value = props.player.roster_type
   } else {
     name.value = ''
     handedness.value = 'unknown' // NFR-202 未選択既定
+    rosterType.value = 'member'
   }
   nameError.value = null
 }
@@ -83,10 +86,10 @@ async function onSubmit() {
 
   let error: unknown
   if (props.mode === 'edit' && props.player) {
-    const input: UpdatePlayerInput = { name: parsed.data, handedness: handedness.value }
+    const input: UpdatePlayerInput = { name: parsed.data, handedness: handedness.value, rosterType: rosterType.value }
     ;({ error } = await updatePlayer(props.player.id, input))
   } else {
-    const input: CreatePlayerInput = { name: parsed.data, handedness: handedness.value }
+    const input: CreatePlayerInput = { name: parsed.data, handedness: handedness.value, rosterType: rosterType.value }
     ;({ error } = await createPlayer(input))
   }
 
@@ -133,6 +136,32 @@ async function onSubmit() {
             v-model="handedness"
             :items="handednessItems"
           />
+        </UFormField>
+
+        <!-- メンバー区分（player-profile REQ-002: 新規登録時から選択可・既定は自チーム） -->
+        <UFormField
+          :label="t('players.rosterTypeLabel')"
+          name="rosterType"
+          class="mt-4"
+        >
+          <div
+            class="flex gap-2"
+            role="radiogroup"
+            :aria-label="t('players.rosterTypeLabel')"
+          >
+            <UButton
+              v-for="v in (['member', 'opponent'] as const)"
+              :key="v"
+              :color="rosterType === v ? 'primary' : 'neutral'"
+              :variant="rosterType === v ? 'solid' : 'outline'"
+              size="sm"
+              role="radio"
+              :aria-checked="rosterType === v"
+              :data-testid="`roster-type-${v}`"
+              :label="t(`players.rosterTypeOptions.${v}`)"
+              @click="rosterType = v"
+            />
+          </div>
         </UFormField>
 
         <div class="mt-6 flex justify-end gap-2">

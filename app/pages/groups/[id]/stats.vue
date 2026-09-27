@@ -62,7 +62,8 @@ watch(activeTab, (tab) => {
 watch(view.includedMatchIds, () => {
   if (coverage.loaded.value || coverage.pending.value) coverage.execute()
 })
-const playerOptions = computed(() => (players.value ?? []).map(p => ({ id: p.id, name: p.name })))
+// rosterType 付きで渡し、フィルタバー側で自チーム優先グルーピング (player-profile REQ-004)
+const playerOptions = computed(() => (players.value ?? []).map(p => ({ id: p.id, name: p.name, rosterType: p.roster_type })))
 
 const overviewEntries = computed<(PlayerRate | PairRate)[]>(() =>
   view.globalFilter.value.subjectMode === 'pair'

@@ -151,7 +151,12 @@
     "modalEditTitle": "",
     "createSuccess": "",
     "updateSuccess": "",
-    "deleteSuccess": ""
+    "deleteSuccess": "",
+    "rosterTypeLabel": "Roster type",
+    "rosterTypeOptions": {
+      "member": "Our team",
+      "opponent": "Opponent"
+    }
   },
   "matches": {
     "title": "",
