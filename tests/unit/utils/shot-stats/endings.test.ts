@@ -148,3 +148,18 @@ describe('buildLandZones (TC-007-01 / REQ-103 / 向き=カメラ基準 2026-08-0
     expect(result.cells).toHaveLength(0)
   })
 })
+
+describe('buildLandZones: 敗者最終打 (アウト判定) の内側座標はセルに入れない (2026-09-29)', () => {
+  it('アウト判定なのに座標がライン内側の行は位置不明として数える', () => {
+    // last_hitter B ≠ 勝者 A = アウト決着。だが land はコート内側 → 相手半面セルへの混入バグだった
+    const r = row({ last_hitter_team: 'B', land_x: 0.5, land_y: 0.2 })
+    const result = buildLandZones([r], { kind: 'player', playerId: 'p0' }, 'won')
+    expect(result.cells).toHaveLength(0)
+    expect(result.unlocated).toBe(1)
+  })
+  it('勝者最終打 (イン決着) は従来どおりセル算入', () => {
+    const result = buildLandZones([row({})], { kind: 'player', playerId: 'p0' }, 'won')
+    expect(result.cells).toHaveLength(1)
+    expect(result.unlocated).toBe(0)
+  })
+})
