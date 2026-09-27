@@ -626,7 +626,8 @@
       "drilled": "{serve} への返球を表示中（同じ棒を再タップで解除）",
       "returnsTitle": "{serve} への返球（種別ごと）",
       "courseTitleAll": "返球コース（全返球）",
-      "courseTitle": "返球コース（{type}）"
+      "courseTitle": "返球コース（{type}）",
+      "courseHint": "数字 = 本数、下段の % = そのコースの得点率（レシーバー視点・下がネット）"
     },
     "combo": {
       "count": "本数",

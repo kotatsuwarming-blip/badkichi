@@ -626,7 +626,8 @@
       "drilled": "Showing returns against {serve} (tap again to clear)",
       "returnsTitle": "Returns against {serve} (by shot type)",
       "courseTitleAll": "Return courses (all returns)",
-      "courseTitle": "Return courses ({type})"
+      "courseTitle": "Return courses ({type})",
+      "courseHint": "Numbers = shots; the % below = win rate for that course (receiver view, net at bottom)"
     },
     "combo": {
       "count": "Count",

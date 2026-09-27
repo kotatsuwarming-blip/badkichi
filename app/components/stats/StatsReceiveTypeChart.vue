@@ -336,6 +336,10 @@ function typesText(types: { type: ShotType | null, total: number }[]): string {
             </text>
           </g>
         </svg>
+        <!-- % = 得点率の説明は残す (ユーザ要望 2026-09-29。集計行のみ撤去) -->
+        <p class="course-hint">
+          {{ $t('shotStats.receive.courseHint') }}
+        </p>
       </div>
     </template>
   </div>
@@ -349,5 +353,6 @@ function typesText(types: { type: ShotType | null, total: number }[]): string {
 .drill-hint { font-size: 0.75rem; opacity: 0.7; }
 .chart { width: 100%; height: 260px; }
 .course-block { display: flex; flex-direction: column; gap: 0.375rem; }
+.course-hint { font-size: 0.75rem; opacity: 0.6; }
 .course-court { width: 100%; max-width: 300px; height: auto; display: block; }
 </style>
