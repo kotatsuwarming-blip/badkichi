@@ -20,6 +20,7 @@ import { useAnnotationProgress } from '~/composables/useAnnotationProgress'
 import { QUICK_REASON_KEYS, useQuickPass } from '~/composables/useQuickPass'
 import { useTypePass } from '~/composables/useTypePass'
 import { usePositionPass } from '~/composables/usePositionPass'
+import { isTextEntryTarget } from '~/utils/keyboard-target'
 
 const route = useRoute()
 const matchId = route.params.matchId as string
@@ -227,8 +228,7 @@ function codeToKey(code: string): string | null {
 }
 
 function onKeydown(event: KeyboardEvent): void {
-  const target = event.target as HTMLElement | null
-  if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return
+  if (isTextEntryTarget(event.target)) return
   if (event.key === 'Backspace') {
     event.preventDefault()
     undoAndReposition()
@@ -391,7 +391,6 @@ onBeforeUnmount(() => {
           <VideoPlayer
             v-if="player"
             :player="player"
-            :skip-keys="session.mode.value === 'quick'"
             @reselect-file="file => initPlayer({ type: 'local', file })"
           />
           <UAlert

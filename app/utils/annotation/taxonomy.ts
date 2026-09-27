@@ -12,14 +12,14 @@ export const TYPE_KEY_BINDINGS: ReadonlyArray<[string, ShotType]> = [
   ['1', 'clear_high'], ['D', 'clear_driven'], // clear 分割 (1=ハイ / D=Driven、2026-08-05)
   ['2', 'smash'], ['3', 'cut'], ['4', 'reverse_cut'], ['5', 'drop'],
   ['6', 'drive'], ['7', 'push'], ['8', 'half'], ['9', 'hairpin'],
-  ['0', 'lob_high'], ['L', 'lob_low'], // lob 分割 (0=ハイ / L=Low の頭文字、2026-08-05)
+  ['0', 'lob_high'], ['P', 'lob_low'], // lob 分割 (0=ハイ / P=その真下=ロー、2026-09-27 L を動画キーへ返上)
   ['Q', 'receive_long'], ['W', 'receive_drive'], ['E', 'receive_short'],
   ['U', 'unknown'] // 判定不能 (ミスヒット等。2026-08-03)
 ]
 
 /** 1打目（サーブ）の三択キー（REQ-109）。パネル表示にも共用 */
 export const SERVE_KEY_BINDINGS: ReadonlyArray<[string, ShotType]> = [
-  ['S', 'serve_short'], ['L', 'serve_long'], ['D', 'serve_drive']
+  ['S', 'serve_short'], ['R', 'serve_long'], ['D', 'serve_drive'] // R=ロング(Rongu)。L は J/K/L 動画キーへ返上 (2026-09-27)
 ]
 
 const KEY_TO_SHOT_TYPE: Record<string, ShotType> = Object.fromEntries(
