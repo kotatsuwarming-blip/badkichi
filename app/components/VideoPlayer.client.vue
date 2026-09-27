@@ -105,7 +105,7 @@ function formatMs(ms: number | null): string {
 }
 
 // 10 秒スキップ/戻し + 再生/一時停止 (YouTube と同じ J=-10s / L=+10s / K=トグル)。
-// skipKeys=false で無効化 (注釈の種別/打点モードは L がサーブ入力キー等と衝突、2026-08-03)
+// skipKeys=false で無効化可能 (キー衝突ページ用の逃げ道。現在は全ページ有効、2026-09-27)
 function onKeydown(e: KeyboardEvent): void {
   if (props.skipKeys === false) return
   if (isTextEntryTarget(e.target)) return

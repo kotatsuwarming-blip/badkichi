@@ -391,7 +391,6 @@ onBeforeUnmount(() => {
           <VideoPlayer
             v-if="player"
             :player="player"
-            :skip-keys="session.mode.value === 'quick'"
             @reselect-file="file => initPlayer({ type: 'local', file })"
           />
           <UAlert

@@ -434,7 +434,7 @@
     "type": {
       "recordHand": "Record fore/backhand",
       "handHint": "Shift+key = backhand",
-      "serveHint": "1st shot: S=short / L=long / D=drive",
+      "serveHint": "1st shot: S=short / R=long / D=drive",
       "loopHint": "Slow loop playing — press a type key (then 1/2 for the hitter from the 3rd shot)",
       "redo": "Redo this rally",
       "nextRally": "Next rally",
