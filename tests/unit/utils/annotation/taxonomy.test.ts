@@ -18,7 +18,8 @@ describe('keyToShotType', () => {
     expect(keyToShotType('8', 3)).toBe('half')
     expect(keyToShotType('9', 3)).toBe('hairpin')
     expect(keyToShotType('0', 3)).toBe('lob_high') // lob 分割 (2026-08-05)
-    expect(keyToShotType('l', 3)).toBe('lob_low') // L = Low の頭文字
+    expect(keyToShotType('p', 3)).toBe('lob_low') // P = 0(ハイロブ)の真下 (2026-09-27 L 返上)
+    expect(keyToShotType('l', 3)).toBeNull() // L は動画キーへ返上済み
     expect(keyToShotType('q', 3)).toBe('receive_long')
     expect(keyToShotType('w', 3)).toBe('receive_drive')
     expect(keyToShotType('e', 3)).toBe('receive_short')
@@ -26,7 +27,8 @@ describe('keyToShotType', () => {
 
   it('TC-109-01: 1打目はサーブ三択のみ受け付ける (REQ-109)', () => {
     expect(keyToShotType('s', 1)).toBe('serve_short')
-    expect(keyToShotType('l', 1)).toBe('serve_long')
+    expect(keyToShotType('r', 1)).toBe('serve_long') // R=ロング (2026-09-27 L 返上)
+    expect(keyToShotType('l', 1)).toBeNull()
     expect(keyToShotType('d', 1)).toBe('serve_drive')
     // サーブ以外のキーは 1 打目では無効
     expect(keyToShotType('1', 1)).toBeNull()

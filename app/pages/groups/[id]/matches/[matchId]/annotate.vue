@@ -435,7 +435,6 @@ onBeforeUnmount(() => {
           <VideoPlayer
             v-if="player"
             :player="player"
-            :skip-keys="session.mode.value === 'quick'"
             @reselect-file="file => initPlayer({ type: 'local', file })"
           />
           <!-- ループ窓の手動延長 (ショットが窓に収まらないとき。ショット移動でリセット、2026-08-29) -->
