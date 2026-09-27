@@ -235,6 +235,7 @@ export type Database = {
           handedness: string
           id: string
           name: string
+          roster_type: string
           updated_at: string
         }
         Insert: {
@@ -244,6 +245,7 @@ export type Database = {
           handedness?: string
           id?: string
           name: string
+          roster_type?: string
           updated_at?: string
         }
         Update: {
@@ -253,6 +255,7 @@ export type Database = {
           handedness?: string
           id?: string
           name?: string
+          roster_type?: string
           updated_at?: string
         }
         Relationships: [

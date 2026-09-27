@@ -151,7 +151,12 @@
     "modalEditTitle": "選手を編集",
     "createSuccess": "選手を追加しました",
     "updateSuccess": "選手を更新しました",
-    "deleteSuccess": "選手を削除しました"
+    "deleteSuccess": "選手を削除しました",
+    "rosterTypeLabel": "メンバー区分",
+    "rosterTypeOptions": {
+      "member": "自チーム",
+      "opponent": "対戦相手"
+    }
   },
   "matches": {
     "title": "試合一覧",

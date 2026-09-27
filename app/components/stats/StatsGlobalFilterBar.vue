@@ -12,7 +12,8 @@ import { computed } from 'vue'
 import type { MatchMeta, StatsGlobalFilter, SubjectMode } from '~/types/stats-dashboard'
 
 const props = withDefaults(defineProps<{
-  players: { id: string, name: string }[]
+  /** rosterType 付きなら自チーム (member) を先頭グループに表示 (player-profile REQ-004) */
+  players: { id: string, name: string, rosterType?: 'member' | 'opponent' }[]
   matchesMeta: MatchMeta[]
   globalFilter: StatsGlobalFilter
   includedMatchIds: string[] | null
@@ -35,6 +36,18 @@ const emit = defineEmits<{
 function sel(e: Event): string {
   return (e.target as HTMLSelectElement).value
 }
+
+/**
+ * 選手選択のグループ (player-profile REQ-004)。rosterType が無い呼び出し元
+ * (試合単位 = 出場4選手のみ) は単一グループ (見出しなし) のまま。
+ */
+const playerGroups = computed(() => {
+  const hasType = props.players.some(p => p.rosterType !== undefined)
+  if (!hasType) return [{ type: null as 'member' | 'opponent' | null, players: props.players }]
+  return (['member', 'opponent'] as const)
+    .map(type => ({ type: type as 'member' | 'opponent' | null, players: props.players.filter(p => (p.rosterType ?? 'member') === type) }))
+    .filter(g => g.players.length > 0)
+})
 
 const includedSet = computed(() => new Set(props.includedMatchIds ?? props.matchesMeta.map(m => m.id)))
 function onDateFrom(e: Event): void {
@@ -82,13 +95,30 @@ function onDateTo(e: Event): void {
         <option value="">
           {{ $t('shotStats.filter.allPlayers') }}
         </option>
-        <option
-          v-for="p in players"
-          :key="p.id"
-          :value="p.id"
+        <template
+          v-for="g in playerGroups"
+          :key="g.type ?? 'flat'"
         >
-          {{ p.name }}
-        </option>
+          <optgroup
+            v-if="g.type !== null"
+            :label="$t(`players.rosterTypeOptions.${g.type}`)"
+          >
+            <option
+              v-for="p in g.players"
+              :key="p.id"
+              :value="p.id"
+            >
+              {{ p.name }}
+            </option>
+          </optgroup>
+          <option
+            v-for="p in (g.type === null ? g.players : [])"
+            :key="p.id"
+            :value="p.id"
+          >
+            {{ p.name }}
+          </option>
+        </template>
       </select>
       <template v-else>
         <select
@@ -100,13 +130,30 @@ function onDateTo(e: Event): void {
           <option value="">
             —
           </option>
-          <option
-            v-for="p in players"
-            :key="p.id"
-            :value="p.id"
+          <template
+            v-for="g in playerGroups"
+            :key="g.type ?? 'flat'"
           >
-            {{ p.name }}
-          </option>
+            <optgroup
+              v-if="g.type !== null"
+              :label="$t(`players.rosterTypeOptions.${g.type}`)"
+            >
+              <option
+                v-for="p in g.players"
+                :key="p.id"
+                :value="p.id"
+              >
+                {{ p.name }}
+              </option>
+            </optgroup>
+            <option
+              v-for="p in (g.type === null ? g.players : [])"
+              :key="p.id"
+              :value="p.id"
+            >
+              {{ p.name }}
+            </option>
+          </template>
         </select>
         <select
           class="ctrl"
@@ -117,13 +164,30 @@ function onDateTo(e: Event): void {
           <option value="">
             —
           </option>
-          <option
-            v-for="p in players"
-            :key="p.id"
-            :value="p.id"
+          <template
+            v-for="g in playerGroups"
+            :key="g.type ?? 'flat'"
           >
-            {{ p.name }}
-          </option>
+            <optgroup
+              v-if="g.type !== null"
+              :label="$t(`players.rosterTypeOptions.${g.type}`)"
+            >
+              <option
+                v-for="p in g.players"
+                :key="p.id"
+                :value="p.id"
+              >
+                {{ p.name }}
+              </option>
+            </optgroup>
+            <option
+              v-for="p in (g.type === null ? g.players : [])"
+              :key="p.id"
+              :value="p.id"
+            >
+              {{ p.name }}
+            </option>
+          </template>
         </select>
       </template>
       <select

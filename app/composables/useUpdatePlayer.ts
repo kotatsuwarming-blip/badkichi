@@ -41,9 +41,9 @@ export function useUpdatePlayer(): UseUpdatePlayerReturn {
       //   RLS players_update = is_member_of(group_id) で自 Group のみ更新可 🔵
       const { data, error } = await client
         .from('players')
-        .update({ name: input.name, handedness: input.handedness })
+        .update({ name: input.name, handedness: input.handedness, roster_type: input.rosterType })
         .eq('id', id)
-        .select('id, name, handedness')
+        .select('id, name, handedness, roster_type')
         .single()
 
       // 【エラー処理】: RLS 拒否 / PostgREST / 通信エラーは ActionResult.error に詰めて返す 🔵

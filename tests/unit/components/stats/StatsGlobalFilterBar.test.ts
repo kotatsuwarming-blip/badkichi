@@ -100,4 +100,26 @@ describe('StatsGlobalFilterBar', () => {
     expect(w.find('[data-testid="mode-pair"]').exists()).toBe(false)
     expect(w.find('[data-testid="mode-player"]').exists()).toBe(true)
   })
+
+  it('rosterType 付きの選手は自チーム→対戦相手の optgroup 表示、無しはフラット (player-profile REQ-004)', () => {
+    const typed = [
+      { id: 'p0', name: '相手', rosterType: 'opponent' as const },
+      { id: 'p1', name: '自分', rosterType: 'member' as const }
+    ]
+    const w = mount(StatsGlobalFilterBar, {
+      props: {
+        players: typed, matchesMeta, globalFilter: gfOf(),
+        includedMatchIds: ['m1', 'm2'], setNumbers: [1, 2], showPeriod: true
+      },
+      global
+    })
+    const groups = w.find('[data-testid="entity-player"]').findAll('optgroup')
+    expect(groups.map(g => g.attributes('label'))).toEqual([
+      'players.rosterTypeOptions.member', 'players.rosterTypeOptions.opponent'
+    ])
+    expect(groups[0]!.find('option').text()).toBe('自分')
+    // rosterType 無し (試合単位の4選手) は optgroup を作らない
+    const flat = mountBar()
+    expect(flat.find('[data-testid="entity-player"]').findAll('optgroup')).toHaveLength(0)
+  })
 })
