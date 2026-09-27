@@ -66,18 +66,33 @@ export interface ShotPlacementRow {
   /** 行き先の種別: in=コート内 / net=ネット・不越 / out=アウト（2026-08-08 #4） */
   dest_kind: 'in' | 'net' | 'out'
   /** out のときの方向（選手視点）。角は side 優先 */
-  dest_out: 'left' | 'right' | 'back' | null
+  dest_out: PlacementOutDirection | null
   /** 相手半面 0=ネット側 〜 zones-1=バック側（in のみ） */
   dest_row: number | null
   dest_col: number | null
   shots: number
 }
 
-/** 球種内訳（miss = ネット/アウトで終わった本数, #7 赤表示用） */
+/** 配球のアウト方向（選手視点）。left_back/right_back = 角 (stats-miss-out-detail REQ-104)。
+ *  rallies.out_direction の OutDirection (side/back/both, shot-annotation) とは別物 */
+export type PlacementOutDirection = 'left' | 'right' | 'back' | 'left_back' | 'right_back'
+
+/** アウト位置リングの 11 枠キー: サイド 3+3 / 奥 3 / 角 2 (REQ-102) */
+export type OutRingSlot
+  = | 'left_0' | 'left_1' | 'left_2' | 'right_0' | 'right_1' | 'right_2'
+    | 'back_0' | 'back_1' | 'back_2' | 'left_back' | 'right_back'
+
+export const OUT_RING_SLOTS: readonly OutRingSlot[] = [
+  'left_0', 'left_1', 'left_2', 'right_0', 'right_1', 'right_2',
+  'back_0', 'back_1', 'back_2', 'left_back', 'right_back'
+]
+
+/** 球種内訳（miss = ネット/アウトで終わった本数, #7 赤表示用 / net = うちネット, REQ-002） */
 export interface PlacementBreakdown {
   type: ShotType | null
   count: number
   miss: number
+  net: number
 }
 
 /** F: 配球先セル（球種内訳つき, ヒアリング2026-08-08） */
@@ -90,11 +105,11 @@ export interface PlacementExtra {
   count: number
   breakdown: PlacementBreakdown[]
 }
-export interface PlacementExtras {
+/** アウト位置リング (11 枠) + ネット単枠 (REQ-102/105) */
+export interface PlacementOutRing {
   net: PlacementExtra
-  left: PlacementExtra
-  right: PlacementExtra
-  back: PlacementExtra
+  ring: Record<OutRingSlot, PlacementExtra>
+  ringTotal: number
 }
 
 /** stats_serve_types の行（grain: サーバー × 1打目種別 × ポジション） */
@@ -117,7 +132,7 @@ export interface ReceiveDetailRow {
   receive_type: ShotType | null
   /** 返球コース: in=相手コート内 / net / out / null=コース不明 */
   dest_kind: 'in' | 'net' | 'out' | null
-  dest_out: 'left' | 'right' | 'back' | null
+  dest_out: PlacementOutDirection | null
   dest_row: number | null
   dest_col: number | null
   total: number

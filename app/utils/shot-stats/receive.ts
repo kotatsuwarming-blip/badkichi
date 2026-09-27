@@ -5,7 +5,8 @@
  * Level 1: サーブ種別ごと / Level 2: 選択サーブへの返球種別ごと /
  * Level 3: 返球コース（相手半面 3×3 + ネット/アウト/コース不明）ごと。
  */
-import type { ReceiveDetailRow } from '~/types/shot-stats'
+import { OUT_RING_SLOTS } from '~/types/shot-stats'
+import type { OutRingSlot, ReceiveDetailRow } from '~/types/shot-stats'
 import type { ShotType } from '~/types/shot-annotation'
 
 export interface RateEntry {
@@ -25,9 +26,9 @@ export interface CourseCell {
 export interface CourseResult {
   cells: CourseCell[]
   net: { total: number, won: number }
-  left: { total: number, won: number }
-  right: { total: number, won: number }
-  back: { total: number, won: number }
+  /** アウト位置リング 11 枠（stats-miss-out-detail REQ-101/102） */
+  ring: Record<OutRingSlot, { total: number, won: number }>
+  ringTotal: number
   /** コース不明（3打目の打点未注釈・camera_near_team なし等） */
   unknown: { total: number, won: number }
 }
@@ -84,7 +85,8 @@ export function buildReturnEntries(rows: ReceiveDetailRow[], serveType: ShotType
 export function buildCourses(rows: ReceiveDetailRow[], sel: ReceiveSelection): CourseResult {
   const cells = new Map<string, { total: number, won: number }>()
   const zero = () => ({ total: 0, won: 0 })
-  const result: CourseResult = { cells: [], net: zero(), left: zero(), right: zero(), back: zero(), unknown: zero() }
+  const ring = Object.fromEntries(OUT_RING_SLOTS.map(slot => [slot, zero()])) as CourseResult['ring']
+  const result: CourseResult = { cells: [], net: zero(), ring, ringTotal: 0, unknown: zero() }
   for (const r of rows) {
     if (!matches(r, sel)) continue
     if (r.dest_kind === 'in' && r.dest_row !== null && r.dest_col !== null) {
@@ -97,8 +99,15 @@ export function buildCourses(rows: ReceiveDetailRow[], sel: ReceiveSelection): C
       result.net.total += r.total
       result.net.won += r.won
     } else if (r.dest_kind === 'out' && r.dest_out !== null) {
-      result[r.dest_out].total += r.total
-      result[r.dest_out].won += r.won
+      // リング枠へ割当（角はそのまま / back は列 / サイドは相手半面の行, REQ-104）
+      const slot: OutRingSlot = r.dest_out === 'left_back' || r.dest_out === 'right_back'
+        ? r.dest_out
+        : r.dest_out === 'back'
+          ? `back_${r.dest_col ?? 1}` as OutRingSlot
+          : `${r.dest_out}_${r.dest_row ?? 0}` as OutRingSlot
+      result.ring[slot].total += r.total
+      result.ring[slot].won += r.won
+      result.ringTotal += r.total
     } else {
       result.unknown.total += r.total
       result.unknown.won += r.won

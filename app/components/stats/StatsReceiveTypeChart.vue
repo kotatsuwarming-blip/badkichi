@@ -15,6 +15,7 @@ import { countAxisScale } from '~/utils/shot-stats/chart-axis'
 import { buildCourses, buildReturnEntries, buildServeFacets, SERVE_FACETS } from '~/utils/shot-stats/receive'
 import type { RateEntry } from '~/utils/shot-stats/receive'
 import type { ServePosition } from '~/types/stats-dashboard'
+import { OUT_RING_SLOTS } from '~/types/shot-stats'
 import type { ReceiveDetailRow } from '~/types/shot-stats'
 import type { ShotType } from '~/types/shot-annotation'
 
@@ -131,6 +132,31 @@ function courseCellY(row: number): number {
   // dest_row 0 = ネット側 = 図の下
   return CH - (row + 1) * (CH / 3)
 }
+
+// アウト位置リング（11 枠。コートセルより小さめ, stats-miss-out-detail REQ-101/102）
+const RBOX = 96
+const RGAP = 10
+const ringRects = OUT_RING_SLOTS.map((slot) => {
+  const colW = CW / 3
+  const rowH = CH / 3
+  if (slot === 'left_back') return { slot, x: -RBOX - RGAP, y: -RBOX - RGAP, w: RBOX, h: RBOX }
+  if (slot === 'right_back') return { slot, x: CW + RGAP, y: -RBOX - RGAP, w: RBOX, h: RBOX }
+  const [side, idx] = slot.split('_') as [string, string]
+  const i = Number(idx)
+  if (side === 'back') return { slot, x: i * colW + RGAP / 2, y: -RBOX - RGAP, w: colW - RGAP, h: RBOX }
+  // サイド: dest_row i (0 = ネット側 = 図の下) に沿わせる
+  return { slot, x: side === 'left' ? -RBOX - RGAP : CW + RGAP, y: courseCellY(i) + RGAP / 2, w: RBOX, h: rowH - RGAP }
+})
+
+function ringMax(): number {
+  if (courses.value === null) return 1
+  return Math.max(1, ...OUT_RING_SLOTS.map(slot => courses.value!.ring[slot].total))
+}
+
+function ringFill(total: number): string {
+  if (total === 0) return 'transparent'
+  return `rgba(239, 68, 68, ${0.18 + (total / ringMax()) * 0.45})`
+}
 </script>
 
 <template>
@@ -182,7 +208,7 @@ function courseCellY(row: number): number {
         </h4>
         <svg
           class="course-court"
-          :viewBox="`-8 -8 ${CW + 16} ${CH + 16}`"
+          :viewBox="`${-RBOX - RGAP - 8} ${-RBOX - RGAP - 8} ${CW + (RBOX + RGAP + 8) * 2} ${CH + RBOX + RGAP + 24}`"
           role="img"
         >
           <g
@@ -256,15 +282,44 @@ function courseCellY(row: number): number {
             stroke-dasharray="18 12"
             opacity="0.8"
           />
+          <!-- アウト位置リング（11 枠。赤系 = アウト, REQ-102/103） -->
+          <g v-if="courses !== null">
+            <g
+              v-for="r in ringRects"
+              :key="r.slot"
+            >
+              <rect
+                :x="r.x"
+                :y="r.y"
+                :width="r.w"
+                :height="r.h"
+                rx="10"
+                :fill="ringFill(courses.ring[r.slot].total)"
+                stroke="rgba(239, 68, 68, 0.45)"
+                stroke-width="3"
+                :opacity="courses.ring[r.slot].total > 0 ? 1 : 0.35"
+                :data-testid="`course-out-${r.slot}`"
+              />
+              <text
+                v-if="courses.ring[r.slot].total > 0"
+                :x="r.x + r.w / 2"
+                :y="r.y + r.h / 2"
+                text-anchor="middle"
+                dominant-baseline="central"
+                font-size="46"
+                font-weight="600"
+                fill="currentColor"
+                pointer-events="none"
+              >{{ courses.ring[r.slot].total }}</text>
+            </g>
+          </g>
         </svg>
         <p
           class="course-extras"
           data-testid="course-extras"
         >
           {{ $t('shotStats.heatmap.net') }} {{ courses.net.total }} /
-          {{ $t('shotStats.heatmap.outLeft') }} {{ courses.left.total }} /
-          {{ $t('shotStats.heatmap.outRight') }} {{ courses.right.total }} /
-          {{ $t('shotStats.heatmap.outBack') }} {{ courses.back.total }} /
+          {{ $t('shotStats.heatmap.outRing') }} {{ courses.ringTotal }} /
           {{ $t('shotStats.receive.unknownCourse') }} {{ courses.unknown.total }}
           ({{ $t('shotStats.combo.rate') }} {{ rateText(courses.unknown.total, courses.unknown.won) }})
         </p>
@@ -284,7 +339,7 @@ function courseCellY(row: number): number {
 .drill-hint { font-size: 0.75rem; opacity: 0.7; }
 .chart { width: 100%; height: 260px; }
 .course-block { display: flex; flex-direction: column; gap: 0.375rem; }
-.course-court { width: 100%; max-width: 220px; height: auto; display: block; }
+.course-court { width: 100%; max-width: 300px; height: auto; display: block; }
 .course-extras { font-size: 0.75rem; opacity: 0.75; }
 .course-hint { font-size: 0.75rem; opacity: 0.6; }
 </style>

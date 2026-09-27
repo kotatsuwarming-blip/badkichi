@@ -11,12 +11,13 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { buildOriginProfile } from '~/utils/shot-stats/placement'
-import type { PlacementBreakdown, PlacementDestCell, PlacementExtras } from '~/types/shot-stats'
+import { OUT_RING_SLOTS } from '~/types/shot-stats'
+import type { PlacementBreakdown, PlacementDestCell, PlacementOutRing } from '~/types/shot-stats'
 
 const props = withDefaults(defineProps<{
   originCells: PlacementDestCell[]
   destCells: PlacementDestCell[]
-  destExtras: PlacementExtras
+  outRing: PlacementOutRing
   selected: { row: number, col: number } | null
   /** 表示中の配球総数（コート内 + ネット + アウト。母数併記, NFR-201） */
   total: number
@@ -32,10 +33,35 @@ const { t } = useI18n()
 const W = 610
 const H = 1340
 const NET = H / 2
-// コート外表示用の余白（左右 = サイドアウト / 上 = バックアウト, #4）
+// コート外表示用の余白（左右 = サイドアウト / 上 = バックアウト + 角, REQ-102）
 const MX = 210
-const MT = 100
+const MT = 140
 const MB = 16
+// アウト位置リングの枠サイズ（コートセルより小さめ, REQ-102）
+const BOX = 104
+const GAP = 12
+
+/** リング 11 枠の SVG 配置（相手半面を取り囲む。0=ネット側の行 / 列は打者視点） */
+const ringRects = computed(() => OUT_RING_SLOTS.map((slot) => {
+  const colW = W / props.zones
+  if (slot === 'left_back') return { slot, x: -BOX - GAP, y: -BOX - GAP, w: BOX, h: BOX }
+  if (slot === 'right_back') return { slot, x: W + GAP, y: -BOX - GAP, w: BOX, h: BOX }
+  const [side, idx] = slot.split('_') as [string, string]
+  const i = Number(idx)
+  if (side === 'back') return { slot, x: i * colW + GAP / 2, y: -BOX - GAP, w: colW - GAP, h: BOX }
+  // サイド: 行 i（0 = ネット側）に沿わせる
+  const y = destY(i) + GAP / 2
+  const h = cellH() - GAP
+  return { slot, x: side === 'left' ? -BOX - GAP : W + GAP, y, w: BOX, h }
+}))
+
+const ringMax = computed(() => Math.max(1, ...OUT_RING_SLOTS.map(slot => props.outRing.ring[slot].count)))
+
+/** アウト枠の塗り（赤系。0 本は枠線のみ, REQ-103） */
+function ringFill(count: number): string {
+  if (count === 0) return 'transparent'
+  return `rgba(239, 68, 68, ${0.18 + (count / ringMax.value) * 0.45})`
+}
 
 function cellH(): number {
   return H / (props.zones * 2)
@@ -143,54 +169,51 @@ function originTitle(row: number, col: number): string {
             pointer-events="none"
           >{{ cell.count }}</text>
         </g>
-        <!-- コート外の行き先（ネット / 左右アウト / バックアウト。#4: 寄せずに表示） -->
-        <g
-          font-size="40"
-          fill="currentColor"
-        >
-          <text
-            v-if="destExtras.back.count > 0"
-            :x="W / 2"
-            :y="-MT / 2"
-            text-anchor="middle"
-            dominant-baseline="central"
-            data-testid="extra-back"
+        <!-- アウト位置リング（11 枠。赤系 = アウト, stats-miss-out-detail REQ-102/103） -->
+        <g>
+          <g
+            v-for="r in ringRects"
+            :key="r.slot"
           >
-            {{ $t('shotStats.heatmap.outBack') }} {{ destExtras.back.count }}
-            <title>{{ breakdownText(destExtras.back.breakdown) }}</title>
-          </text>
+            <rect
+              :x="r.x"
+              :y="r.y"
+              :width="r.w"
+              :height="r.h"
+              rx="10"
+              :fill="ringFill(outRing.ring[r.slot].count)"
+              stroke="rgba(239, 68, 68, 0.45)"
+              stroke-width="3"
+              :opacity="outRing.ring[r.slot].count > 0 ? 1 : 0.35"
+              :data-testid="`out-${r.slot}`"
+            >
+              <title>{{ breakdownText(outRing.ring[r.slot].breakdown) }}</title>
+            </rect>
+            <text
+              v-if="outRing.ring[r.slot].count > 0"
+              :x="r.x + r.w / 2"
+              :y="r.y + r.h / 2"
+              text-anchor="middle"
+              dominant-baseline="central"
+              font-size="48"
+              font-weight="600"
+              fill="currentColor"
+              pointer-events="none"
+            >{{ outRing.ring[r.slot].count }}</text>
+          </g>
+          <!-- ネットは単枠のまま（位置の記録なし, REQ-105） -->
           <text
-            v-if="destExtras.left.count > 0"
-            :x="-16"
-            :y="H * 0.22"
-            text-anchor="end"
-            dominant-baseline="central"
-            data-testid="extra-left"
-          >
-            {{ $t('shotStats.heatmap.outLeft') }} {{ destExtras.left.count }}
-            <title>{{ breakdownText(destExtras.left.breakdown) }}</title>
-          </text>
-          <text
-            v-if="destExtras.right.count > 0"
-            :x="W + 16"
-            :y="H * 0.22"
-            text-anchor="start"
-            dominant-baseline="central"
-            data-testid="extra-right"
-          >
-            {{ $t('shotStats.heatmap.outRight') }} {{ destExtras.right.count }}
-            <title>{{ breakdownText(destExtras.right.breakdown) }}</title>
-          </text>
-          <text
-            v-if="destExtras.net.count > 0"
+            v-if="outRing.net.count > 0"
             :x="W + 16"
             :y="NET"
             text-anchor="start"
             dominant-baseline="central"
+            font-size="40"
+            fill="currentColor"
             data-testid="extra-net"
           >
-            {{ $t('shotStats.heatmap.net') }} {{ destExtras.net.count }}
-            <title>{{ breakdownText(destExtras.net.breakdown) }}</title>
+            {{ $t('shotStats.heatmap.net') }} {{ outRing.net.count }}
+            <title>{{ breakdownText(outRing.net.breakdown) }}</title>
           </text>
         </g>
         <!-- 手前（自陣）半面: 選択可能セル（打った本数 + ヒート + 選択枠） -->
