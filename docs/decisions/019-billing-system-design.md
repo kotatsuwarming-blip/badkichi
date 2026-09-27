@@ -258,26 +258,24 @@ export const ENTITLEMENTS = {
 A は Stripe なしで完結するため、課金を始める前でも「トライアル残り日数の表示」等に使える。
 C は公開時まで寝かせる (仲間内ローンチは制限なし — ADR-013 §理由 4)。
 
-### 11. Team プラン: 個別価格・機能無制限・代行枠。Stripe は Pro と共通 (2026-09-27 追記、ユーザー決定)
+### 11. Team プラン: 手動契約・個別価格・機能無制限 (2026-09-27 追記、ユーザー決定)
 
 ADR-013 の Free / Trial / Pro に **Team** を 4 つ目のプランとして追加する。
 
 | | Pro | Team |
 |---|---|---|
-| 契約 | 野良ユーザーが UI から自己契約 (Checkout) | 運営者と金額を直接合意 → 運営者が Stripe に Team 用 Price を作りグループに割り当て → owner が **Pro と同じ Checkout** で契約 (請求書払いは運営者がダッシュボードで subscription 作成) |
-| 価格 | Product「Pro」× Price 1 本 | Product「Team」× チームごとの Price (`lookup_key: team_<識別子>`) |
+| 契約 | 野良ユーザーが UI から自己契約 (Checkout) | 運営者と直接契約。金額の合意・請求・入金はアプリ外 |
+| 価格 | Product「Pro」× Price 1 本 | チームごとに個別。DB の契約記録に金額をメモ (Stripe Price は作らない) |
 | 機能 | マトリクスの Pro 列 | 基本的に無制限 (Team 列は全開放。チーム間で機能差は付けない) |
-| 代行入力 | なし | Price metadata `concierge_quota` = N 試合分。運営者が記録・注釈を肩代わり (ADR-018 §4 の有料メニュー化) |
-| 判定 | `billing_subscriptions` の `plan = 'pro'` | 同じテーブルの `plan = 'team'` (Webhook が Price の `lookup_key` 接頭辞から導出) |
+| 判定 | `billing_subscriptions` (Stripe ミラー) | `billing_team_contracts` (運営者が SQL で管理)。Stripe 非依存 |
 
-- **Stripe の配管は 1 本**: Customer / Subscription / Checkout / Portal / Webhook / ミラーはすべて共通。
-  Team のために増えるのは「グループ → Team Price の割当テーブル」と「ミラーの導出 2 列 (`plan` / `concierge_quota`)」だけ
-- `get_group_plan()` の判定順: Team subscription → Pro subscription → Trial → Free
-- Pro → Team の移行は subscription を 2 本にせず、ダッシュボードで既存 subscription の Price を差し替える (日割りは Stripe)
-- 代行は「既存の試合 (YouTube URL・選手あり) を選んで依頼」する最小構成。依頼は `concierge_requests`
-  に保存し、残枠 (subscription の `concierge_quota` − 依頼数) の検査と INSERT を RPC で原子的に行う。
-  運営者は招待リンクでグループに参加し通常メンバーとして入力する (特別なロールは作らない)。
-  管理画面・依頼フォームは依頼が続いてから
+- `get_group_plan()` の判定順: Team 契約 → Pro subscription → Trial → Free
+- **当面 Stripe を使わない理由**: 手数料 (カード 3.6% + Billing 0.7%、請求書 + 銀行振込でも約 2.6%) を
+  数チームのうちは払う意味が薄く、契約条件をチームごとに柔軟に決めたい。チーム数が増えて請求業務が
+  重くなったら Team 用 Price + 割当テーブルで Pro の配管に載せられる (将来案。`docs/spec/billing/note.md` §3-3)
+- **代行入力 (運営者が記録・注釈を肩代わり) はアプリ機能にしない**。運営者のダミーアカウントを招待で
+  Team グループに参加させ、通常メンバーとして入力する。依頼の受付・枠・状態は契約側で管理する
+  (ADR-018 §4「依頼が続いてから製品化」を維持)
 - 詳細は `docs/spec/billing/` の要件定義に落とす
 
 ## 理由
@@ -336,7 +334,8 @@ ADR-013 の Free / Trial / Pro に **Team** を 4 つ目のプランとして追
 | エンタイトルメントの DB テーブル化 | 現規模ではコード定数が単純・型安全。リモート切替や個別 override が要る段階で移行 (§6) |
 | Pro のチーム別 Price / クーポンで個別価格を表現 | 個別価格は直接契約 = Team プラン (§11) の領域。Stripe の Price を増やすと Checkout の価格解決と表示が複雑になる |
 | Team ごとの機能差 (エンタイトルメントの個別 override) | 金額調整と機能差を同時に持つと複雑になりすぎる。Team 列は全チーム共通で無制限、契約で変わるのは金額と代行枠のみ (§11、2026-09-27) |
-| Team を Stripe の外 (DB の契約記録 + アプリ外請求) で管理 | 請求・督促・解約・領収書を Pro と別に運用することになる。Price を分けるだけで Stripe の配管を共用でき、追加は割当テーブルと導出 2 列で済む (§11) |
+| Team を最初から Stripe に載せる (Team 用 Price + 割当テーブル) | 数チームのうちは手数料を払う意味が薄く、契約条件の柔軟性も落ちる。配管共用の利点は請求業務が重くなってから効く (§11 将来案) |
+| 代行入力をアプリ機能 (依頼・枠・状態管理) にする | 契約ごとに条件を柔軟にしたい段階で機能に固めると縛りになる。ダミーアカウント招待の手動運用で足りる (§11) |
 | Stripe の trial 機能 (trial_period_days) | Trial にカード登録を要求してしまう。ADR-013 の Trial は「登録から 30 日」の計算で足り、Stripe 非依存にできる (§4) |
 | stripe-sync-engine 等の全量ミラー | Stripe の全オブジェクトを同期するのは過剰。必要なのは subscription の状態だけ |
 
