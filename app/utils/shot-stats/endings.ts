@@ -175,6 +175,13 @@ export function buildLandZones(
         outFallback[dir] += 1
         continue
       }
+      // セルに入れるのは「勝者の最終打 = イン決着」の落下点のみ (2026-09-29 修正)。
+      // 敗者最終打 (= アウト判定) なのに座標がライン内側 (際どいタップ等) のケースが
+      // 相手半面のセルに混入していた。判定と座標が矛盾する行は位置不明として数える
+      if (r.last_hitter_team !== r.point_winner) {
+        unlocated += 1
+        continue
+      }
       const { row, col } = zoneOf(p, zones)
       const key = `${row}:${col}`
       counts.set(key, (counts.get(key) ?? 0) + 1)
