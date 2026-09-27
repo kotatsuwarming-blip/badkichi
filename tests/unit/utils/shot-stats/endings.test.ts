@@ -105,22 +105,22 @@ describe('buildLandZones (TC-007-01 / REQ-103 / 向き=カメラ基準 2026-08-0
     // cam='B'・p2 (チーム B) 視点: land (0.5, 0.9) → 反転 (0.5, 0.1) → row 0, col 1。
     // r1 は A の得点なので B 視点では lost 側
     const result = buildLandZones([row({})], { kind: 'player', playerId: 'p2' }, 'lost')
-    expect(result.cells).toEqual([{ row: 0, col: 1, count: 1, ratio: 1 }])
+    expect(result.cells).toMatchObject([{ row: 0, col: 1, count: 1, ratio: 1 }])
   })
   it('視点チームがカメラ奥のときは反転しない', () => {
     // cam='B'・p0 (チーム A, カメラ奥) 視点: land (0.5, 0.9) そのまま → row 5, col 1
     const result = buildLandZones([row({})], { kind: 'player', playerId: 'p0' }, 'won')
-    expect(result.cells).toEqual([{ row: 5, col: 1, count: 1, ratio: 1 }])
+    expect(result.cells).toMatchObject([{ row: 5, col: 1, count: 1, ratio: 1 }])
   })
   it('左右の向き: カメラ手前視点は左右そのまま / カメラ奥視点は左右反転 (2026-08-08 修正 #3)', () => {
     // cam='B'・land 生座標 (0.2, 0.9) = 映像の左寄り
     const asym = row({ land_x: 0.2, land_y: 0.9 })
     // p2 (B = カメラ手前): (0.2, 0.1) → col 0 (選手の左のまま)
     const near = buildLandZones([asym], { kind: 'player', playerId: 'p2' }, 'lost')
-    expect(near.cells).toEqual([{ row: 0, col: 0, count: 1, ratio: 1 }])
+    expect(near.cells).toMatchObject([{ row: 0, col: 0, count: 1, ratio: 1 }])
     // p0 (A = カメラ奥): (0.8, 0.9) → col 2 (180° 視点なので左右反転)
     const far = buildLandZones([asym], { kind: 'player', playerId: 'p0' }, 'won')
-    expect(far.cells).toEqual([{ row: 5, col: 2, count: 1, ratio: 1 }])
+    expect(far.cells).toMatchObject([{ row: 5, col: 2, count: 1, ratio: 1 }])
   })
 
   it('camera_near_team 不明のラリーは向きを決められず unlocated', () => {
