@@ -6,6 +6,7 @@
  */
 import type { Database } from '~/types/supabase'
 import type { UpdatePlayerInput, Player } from '~/types/player'
+import { toProfileColumns } from '~/utils/players/profile'
 
 /** ActionResult<T>: アクション関数の共通戻り値型 🔵 */
 interface ActionResult<T> {
@@ -41,9 +42,9 @@ export function useUpdatePlayer(): UseUpdatePlayerReturn {
       //   RLS players_update = is_member_of(group_id) で自 Group のみ更新可 🔵
       const { data, error } = await client
         .from('players')
-        .update({ name: input.name, handedness: input.handedness, roster_type: input.rosterType })
+        .update({ name: input.name, handedness: input.handedness, roster_type: input.rosterType, ...toProfileColumns(input.profile) })
         .eq('id', id)
-        .select('id, name, handedness, roster_type')
+        .select('id, name, handedness, roster_type, sex, height_cm, weight_kg, birthdate, badminton_since, practice_frequency, play_styles')
         .single()
 
       // 【エラー処理】: RLS 拒否 / PostgREST / 通信エラーは ActionResult.error に詰めて返す 🔵

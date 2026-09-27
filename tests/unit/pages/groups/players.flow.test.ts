@@ -59,7 +59,9 @@ vi.mock('~/composables/useCreatePlayer', () => ({
         id: String(nextId++),
         name: input.name,
         handedness: (input.handedness ?? 'unknown') as Player['handedness'],
-        roster_type: (input.rosterType ?? 'member') as Player['roster_type']
+        roster_type: (input.rosterType ?? 'member') as Player['roster_type'],
+        sex: 'unspecified', height_cm: null, weight_kg: null, birthdate: null,
+        badminton_since: null, practice_frequency: null, play_styles: []
       }
       store.push(player)
       return Promise.resolve({ data: player, error: null })

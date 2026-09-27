@@ -28,7 +28,7 @@ export function usePlayers() {
     //   並びは自チーム (member) → 対戦相手 (opponent) → name (player-profile REQ-003)。 🔵
     const { data, error } = await client
       .from('players')
-      .select('id, name, handedness, roster_type')
+      .select('id, name, handedness, roster_type, sex, height_cm, weight_kg, birthdate, badminton_since, practice_frequency, play_styles')
       .eq('group_id', gid)
       .is('deleted_at', null)
       .order('roster_type')

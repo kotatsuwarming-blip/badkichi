@@ -156,6 +156,52 @@
     "rosterTypeOptions": {
       "member": "Our team",
       "opponent": "Opponent"
+    },
+    "profile": {
+      "sectionTitle": "Detailed profile (optional)",
+      "unset": "Not set",
+      "sexLabel": "Sex",
+      "sexOptions": {
+        "unspecified": "Not set",
+        "male": "Male",
+        "female": "Female"
+      },
+      "heightLabel": "Height (cm)",
+      "weightLabel": "Weight (kg)",
+      "birthdateLabel": "Date of birth",
+      "agePreview": "{age} years old",
+      "sinceLabel": "Started badminton",
+      "sinceHelp": "Enter either the start month or years of experience. Experience increases automatically.",
+      "yearsPlaceholder": "Years",
+      "careerPreview": "{years} yrs experience",
+      "careerUnderOne": "Under 1 year",
+      "frequencyLabel": "Practice frequency",
+      "frequencyOptions": {
+        "daily": "Almost daily",
+        "several_per_week": "Several times a week",
+        "weekly": "Once a week",
+        "monthly": "A few times a month",
+        "rarely": "Rarely"
+      },
+      "stylesLabel": "Play styles (multi-select)",
+      "styleOptions": {
+        "attacker": "Attacker",
+        "defender": "Defender",
+        "all_round": "All-round",
+        "front_player": "Front court",
+        "rear_player": "Rear court",
+        "rally_oriented": "Rally-oriented",
+        "speed_oriented": "Speed-oriented",
+        "technical": "Technical",
+        "power": "Power"
+      },
+      "errors": {
+        "birthdate": "Invalid date of birth (future dates or before 1920 are not allowed)",
+        "since": "Invalid start date (future dates are not allowed)",
+        "sinceBeforeBirth": "Start date is before the date of birth",
+        "height": "Height must be between 100 and 250 cm",
+        "weight": "Weight must be between 30 and 150 kg"
+      }
     }
   },
   "matches": {

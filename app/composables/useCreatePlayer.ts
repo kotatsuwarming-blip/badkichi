@@ -6,6 +6,7 @@
  */
 import type { Database } from '~/types/supabase'
 import type { CreatePlayerInput, Player } from '~/types/player'
+import { emptyProfileInput, toProfileColumns } from '~/utils/players/profile'
 
 /** ActionResult<T>: アクション関数の共通戻り値型 🔵 */
 interface ActionResult<T> {
@@ -48,8 +49,14 @@ export function useCreatePlayer(): UseCreatePlayerReturn {
       //   (player-profile REQ-002)。同名でも成功 (REQ-102/EDGE-004) 🔵
       const { data, error } = await client
         .from('players')
-        .insert({ group_id: gid, name: input.name, handedness: input.handedness ?? 'unknown', roster_type: input.rosterType ?? 'member' })
-        .select('id, name, handedness, roster_type')
+        .insert({
+          group_id: gid,
+          name: input.name,
+          handedness: input.handedness ?? 'unknown',
+          roster_type: input.rosterType ?? 'member',
+          ...toProfileColumns(input.profile ?? emptyProfileInput())
+        })
+        .select('id, name, handedness, roster_type, sex, height_cm, weight_kg, birthdate, badminton_since, practice_frequency, play_styles')
         .single()
 
       // 【エラー処理】: RLS 拒否 / PostgREST / 通信エラーは ActionResult.error に詰めて返す (表示は page 側 toast) 🔵
