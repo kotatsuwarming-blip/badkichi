@@ -3,12 +3,12 @@ import path from 'node:path'
 
 export default defineConfig({
   resolve: {
-    // pnpm hoist により @supabase/supabase-js が node_modules トップレベルに
-    // 存在しない場合でも .pnpm 内のパスを直接解決する
+    // @supabase/supabase-js は devDependencies の直接依存なので node_modules 直下の
+    // シンボリックリンク経由で解決する (vitest.config.ts の alias と同方針)。
+    // 以前は .pnpm 配下のバージョン入りパスを直書きしていたため、依存更新のたびに
+    // ERR_LOAD_URL で統合テストが落ちていた。バージョン非依存のパスにして追従不要にする。
     alias: {
-      '@supabase/supabase-js': path.resolve(
-        './node_modules/.pnpm/@supabase+supabase-js@2.105.4/node_modules/@supabase/supabase-js'
-      )
+      '@supabase/supabase-js': path.resolve('./node_modules/@supabase/supabase-js')
     }
   },
   test: {

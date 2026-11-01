@@ -10,3 +10,14 @@ ignoredBuiltDependencies:
   - esbuild
   - unrs-resolver
   - vue-demi
+
+# @nuxtjs/supabase は h3 を import するのに依存宣言していない (nuxt-modules/supabase#651)。
+# pnpm では hoist された h3 に解決され、@nuxt/test-utils 等が引く h3 v2 が hoist されると
+# Nitro (h3 v1) の event に対して v2 API が呼ばれ SSR のセッション読込が
+# `event.req.headers.get is not a function` で失敗する。upstream の修正 PR (#654) と同じ
+# ^1.15.11 を packageExtensions で補い、モジュールが常に h3 v1 を解決するようにする。
+# upstream リリースで h3 が宣言されたらこの extension は削除してよい。
+packageExtensions:
+  '@nuxtjs/supabase':
+    dependencies:
+      h3: ^1.15.11
