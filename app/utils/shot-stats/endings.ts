@@ -9,8 +9,9 @@
  */
 import type {
   DecisiveRankRow, EndingBreakdown, EndingCategoryOrUnknown, EndingEntry,
-  LandZoneResult, RallyEndingRow, StatsSubject, ZoneCell
+  LandZoneCell, LandZoneResult, RallyEndingRow, StatsSubject
 } from '~/types/shot-stats'
+import type { ShotType } from '~/types/shot-annotation'
 import type { Team } from '~/utils/rule-engine/types'
 import { deriveOutDirection } from '~/utils/annotation/court-coords'
 import { zoneOf } from '~/utils/shot-stats/mirror'
@@ -149,6 +150,7 @@ export function buildLandZones(
   zones = 3
 ): LandZoneResult {
   const counts = new Map<string, number>()
+  const types = new Map<string, Map<string, number>>() // key = "row:col" → 決定打球種 → 本数 (2026-09-29 ホバー内訳)
   const outFallback = { side: 0, back: 0, both: 0 }
   let unlocated = 0
   for (const r of rows) {
@@ -173,9 +175,23 @@ export function buildLandZones(
         outFallback[dir] += 1
         continue
       }
+      // セルに入れるのは「勝者の最終打 = イン決着」の落下点のみ (2026-09-29 修正)。
+      // 敗者最終打 (= アウト判定) なのに座標がライン内側 (際どいタップ等) のケースが
+      // 相手半面のセルに混入していた。判定と座標が矛盾する行は位置不明として数える
+      if (r.last_hitter_team !== r.point_winner) {
+        unlocated += 1
+        continue
+      }
       const { row, col } = zoneOf(p, zones)
       const key = `${row}:${col}`
       counts.set(key, (counts.get(key) ?? 0) + 1)
+      let tmap = types.get(key)
+      if (!tmap) {
+        tmap = new Map()
+        types.set(key, tmap)
+      }
+      const tkey = r.decisive_shot_type ?? '__null__'
+      tmap.set(tkey, (tmap.get(tkey) ?? 0) + 1)
     } else if (r.out_direction !== null) {
       outFallback[r.out_direction] += 1
     } else {
@@ -183,9 +199,13 @@ export function buildLandZones(
     }
   }
   const max = Math.max(1, ...counts.values())
-  const cells: ZoneCell[] = [...counts.entries()].map(([key, count]) => {
+  const cells: LandZoneCell[] = [...counts.entries()].map(([key, count]) => {
     const [row, col] = key.split(':').map(Number)
-    return { row: row!, col: col!, count, ratio: count / max }
+    const tmap = types.get(key) ?? new Map<string, number>()
+    const typeList = [...tmap.entries()]
+      .map(([tkey, n]) => ({ type: tkey === '__null__' ? null : tkey as ShotType, count: n }))
+      .sort((a, b) => b.count - a.count)
+    return { row: row!, col: col!, count, ratio: count / max, types: typeList }
   })
   return { cells, outFallback, unlocated }
 }

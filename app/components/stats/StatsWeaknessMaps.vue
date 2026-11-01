@@ -67,6 +67,14 @@ const selectedBreakdown = computed<PlacementBreakdown[] | null>(() => {
 const missTotal = computed(() => props.missCells.reduce((s, c) => s + c.count, 0))
 
 /** % の分母: その地点から打った総本数（キー = "row:col"） */
+/** 決められた落下点のホバー内訳（決定打の球種, 2026-09-29） */
+const concededTitles = computed<Record<string, string>>(() =>
+  Object.fromEntries(props.lost.cells.map(c => [
+    `${c.row}:${c.col}`,
+    c.types.map(e => `${typeLabel(e.type)} ${e.count}`).join(' / ')
+  ]))
+)
+
 const missDenominators = computed<Record<string, number>>(() =>
   Object.fromEntries(props.shotTotals.map(c => [`${c.row}:${c.col}`, c.count]))
 )
@@ -148,6 +156,7 @@ const selectedSummary = computed<{ miss: number, total: number, pct: number } | 
       </p>
       <StatsCourtZones
         :cells="lost.cells"
+        :cell-titles="concededTitles"
         data-testid="weakness-conceded-map"
       />
       <p
