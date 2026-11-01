@@ -113,8 +113,8 @@ watch(error, (e) => {
 </script>
 
 <template>
-  <!-- 【ページルート】: default.vue の <slot /> に差し込まれる (layout 無指定で自動継承, ADR-011 D1) -->
   <UContainer class="py-8">
+    <!-- 【ページルート】: default.vue の <slot /> に差し込まれる (layout 無指定で自動継承, ADR-011 D1) -->
     <div class="flex max-w-2xl flex-col gap-6 mx-auto">
       <!-- 【ページヘッダー】: タイトル + 追加ボタン -->
       <div class="flex items-center justify-between">
