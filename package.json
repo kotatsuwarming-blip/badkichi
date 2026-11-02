@@ -26,7 +26,7 @@
     "@sentry/nuxt": "^10.66.0",
     "echarts": "^6.1.0",
     "nuxt": "^4.6.3",
-    "posthog-js": "^1.441.2",
+    "posthog-js": "^1.444.0",
     "tailwindcss": "^4.2.1",
     "vue-echarts": "^8.3.2",
     "zod": "^4.6.7"
@@ -36,13 +36,13 @@
     "@nuxt/test-utils": "^4.3.4",
     "@supabase/supabase-js": "^2.118.0",
     "@vue/test-utils": "^2.5.1",
-    "eslint": "^10.13.0",
+    "eslint": "^10.14.0",
     "happy-dom": "^20.9.0",
     "lint-staged": "^17.6.0",
     "simple-git-hooks": "^2.14.0",
     "typescript": "^5.9.3",
     "vitest": "^4.1.11",
-    "vue-tsc": "^3.3.13"
+    "vue-tsc": "^3.3.14"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm lint-staged && pnpm typecheck && pnpm test && pnpm i18n:check && ./scripts/check-migration-integrity.sh pre-commit"
