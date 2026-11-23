@@ -154,6 +154,56 @@ ADR-017 §5 の `shot_corrections` はこの二層に置き換える (同じ目�
 
 L2 を外側の統治役に置く。L0 と L1 の成果はすべて「作業時間が減ったか」で判定する。
 
+#### ループの図 (追記 2026-11-23)
+
+矢印 = 成果物や信号の受け渡し。ひし形 = 人が判断する点 (3 つ)。
+
+```mermaid
+flowchart TB
+    subgraph L2["L2 プロダクト (週 1) — 信号: 1 試合あたりの作業時間"]
+        direction TB
+        T["作業時間の集計<br>(human_resolutions.lead_time_ms の合計)"]
+        Q["docs/backlog/queue.json<br>優先順位 (人が並べ替える)"]
+        subgraph L0["L0 開発 (タスクごと) — 信号: CI 緑 + PR が開いた"]
+            direction LR
+            A["/next-task<br>先頭タスクを取る"] --> B["worktree + 実装<br>(tsumiki)"]
+            B --> C["Stop hook<br>lint / typecheck / test"]
+            C -- 失敗 --> B
+            C -- 通過 --> D["dev にマージ<br>PR を開く"]
+            D --> E{"人: PR をマージ"}
+        end
+        subgraph L1["L1 モデル (確定 N 件 / 週 1) — 信号: 固定評価セットの精度"]
+            direction LR
+            F["推論バッチ<br>動画 → 下書き (ai_predictions)"] --> G["人: 確認・訂正<br>(human_resolutions)"]
+            G --> H["再学習<br>(autoresearch 型の枠)"]
+            H --> I["evaluate.py<br>固定評価セット (DVC)"]
+            I --> J{"人: 昇格を承認<br>(MLflow @champion)"}
+            J -- 承認 --> F
+            J -- 却下 --> H
+        end
+        subgraph L3["L3 研究 (実験ごと) — 信号: 項目別の精度表"]
+            direction LR
+            K["仮説"] --> L["実験<br>(~/dev/badkichi-ai)"] --> M["STATUS.md 更新"]
+        end
+    end
+    E -- 機能が本番へ --> F
+    G -- lead_time_ms --> T
+    T -- 作業時間が減らない項目 --> Q
+    Q --> A
+    I -- 精度表 --> M
+    M -- 使える手法 --> H
+    G -. 評価専用の試合 (5 試合に 1) .-> I
+```
+
+読み方:
+
+- **L0 と L1 は独立に回る。** つなぐのは「L0 が作った機能で L1 の下書きと訂正が動く」(E → F) と、
+  「L1 の訂正時間が L2 の信号になる」(G → T) の 2 本だけ。
+- **L2 が親。** 作業時間が減らない項目があれば、キューの先頭にその項目の改善タスクが来る (T → Q → A)。
+- **L3 は L1 の供給源。** 実験で使えると分かった手法だけが再学習の枠に入る (M → H)。評価結果は STATUS.md に戻る (I → M)。
+- 人の確定の一部 (5 試合に 1 試合) は学習に使わず評価セットに回る (G ⇢ I、§3)。
+
+
 **L0 のハーネス** (ADR-003 Phase 1 への移行。移行条件を「痛みの観測」から「方針判断」に改める。改訂 2026-11-23):
 
 - `settings.json` の Stop hook で、コードに変更があれば lint / typecheck / test を回し、失敗したら終わらせない。
