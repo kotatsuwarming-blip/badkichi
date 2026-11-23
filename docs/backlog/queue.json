@@ -115,7 +115,19 @@
       "notes": ""
     }
   ],
-  "inbox": [],
+  "inbox": [
+    {
+      "id": "INBOX-001",
+      "date": "2026-11-23",
+      "from": "ADR-020-A2",
+      "type": "finding",
+      "summary": "ai-draft-loop の要件定義が注釈スタジオ (ショット層) に寄っており、記録層 (ラリー開始・終了、サーブ側・ポジション、得点者) の AI 下書きと確認が前提であることを明示していない。打刻・打点・打者はラリー区間とサーブ側が確定していないと成立しない (作者指摘)。",
+      "tried": "2026-11-01 の未コミット要件定義 docs/spec/serve-start-assist (記録層の AI 確認モード) と docs/spec/video-upload-analysis (動画アップロード + 解析ジョブ) を発見し救出 PR を開いた。dev には rally-first-recording (人手のラリー単位記録、BL-027) もある。",
+      "question": "ai-draft-loop を「記録層 (serve-start-assist) の確定を前提に、その上にショット層の下書きを載せる」構成に改訂し、serve-start-assist の候補・確定を二層スキーマに載せるか。VID-0〜4 を video-upload-analysis に置き換えるか。",
+      "status": "open",
+      "triage": ""
+    }
+  ],
   "outside_this_repo": [
     "ADR-020-A3' 推論の 1 コマンド化 (~/dev/badkichi-ai): 動画 + match_id → 下書き JSON。サーブ → 打刻 → 打者の順",
     "ADR-020-A4 autoresearch 型の枠と evaluate.py、固定評価セットの DVC 凍結、MLflow 導入 (~/dev/badkichi-ai)"
