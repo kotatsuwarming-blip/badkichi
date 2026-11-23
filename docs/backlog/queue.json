@@ -20,7 +20,7 @@
       "done_when": "二層スキーマ (ai_predictions / human_resolutions、ADR-020 §2)、確認画面の受け入れ条件 (ラリー単位の全却下・1 キー確定・訂正 1 ショット 5 秒以内)、固定評価セットの書き出し、ai_model_version の切り替え、lead_time_ms の計測が EARS 形式で書かれ、PR が開いている",
       "source": "ADR-020 影響 §次のアクション 2",
       "passes": false,
-      "pr": null,
+      "pr": 92,
       "notes": "",
       "after": []
     },
