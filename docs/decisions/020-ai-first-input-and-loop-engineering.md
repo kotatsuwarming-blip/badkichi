@@ -1,7 +1,8 @@
 # ADR-020: AI 先行入力への転換とループエンジニアリング
 
 ## ステータス
-Accepted (2026-11-23)。未決事項 1 は 2026-11-23 に作者が「課金は一旦置き、AI 化とループを進める」と決定し解消。残り 3 件は実装中に決める。
+Accepted (2026-11-23)。未決事項 1 は 2026-11-23 に作者が「課金は一旦置き、AI 化とループを進める」と決定し解消。
+同日、`docs/research/loop-engineering/survey.md` の調査結果で §2 / §3 / §4 / §5 を改訂 (改訂箇所は「改訂 2026-11-23」と記す)。
 
 ## 背景
 
@@ -83,21 +84,29 @@ PR 作成はすべて作者が 1 回ずつ指示している。AI 下書きと�
 - **既存の注釈スタジオは確認画面に統合する。** 3 パス (決まり方 / 種別 / 打点) は、下書きが揃った後は
   1 回の確認パスにまとめる (`analysis.md` §3-3)。パス単位の画面は下書きが揃うまでの経過措置。
 
-### 2. ショットの状態を 3 値で持ち、訂正を記録する
+### 2. 予測と人の確定を二層で持ち、確認も訂正も記録する (改訂 2026-11-23)
 
 学習に使えるのは「人が見た」データだけである。人は気づいたところしか直さないので、
 **未変更の下書きを正解とは扱わない**。
 
-- shots と rallies の AI 下書き対象項目に、項目ごとの状態を持つ:
-  `draft` (AI が出したまま) / `confirmed` (人が見て変えなかった) / `corrected` (人が変えた)。
-  項目ごとに持つか行ごとに持つかは要件定義で決める。既存の `annotation_source` (`human` / `ai`) は
-  廃止せず、`human` = 人が入力した行、`ai` = 下書き起点の行として残す。
-- 訂正は ADR-017 §5 の `shot_corrections` を採用して append-only で残す。rallies にも同じ構造の
-  `rally_corrections` を置く。`ai_model_version` は必須にする。
-- 確認 (`confirmed`) も記録する。確認は「この値は正しい」という正例であり、訂正と同じ価値がある。
-- 統計では `draft` のままの値を「未確認」として表示する。下書きのまま読まれる統計は、
-  精度が低い間は信頼できないので、未確認の割合を各チャートに出す。
-- 学習に使うのは `confirmed` と `corrected` だけ。`draft` は使わない。
+当初案は shots の項目ごとに draft / confirmed / corrected の 3 状態を持つ形だったが、調査
+(`docs/research/loop-engineering/survey.md` §4-3) で Label Studio の「予測は読み取り専用、人の注釈は
+元予測を参照する別の行」というスキーマを採り、Supabase に写す形に改める。
+
+- **`ai_predictions`**: AI が出した値。shot_id (または rally_id)、field、value、ai_model_version、score、
+  input_hash、created_at。**追記のみ、更新しない**。既存の `annotation_source` / `ai_model_version` /
+  `ai_confidence` 列は、この表の「現在採用している予測」を shots に写した値として残す。
+- **`human_resolutions`**: 人の確定。prediction_id (元予測、人が新規に入力した場合は null)、field、value、
+  kind = `confirmed` / `corrected` / `rejected`、lead_time_ms (その項目に人が使った時間)、user_id、created_at。
+  **追記のみ**。
+- shots / rallies の列は「現在の値」を持つだけにし、履歴は上の 2 表から復元する。
+- 確認 (`confirmed`) も記録する。確認は「この値は正しい」という正例で、訂正と同じ価値がある。
+  ラリー単位の一括確認は、そのラリーの全項目に `confirmed` を書く。
+- 統計では、人の確定が無い予測を「未確認」として表示し、各チャートに未確認の割合を出す。
+- 学習に使うのは `human_resolutions` のある項目だけ。確定の無い予測は使わない。
+- `lead_time_ms` の合計が「1 試合あたりの作業時間」(BL-020) になる。計測機能を別に作らない。
+
+ADR-017 §5 の `shot_corrections` はこの二層に置き換える (同じ目的で情報が増える)。
 
 ### 3. 評価の正本は凍結した評価セット。訂正データでは評価しない
 
@@ -122,6 +131,10 @@ PR 作成はすべて作者が 1 回ずつ指示している。AI 下書きと�
   どちらかを欠けば昇格しない。
 - 評価は 1 コマンドで項目ごとの表を出す。`~/dev/badkichi-ai/` の `eval_*.py` を束ねる。
   結果は `STATUS.md` の表に追記する形で残す。
+- (改訂 2026-11-23) 固定評価セットは **DVC** でバージョンを凍結し、学習スクリプトから読めないパスに置く。
+  評価結果と学習済みモデルは **MLflow** (SQLite バックエンド) に記録し、昇格は `@champion` / `@challenger`
+  のエイリアス付け替えで行う。gold set の可視化とモデル間比較には FiftyOne を使う。
+  いずれも一人で運用できる最小構成として選んだ (survey §4-4)。
 
 ### 4. 4 層のループと、人が残る 3 点
 
@@ -136,20 +149,35 @@ PR 作成はすべて作者が 1 回ずつ指示している。AI 下書きと�
 
 L2 を外側の統治役に置く。L0 と L1 の成果はすべて「作業時間が減ったか」で判定する。
 
-**L0 のハーネス** (ADR-003 Phase 1 への移行。移行条件を「痛みの観測」から「方針判断」に改める):
+**L0 のハーネス** (ADR-003 Phase 1 への移行。移行条件を「痛みの観測」から「方針判断」に改める。改訂 2026-11-23):
 
-- `settings.json` の Stop hook で typecheck と test を強制する。lint は PostToolUse。
-- タスクキューはバックログの BL-ID 単位。`docs/backlog/queue.md` (仮) に「次にやる ID」を並べ、
-  ループはその先頭を取って tsumiki の `kairo-*` / `tdd-*` で実装し、PR を開いて止まる。
-- PR の本文に、対応 BL-ID、完了条件、検証結果 (test / typecheck / dev での確認) を必ず書く。
+- `settings.json` の Stop hook で、コードに変更があれば lint / typecheck / test を回し、失敗したら終わらせない。
+  連続ブロックの上限は Claude Code 組み込みの 8 回に任せる。PostToolUse で編集した .ts / .vue を eslint にかける。
+- タスクキューは **JSON** (`docs/backlog/queue.json`)。公式の長時間エージェント指針に従い、ループが変えてよいのは
+  `passes` / `pr` / `notes` だけ、行の削除は禁止、追加は末尾。人は順序を並べ替えて優先度を伝える。
+- 1 周 1 タスク。`/next-task` が先頭の未完了タスクを取り、worktree を切り、実装し、dev にマージし、PR を開いて止まる。
+  **完了の判定はモデルの発話ではなく「PR が開いた」という外部事実**で行い、PR 番号を `pr` に書く。
+- 各周の学び (詰まった点、次の周への注意) を `docs/backlog/progress.md` に追記する。次の周は最初にこれを読む。
+- 試行がうまくいかない周は、キューの `notes` に理由を書いて人に保留 (needs-human) し、次のタスクには進まない。
+- 起点は**まずローカルの `/next-task`** で 5 周回す。安定したら `claude-code-action` の cron (1 run 1 タスク、
+  `--max-turns`、`timeout-minutes`、`concurrency: 1`) に移し、検証は既存 CI に任せる。秘密は Environment Secrets のまま。
+- PR の本文はテンプレート (`.github/pull_request_template.md`) に従い、対応タスク、完了条件と結果、検証、
+  人が判断することを必ず書く。
 - 並列実行 (Agent Teams、ADR-003 Phase 2) は入れない。PR が 1 本ずつ流れれば足りる。
+- 既製のループ製品 (Ralph 系、BMAD、spec-kit) は入れない。借りるのは設計だけ (survey §3、§5-1)。
 
-**L1 のハーネス**:
+**L1 のハーネス** (改訂 2026-11-23):
 
-- 推論は 1 コマンド (`動画 + match_id → 下書きを DB に書く`)。
-- 再学習は 1 コマンド (`confirmed + corrected を書き出す → 学習 → 固定セットで評価 → 結果の表`)。
-- 昇格は評価結果の表と差分を人に見せ、承認で `ai_model_version` を切り替える。
-- どの段階も `~/dev/badkichi-ai/` に置き、本体リポジトリからは DB の下書きと訂正だけで接続する。
+- `~/dev/badkichi-ai/` に **autoresearch 型の枠**を作る (survey §4-1): `program.md` (研究方針、人だけが編集)、
+  ループが編集できるファイルは 1 つ (特徴量やハイパーパラメータ)、評価器 `evaluate.py` と固定評価セットは不変、
+  1 実験に時間上限、結果は `results.tsv` に追記、改善したら git commit で keep、しなければ revert。
+  Claude Code はこの枠の中だけで実験を回す。
+- 推論は 1 コマンド (`動画 + match_id → 下書き JSON`)。本体には `ai_predictions` への取り込み経路を作る。
+- 再学習は 1 コマンド (`human_resolutions を書き出す → 学習 → evaluate.py → MLflow に記録`)。
+- 昇格は MLflow の評価結果と前版との差分を人に見せ、承認で `@champion` を付け替える。
+- 学習の要らない後処理コード (音 + 映像の打刻融合、ラリー境界の後処理) は **OpenEvolve** (Claude Code CLI を
+  バックエンドにできる) で評価器のスコアを目標に進化させる。
+- 本体リポジトリとは DB の `ai_predictions` / `human_resolutions` だけで接続する。
 
 **人が残る点は 3 つだけ**: PR のマージ、モデルの昇格、動画の受領と学習利用の同意。
 それ以外は人が起点にならなくても回るようにする。
@@ -161,9 +189,10 @@ L2 を外側の統治役に置く。L0 と L1 の成果はすべて「作業時�
 
 - **追跡なしで下書きを出す。** 打刻は音 + 映像の融合、打者は姿勢、球種は打刻の間隔・打者の位置・
   直前の球種から出す。これらはすべて利用者が訂正できる項目で、訂正がそのまま学習データになる。
-- **打刻を弱教師にして後から追跡を育てる。** `confirmed` / `corrected` の打刻時刻では、
-  シャトルは打者のラケット付近にある。この拘束で追跡器の自己学習を試し、人手ラベルは追跡が
-  外れた区間だけ `label_tool.py` で足す。これは L3 の実験項目で、本線の順序には入れない。
+- **打刻を弱教師にして後から追跡を育てる。** 人が確定した打刻時刻では、シャトルは打者のラケット付近にある。
+  この拘束を TrackNet の損失項か後処理の整合性スコアとして**自前で実装**する (Snorkel は保守が止まっており
+  使わない。改訂 2026-11-23)。人手ラベルは追跡が外れた区間だけ足し、座標ラベルが本格的に要る段階になったら
+  Label Studio (self-host) と FiftyOne を使う。これは L3 の実験項目で、本線の順序には入れない。
 
 球種の精度を上げる段階で軌跡が要ると判明したら、そのときに順序を見直す。
 
@@ -238,15 +267,15 @@ AI の下書きには動画ファイルが要り、YouTube の動画は使えな
 
 ## 影響
 
-### 次のアクション (順序)
+### 次のアクション (順序、改訂 2026-11-23)
 
-1. **L0 のハーネス** (小さく): Stop hook、タスクキュー、PR 本文の型。ADR-003 の Phase 1 として記録する。
-2. **要件定義 `docs/spec/ai-draft-loop/`**: 3 状態、訂正テーブル、確認画面の受け入れ条件 (§1)、
-   固定評価セットの書き出し、`ai_model_version` の切り替え。ここまでは動画がなくても進む。
-3. **推論の 1 コマンド化** (`~/dev/badkichi-ai/`): §1 の順 1 〜 3 (サーブ・打刻・打者) から。
-   出力は DB の下書き (`annotation_source = 'ai'`、状態 `draft`)。
-4. **評価の 1 コマンド化**: 固定評価セットで §3 の表を出す。
-5. **再学習と昇格**: 訂正 N 件で再学習、評価、承認で切り替え。
+1. **L0 のハーネス**: Stop / PostToolUse hook、JSON キュー、`progress.md`、`/next-task`、PR テンプレート。
+   ADR-003 の Phase 1 として記録する。ローカルで 5 周回してから GitHub Actions の cron へ。
+2. **要件定義 `docs/spec/ai-draft-loop/`**: 二層スキーマ (§2)、確認画面の受け入れ条件 (§1)、固定評価セットの
+   書き出し、`ai_model_version` の切り替え、`lead_time_ms` の計測。ここまでは動画がなくても進む。
+3. **`~/dev/badkichi-ai/` に autoresearch 型の枠と `evaluate.py`** (§4 L1)。固定評価セットを DVC で凍結し、MLflow を入れる。
+4. **推論の 1 コマンド化**: §1 の順 1 〜 3 (サーブ・打刻・打者) から。出力は下書き JSON。本体への取り込み経路。
+5. **再学習と昇格**: 確定 N 件で再学習、評価、承認で `@champion` 切り替え。
 6. バックログの改訂 (§8) と、ADR-013 / 016 / 017 / 018 への追記。
 
 ### まだやらないこと
@@ -282,6 +311,7 @@ ADR-013 / 016 / 017 / 018 は Superseded にせず、各 ADR の末尾に本 ADR
 2. 動画原本の保持期間と、学習利用の同意文面 (BL-031 で決める)。
 3. 推論環境の費用上限 (クラウド GPU に移す時期と月額)。
 4. 確認画面を項目ごとのパスで始めるか、最初から 1 回の確認パスにまとめるか。本 ADR は経過措置としてパス単位を許容している (§1)。
+5. (追加 2026-11-23) tsumiki の `kairo-*` / `tdd-*` は現行版で legacy プラグイン扱い。legacy のまま使い続けるか、新しい Dev Skills (`dev-verify`) に移るか。
 
 ## 関連
 
@@ -292,9 +322,13 @@ ADR-013 / 016 / 017 / 018 は Superseded にせず、各 ADR の末尾に本 ADR
 - `docs/backlog/product-backlog.md` (BL-001 が本 ADR。エピック D を最優先に)
 - `docs/research/input-automation/analysis.md` (入力時間の実測と短縮案)
 - `~/dev/badkichi-ai/STATUS.md` / `HANDOFF.md` (検証の結果と手順)
+- `docs/research/loop-engineering/survey.md` (2026-11-23 の調査。公式部品、開発ループ既製品、AI 精度改善ループの比較と本 ADR の改訂根拠)
 
 ## 参考
 
 - 弱教師あり学習 (weak supervision): 打刻時刻の拘束で軌跡ラベルを代替する発想の出典として
-  Ratner et al., "Snorkel: Rapid Training Data Creation with Weak Supervision" (VLDB 2017)
+  Ratner et al., "Snorkel: Rapid Training Data Creation with Weak Supervision" (VLDB 2017)。実装は自前 (§5)
+- Anthropic, "Effective harnesses for long-running agents" (JSON のタスク一覧、進捗ファイル、commit をチェックポイントに)
+- karpathy/autoresearch (編集可能ファイル 1 つ + 不変の評価器 + 時間予算 + git で keep / revert)
+- Label Studio のデータモデル (predictions と annotations の二層、parent_prediction、lead_time)
 - データの訂正を学習に回すフライホイールの一般論: ADR-013 §6-4、ADR-017 §2 Stage 4
