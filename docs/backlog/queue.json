@@ -10,7 +10,7 @@
   ],
   "last_refill": {
     "commit": null,
-    "date": null
+    "date": "2026-11-23"
   },
   "tasks": [
     {
@@ -25,6 +25,32 @@
       "after": []
     },
     {
+      "id": "SSA-0",
+      "kind": "docs",
+      "title": "serve-start-assist の要件定義を ADR-020 に整合 (ラリー確認)",
+      "done_when": "2026-11-01 の要件定義 (PR #94) を、名称「ラリー確認」、候補と確定の保存先を ai-draft-loop の二層スキーマ (ai_predictions / human_resolutions、REQ-302 の訂正履歴を代替)、ライブ記録の位置づけ (ADR-020 §1)、再生は YouTube のみ (§6) に合わせて改訂し、PR が Ready になっている",
+      "source": "ADR-020 §1 / §6 (2026-11-23)、PR #94、INBOX-001",
+      "after": [
+        "ADR-020-A2"
+      ],
+      "passes": false,
+      "pr": null,
+      "notes": ""
+    },
+    {
+      "id": "VUA-0",
+      "kind": "docs",
+      "title": "video-upload-analysis の要件定義を ADR-020 に整合",
+      "done_when": "2026-11-01 の要件定義 (PR #94) を、原本は解析後削除が既定・学習利用はオプトイン保管 (ADR-020 §6)、同意の 4 点 (アップロード・解析・削除・学習利用)、候補ファイルに加えてショット層の下書き JSON も同じジョブの出力にできる契約 (ADR-020-A3 と共有) に合わせて改訂し、PR が Ready になっている",
+      "source": "ADR-020 §6 (2026-11-23)、PR #94、INBOX-001",
+      "after": [
+        "ADR-020-A2"
+      ],
+      "passes": false,
+      "pr": null,
+      "notes": ""
+    },
+    {
       "id": "BL-031",
       "kind": "docs",
       "title": "動画原本の受領と保管の方針 (ADR-021)",
@@ -32,7 +58,7 @@
       "source": "ADR-020 §6、バックログ BL-031",
       "passes": false,
       "pr": null,
-      "notes": "",
+      "notes": "削除候補: 原本は解析後削除が既定、学習利用はオプトイン (ADR-020 §6 改訂 2026-11-23)。video-upload-analysis の要件に統合するため ADR は不要",
       "after": []
     },
     {
@@ -46,7 +72,7 @@
       ],
       "passes": false,
       "pr": null,
-      "notes": ""
+      "notes": "削除候補: 2026-11-01 の docs/spec/video-upload-analysis (PR #94) に置き換える (作者決定 2026-11-23、ADR-020 §6)。消すのは人"
     },
     {
       "id": "ADR-020-A3",
@@ -72,7 +98,7 @@
       ],
       "passes": false,
       "pr": null,
-      "notes": ""
+      "notes": "削除候補: 2026-11-01 の docs/spec/video-upload-analysis (PR #94) に置き換える (作者決定 2026-11-23、ADR-020 §6)。消すのは人"
     },
     {
       "id": "VID-2",
@@ -85,7 +111,7 @@
       ],
       "passes": false,
       "pr": null,
-      "notes": ""
+      "notes": "削除候補: 2026-11-01 の docs/spec/video-upload-analysis (PR #94) に置き換える (作者決定 2026-11-23、ADR-020 §6)。消すのは人"
     },
     {
       "id": "VID-3",
@@ -98,7 +124,7 @@
       ],
       "passes": false,
       "pr": null,
-      "notes": ""
+      "notes": "削除候補: 2026-11-01 の docs/spec/video-upload-analysis (PR #94) に置き換える (作者決定 2026-11-23、ADR-020 §6)。消すのは人"
     },
     {
       "id": "VID-4",
@@ -112,7 +138,7 @@
       ],
       "passes": false,
       "pr": null,
-      "notes": ""
+      "notes": "削除候補: 2026-11-01 の docs/spec/video-upload-analysis (PR #94) に置き換える (作者決定 2026-11-23、ADR-020 §6)。消すのは人"
     }
   ],
   "inbox": [
@@ -124,8 +150,8 @@
       "summary": "ai-draft-loop の要件定義が注釈スタジオ (ショット層) に寄っており、記録層 (ラリー開始・終了、サーブ側・ポジション、得点者) の AI 下書きと確認が前提であることを明示していない。打刻・打点・打者はラリー区間とサーブ側が確定していないと成立しない (作者指摘)。",
       "tried": "2026-11-01 の未コミット要件定義 docs/spec/serve-start-assist (記録層の AI 確認モード) と docs/spec/video-upload-analysis (動画アップロード + 解析ジョブ) を発見し救出 PR を開いた。dev には rally-first-recording (人手のラリー単位記録、BL-027) もある。",
       "question": "ai-draft-loop を「記録層 (serve-start-assist) の確定を前提に、その上にショット層の下書きを載せる」構成に改訂し、serve-start-assist の候補・確定を二層スキーマに載せるか。VID-0〜4 を video-upload-analysis に置き換えるか。",
-      "status": "open",
-      "triage": ""
+      "status": "triaged",
+      "triage": "adr + spec: 作者決定 2026-11-23 (得点者は導出、ライブ記録→ラリー確認、再生は YouTube・動画は解析用のみ) を ADR-020 §1 / §6 に反映 (PR #95)。ai-draft-loop に記録層の前提を追加 (PR #92)。SSA-0 / VUA-0 を追加し、VID-0〜4 と BL-031 を削除候補にした"
     }
   ],
   "outside_this_repo": [
