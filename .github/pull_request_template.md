@@ -1,6 +1,7 @@
 ## 対応するタスク
 
-- バックログ ID / ADR / 要件: (例: BL-020、ADR-020 §4、docs/spec/xxx REQ-001)
+- Issue: Closes #<番号> (開発ループのタスクは必ず書く。マージで Issue が閉じる = 完了)
+- ADR / 要件: (例: ADR-020 §4、docs/spec/xxx REQ-001)
 - 起点: 人の指示 / `/next-task` (開発ループ)
 
 ## 完了条件と結果
