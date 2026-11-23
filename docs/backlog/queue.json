@@ -19,9 +19,9 @@
       "title": "docs/spec/ai-draft-loop/ の要件定義",
       "done_when": "二層スキーマ (ai_predictions / human_resolutions、ADR-020 §2)、確認画面の受け入れ条件 (ラリー単位の全却下・1 キー確定・訂正 1 ショット 5 秒以内)、固定評価セットの書き出し、ai_model_version の切り替え、lead_time_ms の計測が EARS 形式で書かれ、PR が開いている",
       "source": "ADR-020 影響 §次のアクション 2",
-      "passes": false,
+      "passes": true,
       "pr": 92,
-      "notes": "",
+      "notes": "PR #92 マージ済み (gh で確認、2026-11-23)。passes は実行係が確認して true にした",
       "after": []
     },
     {
@@ -34,7 +34,7 @@
         "ADR-020-A2"
       ],
       "passes": false,
-      "pr": null,
+      "pr": 96,
       "notes": ""
     },
     {
@@ -152,6 +152,28 @@
       "question": "ai-draft-loop を「記録層 (serve-start-assist) の確定を前提に、その上にショット層の下書きを載せる」構成に改訂し、serve-start-assist の候補・確定を二層スキーマに載せるか。VID-0〜4 を video-upload-analysis に置き換えるか。",
       "status": "triaged",
       "triage": "adr + spec: 作者決定 2026-11-23 (得点者は導出、ライブ記録→ラリー確認、再生は YouTube・動画は解析用のみ) を ADR-020 §1 / §6 に反映 (PR #95)。ai-draft-loop に記録層の前提を追加 (PR #92)。SSA-0 / VUA-0 を追加し、VID-0〜4 と BL-031 を削除候補にした"
+    },
+    {
+      "id": "INBOX-002",
+      "date": "2026-11-23",
+      "from": "SSA-0",
+      "type": "finding",
+      "summary": "ai-draft-loop REQ-001 の target_type は shot / rally だけだが、ラリー確認はラリー行が無い段階の候補を予測として残す必要がある (却下した候補 = 負例も含む)。target_type に rally_candidate を足し、確定時に新 rally の target へ写す規則 (serve-start-assist REQ-011) を ai-draft-loop 側にも書く必要がある。",
+      "tried": "serve-start-assist REQ-001 / REQ-011 にはその前提で書いた。ai-draft-loop (マージ済み) は変えていない。",
+      "question": "ai-draft-loop の要件追補 (target_type の追加と写しの規則) をタスクにするか。",
+      "status": "open",
+      "triage": ""
+    },
+    {
+      "id": "INBOX-003",
+      "date": "2026-11-23",
+      "from": "/next-task",
+      "type": "finding",
+      "summary": "PR #92 はマージ済みだったが queue.json の ADR-020-A2.passes は false のままだった。passes を true にするのは人の役割だが、マージ時に忘れる。実行係は gh で MERGED を確認して進め、passes を true にした。",
+      "tried": "手順書の「after の各タスクが passes: true (= main にマージ済み)」を「PR がマージ済み」と読み替えて進めた。",
+      "question": "passes の更新を自動化するか (refill-queue が gh で PR の状態を見て更新する、または GitHub Actions で PR マージ時に更新する)。",
+      "status": "open",
+      "triage": ""
     }
   ],
   "outside_this_repo": [
