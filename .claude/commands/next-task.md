@@ -3,12 +3,15 @@ description: 開発ループ L0 の 1 周。docs/backlog/queue.json の先頭タ
 ---
 
 あなたは badkichi の開発ループ (ADR-020 §4 の L0) を 1 周回す。人の指示を待たずに、次の手順を上から順に行い、最後に PR の URL を報告して止まる。1 周で扱うタスクは 1 つだけ。
+キューへのタスクの補充はこのコマンドの仕事ではない (`/refill-queue`、L2)。
 
 ## 0. 前提の確認
 
 - `docs/decisions/020-ai-first-input-and-loop-engineering.md` §4、`docs/backlog/progress.md`、`docs/backlog/queue.json` をこの順で読む。
 - `git -C ../badkichi-dev fetch origin` を実行し、origin/main を最新にする。
-- `queue.json` の `tasks` を上から見て、`passes` が false で `pr` が null、かつ `notes` に「着手しない」等の保留条件が無い最初の 1 件を選ぶ。無ければ「キューが空」と報告して止まる。
+- `queue.json` の `tasks` を上から見て、次の条件をすべて満たす最初の 1 件を選ぶ:
+  `passes` が false、`pr` が null、`notes` に needs-human が無い、`after` の各タスクが `passes: true` (= main にマージ済み)。
+- 該当が無ければ理由を分けて報告して止まる: 「キューが空 (→ `/refill-queue` を実行する)」か「残りはすべて依存待ちか保留 (→ 人が PR をマージするか保留を解く)」。
 
 ## 1. 作業ツリーとブランチ
 
@@ -45,8 +48,8 @@ description: 開発ループ L0 の 1 周。docs/backlog/queue.json の先頭タ
 
 ## やってはいけないこと
 
-- キューに無いタスクに手を出す。見つけた問題は `queue.json` の `tasks` 末尾に `passes: false` で追記するだけにする。
-- `queue.json` のタスクを削除する、`passes` / `pr` / `notes` 以外の項目を変える。
+- キューに無いタスクに手を出す。作業中に見つけた問題は `queue.json` の `tasks` 末尾に `passes: false` で 1 行追記するだけにする (出典は「/next-task <タスク ID> で発見」)。
+- `queue.json` のタスクを削除する、`passes` / `pr` / `notes` 以外の項目を変える (末尾追記を除く)。
 - main や dev に直接コミットする。
 - `supabase db push` / `db reset`、`git push --force`、ディレクトリの再帰削除。
 - 要件定義を書かずに新機能を実装する。
