@@ -136,3 +136,22 @@ tsumiki の `tdd-tasknote` / `kairo-tasknote` はその回のコンテキスト�
 - Harness Engineering Best Practices 2026: https://nyosegawa.com/posts/harness-engineering-best-practices-2026/
 - learning-rules スキル紹介（Tinkly）: https://note.com/jake_k547/n/n2004f4422e12
 - tsumiki: https://github.com/classmethod/tsumiki
+
+---
+
+## 追補 (2026-11-23): Phase 1 へ移行
+
+ADR-020 §4 (開発ループ L0) の決定により、移行条件を「痛みの観測」から「方針判断」に改めて Phase 1 に入る。
+設計の根拠は `docs/research/loop-engineering/survey.md`。入れたもの:
+
+- `settings.json` の hooks: PostToolUse (Edit / Write / MultiEdit) で編集した .ts / .vue を eslint にかける
+  (`scripts/harness/post-edit-lint.sh`)。Stop でコードに変更があれば lint / typecheck / test を回し、
+  失敗したら止めて結果を返す (`scripts/harness/stop-check.sh`。連続ブロックの上限は Claude Code 組み込みの 8 回)。
+- タスクキュー `docs/backlog/queue.json` (ループが変えてよいのは passes / pr / notes だけ、削除禁止) と、
+  各周の学びを残す `docs/backlog/progress.md`。
+- 先頭タスクを 1 つ取って PR まで進めるコマンド `/next-task` (`.claude/commands/next-task.md`)。
+  完了の判定はモデルの発話ではなく「PR が開いた」という外部事実。
+- PR テンプレート `.github/pull_request_template.md` (対応タスク、完了条件と結果、検証、人が判断すること)。
+
+起点はまずローカルの `/next-task`。5 周回って安定したら `claude-code-action` の cron に移す。
+Phase 2 (Agent Teams) には入らない。既製のループ製品 (Ralph 系、BMAD、spec-kit) も入れない。

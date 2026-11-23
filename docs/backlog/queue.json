@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "readme": [
+    "開発ループ L0 のタスクキュー (ADR-020 §4)。/next-task が tasks の先頭から passes=false の 1 件を取り、PR を開いて止まる。",
+    "ループが変えてよいのは passes / pr / notes だけ。行の削除は禁止。追加は末尾。人は順序を並べ替えて優先度を伝える。",
+    "kind: docs (要件定義や ADR。作者確認が要るので PR を開いて止まる) / feature / fix。",
+    "source はバックログの BL-xxx か ADR の節。done_when は完了条件 (PR 本文にそのまま写す)。"
+  ],
+  "tasks": [
+    {
+      "id": "ADR-020-A2",
+      "kind": "docs",
+      "title": "docs/spec/ai-draft-loop/ の要件定義",
+      "done_when": "二層スキーマ (ai_predictions / human_resolutions、ADR-020 §2)、確認画面の受け入れ条件 (ラリー単位の全却下・1 キー確定・訂正 1 ショット 5 秒以内)、固定評価セットの書き出し、ai_model_version の切り替え、lead_time_ms の計測が EARS 形式で書かれ、PR が開いている",
+      "source": "ADR-020 影響 §次のアクション 2",
+      "passes": false,
+      "pr": null,
+      "notes": ""
+    },
+    {
+      "id": "BL-031",
+      "kind": "docs",
+      "title": "動画原本の受領と保管の方針 (ADR-021)",
+      "done_when": "受け取り方、保管期間、削除、学習利用の同意 (オプトイン) が ADR として書かれ、PR が開いている",
+      "source": "ADR-020 §6、バックログ BL-031",
+      "passes": false,
+      "pr": null,
+      "notes": ""
+    },
+    {
+      "id": "ADR-020-A3",
+      "kind": "feature",
+      "title": "推論結果 (下書き JSON) を ai_predictions に取り込む経路",
+      "done_when": "~/dev/badkichi-ai のバッチが出す下書き JSON を、指定した match に ai_predictions として書き込め、shots / rallies の現在値に反映される。統計で未確認の割合が出る",
+      "source": "ADR-020 §4 L1、要件定義 ADR-020-A2 の後",
+      "passes": false,
+      "pr": null,
+      "notes": "ADR-020-A2 がマージされるまで着手しない"
+    }
+  ],
+  "outside_this_repo": [
+    "ADR-020-A3' 推論の 1 コマンド化 (~/dev/badkichi-ai): 動画 + match_id → 下書き JSON。サーブ → 打刻 → 打者の順",
+    "ADR-020-A4 autoresearch 型の枠と evaluate.py、固定評価セットの DVC 凍結、MLflow 導入 (~/dev/badkichi-ai)"
+  ]
+}
