@@ -45,6 +45,10 @@ video-playback（確認画面の動画再生）。推論そのもの（`~/dev/ba
 5. 学習用 / 評価用の書き出し（SQL 関数またはスクリプト）と、評価専用の試合の印
 6. 統計チャートの「未確認 n / N」表示
 
+### 前提（別単位）
+
+- **記録層の確定が先**: ラリーの開始・終了、サーブ側・サーバー・左右、得点者（導出）は `docs/spec/serve-start-assist/` の方式で確認する。本単位のショット層の下書きは、記録層が確定したラリーに対してだけ出す（ADR-020 §1 原則、作者指摘 2026-11-23）。serve-start-assist の候補と確定を本単位の二層スキーマに載せる改訂は、INBOX-001 の仕分け後に行う。
+
 ### 含まない（スコープ外・別単位）
 
 - 推論の実装、モデルの学習・評価・昇格（`~/dev/badkichi-ai`、ADR-020 §4 L1）
@@ -70,8 +74,8 @@ video-playback（確認画面の動画再生）。推論そのもの（`~/dev/ba
 |---|---|---|---|
 | rally | `start_ms` | `video_start_timestamp_ms` | integer（動画 ms） |
 | rally | `end_ms` | 列なし（最終ショットの `annotated_timestamp_ms` で代替。取り込み時のショット行生成にのみ使う） | integer |
-| rally | `serving_team` / `server_player_id` / `server_position` | 同名列（いずれも NOT NULL。予測が欠ける場合の既定値は REQ-008） | text / uuid / text |
-| rally | `point_winner` | `point_winner` | text |
+| rally | `serving_team` / `server_player_id` / `server_position` | 同名列（いずれも NOT NULL。予測が欠ける場合の既定値は REQ-008）。人の訂正はここに対して行い、得点者の訂正を兼ねる | text / uuid / text |
+| rally | `point_winner` | `point_winner`（**予測項目ではない**。次のラリーの `serving_team` / `server_player_id` の確定から rule-engine で導出。直前がレットなら導出不可。作者決定 2026-11-23） | text（導出） |
 | rally | `end_reason` | `end_reason` | text |
 | rally | `land_x` / `land_y` | `land_x` / `land_y` | real |
 | shot | `timestamp_ms` | `annotated_timestamp_ms`（押下時刻 `video_timestamp_ms` は保持） | integer |
