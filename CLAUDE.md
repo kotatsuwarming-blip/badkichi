@@ -56,4 +56,5 @@ Badminton analytics app for team use. Built with Nuxt 4 (Vue 3) + Nuxt UI + Type
   - `implements/{requirement-name}/{task-id}/` — Implementation records
   - `rule/` — Project-specific rules for tsumiki commands
   - `decisions/` — Architecture Decision Records (ADR)
+  - `backlog/` — Product backlog (business figures are kept outside this public repo)
 - `public/` — Static files served as-is
