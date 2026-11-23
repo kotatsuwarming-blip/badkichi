@@ -151,6 +151,9 @@ ADR-020 §4 (開発ループ L0) の決定により、移行条件を「痛み�
   各周の学びを残す `docs/backlog/progress.md`。
 - 先頭タスクを 1 つ取って PR まで進めるコマンド `/next-task` (`.claude/commands/next-task.md`)。
   完了の判定はモデルの発話ではなく「PR が開いた」という外部事実。
+- キューの補充は別コマンド `/refill-queue` (`.claude/commands/refill-queue.md`、ADR-020 §4 の L2)。
+  マージ済みの ADR / 要件定義から未登録のタスクを導いて末尾に追記する PR を開く。人は要らない行を消し順序を直すだけ (拒否権)。
+  消費 (L0) と補充 (L2) は信号も周期も違うので分けた。
 - PR テンプレート `.github/pull_request_template.md` (対応タスク、完了条件と結果、検証、人が判断すること)。
 
 起点はまずローカルの `/next-task`。5 周回って安定したら `claude-code-action` の cron に移す。
