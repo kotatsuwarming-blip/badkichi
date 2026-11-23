@@ -175,8 +175,8 @@ function getMemberAvatarUrl(userId: string): string | undefined {
 </script>
 
 <template>
-  <!-- 【ページルート】: default.vue の <slot /> に差し込まれる (layout 無指定で自動継承, ADR-011 D1) -->
   <UContainer class="py-8">
+    <!-- 【ページルート】: default.vue の <slot /> に差し込まれる (layout 無指定で自動継承, ADR-011 D1) -->
     <div class="flex max-w-2xl flex-col gap-8 mx-auto">
       <!-- 【ページタイトル】: locales/ja.json groups.settings.title (NFR-204) 🔵 -->
       <h1 class="text-2xl font-bold">

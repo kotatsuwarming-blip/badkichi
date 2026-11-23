@@ -35,8 +35,8 @@ function handleLogin() {
 </script>
 
 <template>
-  <!-- 【ページルート】: auth レイアウトの <slot /> に差し込まれる -->
   <div class="w-full flex flex-col gap-6">
+    <!-- 【ページルート】: auth レイアウトの <slot /> に差し込まれる -->
     <!-- 【タイトル】: locales/ja.json login.title (NFR-204) 🔵 -->
     <h1 class="text-2xl font-bold text-center">
       {{ t('login.title') }}

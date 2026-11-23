@@ -53,8 +53,8 @@ watch(
 </script>
 
 <template>
-  <!-- 【ページルート】: auth レイアウトの <slot /> に差し込まれる -->
   <div class="w-full flex flex-col gap-6">
+    <!-- 【ページルート】: auth レイアウトの <slot /> に差し込まれる -->
     <!-- 【エラー通知】: Auth エラー時に useLogin.notice を <UAlert> で表示 (EDGE-002) 🔵 -->
     <template v-if="notice">
       <UAlert

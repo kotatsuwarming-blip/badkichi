@@ -16,8 +16,8 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <!-- 【ページルート】: default.vue の <slot /> に差し込まれる (layout 無指定で自動継承) -->
   <UContainer class="flex min-h-[60vh] flex-col items-center justify-center py-16">
+    <!-- 【ページルート】: default.vue の <slot /> に差し込まれる (layout 無指定で自動継承) -->
     <div class="flex w-full max-w-sm flex-col gap-8">
       <!-- 【タイトル】: locales/ja.json onboarding.title (NFR-204) 🔵 -->
       <h1 class="text-center text-2xl font-bold">

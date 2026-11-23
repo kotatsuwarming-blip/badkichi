@@ -13,7 +13,9 @@ import StatsWeaknessMaps from '~/components/stats/StatsWeaknessMaps.vue'
 import type { LandZoneResult } from '~/types/shot-stats'
 
 const lost: LandZoneResult = {
-  cells: [],
+  cells: [
+    { row: 1, col: 2, count: 3, ratio: 1, types: [{ type: 'smash', count: 2 }, { type: null, count: 1 }] }
+  ],
   outFallback: { side: 0, back: 0, both: 0 },
   unlocated: 0
 } as unknown as LandZoneResult
@@ -83,5 +85,12 @@ describe('ミス打点の内訳と割合 (stats-miss-out-detail REQ-001/002)', (
   it('ホバー用ツールチップ (title) に内訳が入る', () => {
     const w = mountMiss()
     expect(w.find('[data-testid="zone-2-0"] title').text()).toContain('missEntry')
+  })
+
+  it('決められた落下点: セルホバーで決定打の球種内訳が出る (2026-09-29)', () => {
+    const w = mountMiss()
+    const cell = w.find('[data-testid="weakness-conceded-map"] [data-testid="zone-1-2"]')
+    expect(cell.find('title').text()).toContain('annotation.shotType.smash 2')
+    expect(cell.find('title').text()).toContain('shotStats.endings.unannotated 1')
   })
 })

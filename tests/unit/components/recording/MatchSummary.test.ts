@@ -5,20 +5,20 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import type { MatchSummary } from '~/types/match-recording'
+import type { MatchSummary as MatchSummaryData } from '~/types/match-recording'
 
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k: string) => k }) }))
 
 // eslint-disable-next-line import/first
 import MatchSummary from '~/components/recording/MatchSummary.vue'
 
-function mountSummary(summary: MatchSummary) {
+function mountSummary(summary: MatchSummaryData) {
   return mount(MatchSummary, { props: { summary }, global: { mocks: { $t: (k: string) => k } } })
 }
 
 describe('MatchSummary', () => {
   it('各セットのスコアと試合勝者を表示する', () => {
-    const summary: MatchSummary = {
+    const summary: MatchSummaryData = {
       sets: [
         { setNumber: 1, scoreA: 21, scoreB: 15, winner: 'A' },
         { setNumber: 2, scoreA: 18, scoreB: 21, winner: 'B' },
@@ -34,7 +34,7 @@ describe('MatchSummary', () => {
   })
 
   it('試合未決着なら記録中を表示する', () => {
-    const summary: MatchSummary = {
+    const summary: MatchSummaryData = {
       sets: [{ setNumber: 1, scoreA: 10, scoreB: 8, winner: null }],
       setsWonA: 0, setsWonB: 0, matchWinner: null
     }

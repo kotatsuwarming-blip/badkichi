@@ -229,9 +229,14 @@ export interface DecisiveRankRow {
   count: number
 }
 
+/** 落下点セル（決定打球種の内訳つき。ホバー表示用, 2026-09-29） */
+export interface LandZoneCell extends ZoneCell {
+  types: { type: ShotType | null, count: number }[]
+}
+
 /** A: 落下点ゾーン集計の結果（座標 null は out_direction フォールバック, REQ-103） */
 export interface LandZoneResult {
-  cells: ZoneCell[]
+  cells: LandZoneCell[]
   outFallback: { side: number, back: number, both: number }
   /** 座標も out_direction も無い決着数 */
   unlocated: number
