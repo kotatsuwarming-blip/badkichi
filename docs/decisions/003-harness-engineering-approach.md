@@ -149,11 +149,14 @@ ADR-020 §4 (開発ループ L0) の決定により、移行条件を「痛み�
   失敗したら止めて結果を返す (`scripts/harness/stop-check.sh`。連続ブロックの上限は Claude Code 組み込みの 8 回)。
 - タスクキュー `docs/backlog/queue.json` (ループが変えてよいのは passes / pr / notes だけ、削除禁止) と、
   各周の学びを残す `docs/backlog/progress.md`。
-- 先頭タスクを 1 つ取って PR まで進めるコマンド `/next-task` (`.claude/commands/next-task.md`)。
-  完了の判定はモデルの発話ではなく「PR が開いた」という外部事実。
-- キューの補充は別コマンド `/refill-queue` (`.claude/commands/refill-queue.md`、ADR-020 §4 の L2)。
-  マージ済みの ADR / 要件定義から未登録のタスクを導いて末尾に追記する PR を開く。人は要らない行を消し順序を直すだけ (拒否権)。
-  消費 (L0) と補充 (L2) は信号も周期も違うので分けた。
+- 実行係 `/next-task` (`.claude/commands/next-task.md`): 先頭タスクを 1 つ取って PR まで進める。出口は
+  「PR が開いた」か「詰まったので `queue.json` の `inbox` に記録して止まった」の 2 つだけ。計画はしない
+  (タスクの追加、ADR の要否判断、詰まりの扱いの決定をしない)。完了の判定はモデルの発話ではなく外部事実。
+- 計画係 `/refill-queue` (`.claude/commands/refill-queue.md`、ADR-020 §4 の L2): マージ済みの ADR / 要件定義から
+  未登録のタスクを導き、`inbox` の詰まりと気づきを仕分け (補足で再開 / ADR タスク化 / 要件追補 / 削除候補)、
+  `queue.json` を更新する PR を開く。人はその PR で行を消し順序を直すだけ (拒否権)。
+  実行と計画を分けるのは、ワーカーが失敗ジョブをデッドレターキューに置き、再計画は別プロセスが行うのと同じ理由。
+  実行係に再計画をさせると周ごとに判断がぶれる。
 - PR テンプレート `.github/pull_request_template.md` (対応タスク、完了条件と結果、検証、人が判断すること)。
 
 起点はまずローカルの `/next-task`。5 周回って安定したら `claude-code-action` の cron に移す。
