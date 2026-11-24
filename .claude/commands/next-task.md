@@ -30,6 +30,8 @@ description: 開発ループ L0 の 1 周 (実行係)。GitHub Issues (label loo
 
 - `kind:docs` のタスク (要件定義、ADR) は、書いたら PR を開いて止まる。作者の確認が要るので実装には進まない。
 - 要件定義が無い機能は、先に `docs/spec/<name>/` に tsumiki の書式 (EARS、🔵🟡🔴) で要件定義を書き、**要件定義だけで PR を開いて止まる** (実装は次の周)。
+  大きい機能 (`docs/rule/story-splitting.md` §2-1 の信号に当たる) は、親 (ストーリー・方針・単位の分割と契約) だけを書いて止まる。子の要件定義は `/refill-queue` が起票する別の周。
+- 子の要件定義のタスク (親がある単位) では、親の `user-stories.md` を書き換えない。`user-stories.md` は親への対応表にする (`docs/rule/story-splitting.md` §0)。ストーリーへの提案は inbox に `finding:` で出す。
 - 要件定義があるものは tsumiki の `kairo-design` → `kairo-tasks` → `tdd-*` の流れで実装する。
 - `git add` は変更したファイルを明示する (`git add -A` は使わない)。
 - コミットメッセージは `<type>(<scope>): <要約>` の形。末尾に Co-Authored-By と Claude-Session を付ける。
