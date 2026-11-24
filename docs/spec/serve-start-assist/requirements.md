@@ -6,7 +6,7 @@
 人が見るのは 4 つ: ラリーの開始 (サーブの瞬間)、サーブ打者、ポジション (左右)、結果 (次のサーバーから「どちらが得点したか」
 「レットだったか」を判定。得点者は入力しない)。
 **作業規模**: match-recording への新しい記録モードの追加 (rule-engine は無変更)、候補ファイルの受け取り、video-playback (YouTube) の再生制御の流用
-**依存単位**: match-recording (記録画面・composable)、rule-engine (サーバー/レシーバー推論)、video-playback (再生・シーク)、data-foundation (`rallies` / `shots` / `position_overrides`)、**video-upload-analysis (別単位: 動画のアップロードとサーバーでの解析ジョブ。候補ファイルを生成して本単位に渡す)**、**ai-draft-loop (別単位: 候補と人の判断を保存する二層スキーマ `ai_predictions` / `human_resolutions`、`lead_time_ms`、学習・評価用の書き出し。改訂 2026-11-23)**
+**依存単位**: match-recording (記録画面・composable)、rule-engine (サーバー/レシーバー推論)、video-playback (再生・シーク)、data-foundation (`rallies` / `shots` / `position_overrides`)、**video-upload / video-analysis-job (別単位: 動画のアップロードと保管、サーバーでの解析ジョブ。候補ファイルを生成して本単位に渡す。親は video-upload-analysis)**、**ai-draft-loop (別単位: 候補と人の判断を保存する二層スキーマ `ai_predictions` / `human_resolutions`、`lead_time_ms`、学習・評価用の書き出し。改訂 2026-11-23)**
 **候補の生成ロジック**: `~/dev/badkichi-ai/` の検証コード (HANDOFF §9-10〜9-12) を解析ワーカーに移植する。本単位は候補ファイルの契約 (note.md §5) だけを持つ
 
 ## 概要
@@ -19,7 +19,7 @@
 
 1. **得点者は入力しない。** 次のサーブ候補の画像で「どちらのチームがサーブしているか」を確認すれば、競技規則 (得点したチームが次にサーブする) により直前のラリーの得点者が決まる。サーブ側・左右・サーバー・レシーバーは既存の rule-engine が導出する。
 2. **検出の取りこぼしは 3 つの網で見つける。** (a) rule-engine の予測 (次は A の右から) と候補のサーバー位置の食い違い、(b) 前の確定サーブからの間隔が長い、(c) セット終了時の最終得点から求めたラリー数と確定数の差。網にかかった区間だけ、普段は出さない低いしきい値の候補を追加で提示し、人に探してもらう。
-3. **候補の生成はサーバーの解析ジョブ。** 利用者が動画ファイルをアップロードし、サーバーの解析ワーカーが候補ファイルを作る (別単位 video-upload-analysis)。再生は従来どおり YouTube に任せ、利用者の手元に動画ファイルを置かせない。本単位は候補の提示・確認・保存だけを担う (ADR-013 §6「AI 下書き → 人が確認・訂正」)。
+3. **候補の生成はサーバーの解析ジョブ。** 利用者が動画ファイルをアップロードし、サーバーの解析ワーカーが候補ファイルを作る (別単位 video-analysis-job。アップロードと保管は video-upload)。再生は従来どおり YouTube に任せ、利用者の手元に動画ファイルを置かせない。本単位は候補の提示・確認・保存だけを担う (ADR-013 §6「AI 下書き → 人が確認・訂正」)。
 4. **候補と判断は二層で残す** (改訂 2026-11-23)。候補 (AI の予測) と人の判断 (確認・訂正・却下、所要時間) を ai-draft-loop の `ai_predictions` / `human_resolutions` に追記で保存し、人が見たものだけを学習と評価に流す (ADR-020 §2)。本単位は ADR-020 §1 の「記録層」であり、ショット層 (打刻・打者・球種・打点) の下書きは本単位で確定したラリーに対してだけ出る。
 
 背景となる数字 (戸塚ミックス 1 試合、3 セット 100 ラリー、`totsuka/rallies.json` が正解):
@@ -39,7 +39,7 @@
 - **コンテキストノート (検出の数字と設計の根拠)**: [📝 note.md](note.md)
 - **ADR-020 (AI 先行入力。§1 ラリー確認と記録層、§2 二層スキーマ、§6 動画は解析用アップロードのみ)**: [../../decisions/020-ai-first-input-and-loop-engineering.md](../../decisions/020-ai-first-input-and-loop-engineering.md)
 - **ai-draft-loop 要件 (二層スキーマ REQ-001〜005、取り込み REQ-006〜008、lead_time_ms REQ-016〜018、書き出し REQ-019〜022)**: [../ai-draft-loop/requirements.md](../ai-draft-loop/requirements.md)
-- **video-upload-analysis 要件 (アップロード、解析ジョブ、候補ファイルの受け渡し)**: [../video-upload-analysis/requirements.md](../video-upload-analysis/requirements.md)
+- **video-upload-analysis 要件 (親: 機能群)**: [../video-upload-analysis/requirements.md](../video-upload-analysis/requirements.md)。子: [video-upload](../video-upload/requirements.md) (アップロードと保管)、[video-analysis-job](../video-analysis-job/requirements.md) (解析ジョブ、候補ファイルの受け渡し)
 - **match-recording 要件 (旧ライブ記録、REQ-005〜007 / REQ-105 / REQ-110)**: [../match-recording/requirements.md](../match-recording/requirements.md)
 - **rule-engine 要件 (REQ-002 / REQ-003 / REQ-010 / REQ-011 / REQ-104)**: [../rule-engine/requirements.md](../rule-engine/requirements.md)
 - **ADR-017 (AI 階段、Stage 3「サーブ / 誰が打ったか」)**: [../../decisions/017-ai-staged-rollout-and-shot-annotation.md](../../decisions/017-ai-staged-rollout-and-shot-annotation.md)
@@ -58,13 +58,13 @@
 - 既存のライブ記録 UI・注釈・統計のコードを変えないこと (ライブ記録は主経路ではなくなる。REQ-205)
 
 ### 動画ファイルと再生の扱い (ユーザー決定 2026-11-01、2026-11-23 に再確認)
-- 候補の生成に使う動画ファイルは、利用者がアプリにアップロードする (別単位 video-upload-analysis)。運営者だけでなく利用者自身が使えるようにするため。
+- 候補の生成に使う動画ファイルは、利用者がアプリにアップロードする (別単位 video-upload)。運営者だけでなく利用者自身が使えるようにするため。
 - 再生は YouTube に任せる (既存の記録・注釈と同じ)。利用者のローカルにファイルを置く必要をなくす。
 - 候補の時刻は「アップロードしたファイルの先頭からの秒数」。同じファイルを YouTube に上げていれば YouTube の時刻とのずれはほぼ 0 (南区の実測で 0.06 秒 = 2 フレーム)。ずれの自動推定はできない (YouTube の埋め込みプレーヤーから映像・音声を読めず、サーバーから YouTube を取得して比べるのは利用規約に反する) ので、長さの比較と最初の候補での 1 回の手合わせで扱う (REQ-113)。
 - アップロードしたファイルを Storage から直接再生する選択肢は**採らない** (作者決定 2026-11-23: 再生は YouTube だけ、動画は解析用のアップロードのみ。原本は解析後に削除が既定、ADR-020 §6)。旧 REQ-304 は不採用。
 
 ### 含まない
-- 動画のアップロード、解析ジョブの実行・進捗・費用、原本の保管と削除 (別単位 video-upload-analysis。候補ファイルの契約だけを本単位で定める)
+- 動画のアップロード、解析ジョブの実行・進捗・費用、原本の保管と削除 (別単位 video-upload / video-analysis-job。候補ファイルの契約だけを本単位で定める)
 - ショット (サーブ以外の打刻) の下書き。ショット層の下書きと確認は ai-draft-loop で、本単位で確定したラリーに対して行う
 - ラリー終了時刻の確定 (候補の塊の末尾は参考値として持つが、確定はしない。`rallies` に終了時刻の列は無い)
 - YouTube 動画とのずれの自動推定 (不可能。REQ-113 の手合わせで扱う)
@@ -80,7 +80,7 @@
 
 ### 通常要件
 
-- REQ-001: システムは、試合 (`matches`) に紐づく解析ジョブ (video-upload-analysis) が生成したサーブ候補ファイルを受け取り、候補の列 (動画時刻 ms、信頼度、サーバーのスロット = 手前左/手前右/奥左/奥右とその確率、生成元の種別) を **`ai_predictions` に追記**しなければならない (target_type = `rally_candidate`、target_id = 候補 ID、field = `start_ms` / `server_slot`、ai_model_version = 候補ファイルの生成モデル版、batch_id = 解析ジョブ ID。ai-draft-loop REQ-001 / REQ-006 の経路。改訂 2026-11-23)。運営者が手元で作った候補ファイルを手動で取り込む経路も残す (検証・障害時用) 🔵 *HANDOFF §9-11 の `serve_combine.py` / `server_slot_clf.py` の出力項目 + ユーザー決定 2026-11-01 (サーバー解析)*
+- REQ-001: システムは、試合 (`matches`) に紐づく解析ジョブ (video-analysis-job) が生成したサーブ候補ファイルを受け取り、候補の列 (動画時刻 ms、信頼度、サーバーのスロット = 手前左/手前右/奥左/奥右とその確率、生成元の種別) を **`ai_predictions` に追記**しなければならない (target_type = `rally_candidate`、target_id = 候補 ID、field = `start_ms` / `server_slot`、ai_model_version = 候補ファイルの生成モデル版、batch_id = 解析ジョブ ID。ai-draft-loop REQ-001 / REQ-006 の経路。改訂 2026-11-23)。運営者が手元で作った候補ファイルを手動で取り込む経路も残す (検証・障害時用) 🔵 *HANDOFF §9-11 の `serve_combine.py` / `server_slot_clf.py` の出力項目 + ユーザー決定 2026-11-01 (サーバー解析)*
 - REQ-002: システムは、候補を動画時刻順に 1 つずつ提示し、各候補について「候補時刻の静止画」と「候補の前後 (−1.5 秒〜+1.5 秒) の繰り返し再生」を提供しなければならない 🔵 *候補の時刻誤差は ±1 秒以内 (再現の定義) + 既存の注釈ループ再生の流用*
 - REQ-003: システムは、各候補に rule-engine の予測 (次のサーブ側チーム、サーバーの左右、サーバーとレシーバーの選手名) と、検出のサーバー位置 (スロットを `camera_near_team` でチームに変換したもの) を並べて表示し、両者が食い違う場合は強調表示しなければならない 🔵 *rule-engine REQ-002/003 + サーバー位置の検出 側 97%・左右 94%*
 - REQ-004: システムは、候補に対する操作として「サーブとして確定」「サーブではない (捨てる)」「レット (前のラリーのやり直し)」「時刻の微調整 (フレーム単位の前後移動)」を提供しなければならない 🔵 *match-recording REQ-006 の入力種別 (得点・レット) の読み替え + video-playback のフレーム送り*
@@ -126,7 +126,7 @@
 ### 制約要件
 
 - REQ-401: システムは rule-engine (`app/utils/rule-engine/`) を無変更で利用しなければならない。得点者の導出 (REQ-006) と抜けの検知 (REQ-101) は match-recording 側の composable で行う 🔵 *ADR-002 + rule-engine REQ-401*
-- REQ-402: システムは候補の生成 (動画解析) を記録画面やブラウザで行ってはならない。解析はサーバーの解析ジョブ (video-upload-analysis) が担い、本単位は候補ファイルの形式 (JSON、note.md §5) だけを契約として定める 🔵 *ユーザー決定 2026-11-01 + 解析は Python + GPU で実時間の数倍 (STATUS §D)*
+- REQ-402: システムは候補の生成 (動画解析) を記録画面やブラウザで行ってはならない。解析はサーバーの解析ジョブ (video-analysis-job) が担い、本単位は候補ファイルの形式 (JSON、note.md §5) だけを契約として定める 🔵 *ユーザー決定 2026-11-01 + 解析は Python + GPU で実時間の数倍 (STATUS §D)*
 - REQ-403: システムは既存のライブ記録 UI (match-recording REQ-005〜007) の画面・composable・保存形式のコードを変えてはならない。ラリー確認は同じ録画系テーブルに同じ列構成で書き、加えて `ai_predictions` / `human_resolutions` に追記する 🔵 *stats-dashboard / shot-annotation が rallies / shots を直接読む (match-recording REQ-410)*
 - REQ-404: システムは候補ファイルを試合に紐づく添付としてサーバーに保存する場合、Group の RLS (`is_member_of(matches.group_id)`) に従わなければならない 🔵 *data-foundation RLS 方針*
 - REQ-405: システムは画面の全文言を i18n locales (ja/en) 経由で表示しなければならない 🔵 *match-recording REQ-405*
