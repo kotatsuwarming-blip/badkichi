@@ -11,6 +11,7 @@ description: プロダクトループ L2 の計画係。マージ済みの ADR /
 ## 0. 読むもの
 
 - `docs/decisions/020-ai-first-input-and-loop-engineering.md` §4、§8
+- `docs/rule/story-splitting.md` (ストーリー → 単位の分割基準)
 - `docs/backlog/progress.md` (末尾の「補充」の行で、前回見た main のコミットを知る。無ければ全体)
 - `gh issue list --label loop:task --state all --limit 100 --json number,title,labels,state,body` (既存タスク。重複起票を避ける)
 - `gh issue list --label loop:inbox --state open --json number,title,body`
@@ -23,6 +24,8 @@ description: プロダクトループ L2 の計画係。マージ済みの ADR /
 - ADR の「決定」「影響 §次のアクション」にあって Issue に無い実装項目
 - 要件定義 (`docs/spec/<name>/requirements.md`) があって、設計・実装のタスクが無いもの
 - バックログで ADR-020 §8 により最優先になったエピック D の項目で未登録のもの
+
+タスクは**子の単位** (親を持たない単位を含む) から導く。親 (機能群) の `requirements.md` からは実装タスクを導かない (親はストーリー・方針・単位の分割を持つだけ。`docs/rule/story-splitting.md` §0)。
 
 1 タスクは「1 つの PR で閉じられる大きさ」(規模 L は 2〜3 に割る)。起票は次の形:
 
@@ -41,6 +44,15 @@ gh issue create --label loop:task --label kind:<docs|feature|fix> --label prio:<
 ```
 
 `prio` は、ADR-020 §8 の順序 (エピック D と記録層が先) と依存関係から付ける。既存タスクと同じ内容なら起票せず、既存 Issue にコメントで出典を足す。
+
+## 1b. ストーリーから要件定義の単位を導く
+
+前回以降に `docs/spec/<親>/user-stories.md` が変わった (または新しい単位の `requirements.md` が `docs/rule/story-splitting.md` §2-1 の信号に当たる) 場合:
+
+- §2-2 の 4 問で単位の分割案を作る: 単位名、担うストーリー、持つデータ、外部依存、単位間の契約 (3 本以内)。
+- 子の要件定義を 1 単位 1 件、`kind:docs` の `loop:task` として起票する。本文の完了条件は「`docs/spec/<単位>/` に requirements.md (EARS)、acceptance-criteria.md、note.md、user-stories.md (親への対応表) が書かれ PR が開いている」、出典は親の `user-stories.md` と分割案。本文に分割案の表を載せる。
+- 信号に当たらなければ何もしない。分割しない判断も親の Issue にコメントで残す (理由は 4 問の結果)。
+- ストーリー自体は書き換えない。ストーリーの提案があれば `needs-human` ラベルつきの Issue 1 件にまとめる (持ち主は人)。
 
 ## 2. inbox を仕分ける
 
