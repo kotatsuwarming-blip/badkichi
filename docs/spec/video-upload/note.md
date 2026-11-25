@@ -16,7 +16,7 @@
 ## 2. 構成案 (kairo-design で確定)
 
 ```
-ブラウザ ──(再開可能アップロード, TUS)──▶ Storage (非公開バケット videos/)
+ブラウザ ──(再開可能アップロード)──▶ S3 互換バケット 1 つ (非公開。badkichi-ai の DVC リモートと共有)
    │ 同意・校正・区間                          │
    ▼                                          ▼
  本体 (Nuxt サーバー) ── match_videos (台帳: メタデータ, 状態, 保持の理由, 削除記録)
@@ -24,12 +24,13 @@
    ├──▶ video-analysis-job (署名 URL を発行)     │ hold の付け外し (サーバー側 API)
    │                                            │
    └──◀ serve-start-assist / ai-draft-loop ──────┘ (correction を付ける・入力完了で外す)
-         ai-draft-loop の学習用書き出し ──────────┘ (learning を外す)
- 定期ジョブ (1 日 1 回): 保持の理由が無く猶予を過ぎた原本を削除、漏れを検知
+         ai-draft-loop の学習用書き出し ──────────┘ (DVC に登録 → learning を外す。バイトは動かない)
+ 定期ジョブ (1 日 1 回): 保持の理由が無く、DVC 未登録で、猶予を過ぎた原本を削除、漏れを検知
 ```
 
-- **台帳 `match_videos`**: id, match_id, storage_path, size_bytes, duration_ms, fps, width, height, rotation, format, segment_start_ms, segment_end_ms, consent_at, consent_terms (4 点), learning_consent_at, learning_consent_revoked_at, status (uploading / uploaded / ready / deleted), is_proxy, holds (jsonb または別テーブル `match_video_holds`: kind, set_at, set_by, cleared_at), delete_scheduled_at, deleted_at, delete_reason。RLS は `matches.group_id` 経由。
+- **台帳 `match_videos`**: id, match_id, storage_path, size_bytes, duration_ms, fps, width, height, rotation, format, segment_start_ms, segment_end_ms, content_md5, consent_at, consent_terms (4 点), learning_consent_at, learning_consent_revoked_at, dvc_registered_at, dvc_version, status (uploading / uploaded / ready / deleted), is_proxy, holds (jsonb または別テーブル `match_video_holds`: kind, set_at, set_by, cleared_at), delete_scheduled_at, deleted_at, delete_reason。RLS は `matches.group_id` 経由。
 - **校正**: video-tap-annotation のコート校正を参照する。無ければ本単位の画面で 1 枚の静止画から 4 隅を取り、同じ保存先に書く (校正の所有は video-tap-annotation 側)。
+- **保管先は 1 つ** (2026-11-25): 製品と badkichi-ai が同じ S3 互換バケットを使う。候補は Cloudflare R2、Backblaze B2、Supabase Storage の S3 互換 API。Supabase Storage は認証・RLS・TUS が組み込みだが Free は 1 GB、Pro でも込み分 100 GB で単価が高い。R2 / B2 は単価が低く転送料がほぼ無いが、署名 URL の発行と再開 (S3 マルチパート) を本体で書く。DVC は台帳なので、どれを選んでも登録はハッシュの記録だけで済む。選択は kairo-design。
 - **署名 URL の発行**: サーバールートのみ。video-analysis-job がジョブ開始時に呼ぶ。有効期限 12 時間 (既定)。
 - **保持の理由の API**: サーバー側だけから呼べる関数 (`add_hold(match_video_id, kind, by)` / `clear_hold(...)`)。クライアントからは `match_videos` の保持の列を更新できない。
 
@@ -45,7 +46,7 @@
 
 - なぜ `correction` が要るか: 人が訂正するのは YouTube を見ながらで、訂正画面自体に原本は要らない。要るのは AI 側で、ラリーの開始・終了を人が直したらその区間で打刻・球種を推論し直す (video-analysis-job の再実行)。原本が無いと再推論できない。
 - 「確認完了」の信号は ai-draft-loop 側の要件 (試合単位の `confirmed_at`。L2 の信号「1 試合あたりの作業時間」の終点としても要る)。**本単位は hold の付け外しの口を提供するだけ**で、いつ外すかは記録側が決める。→ inbox に起票済み (ai-draft-loop の要件追補候補)。
-- `eval` の正本は製品のストレージではなく DVC (ADR-020 §3)。製品側は「消さない」だけで、評価セットの凍結・版管理は badkichi-ai 側。製品側の原本が (利用者の要求や Group 削除で) 消えても、DVC 側の版はそのまま使える。ただし学習同意の取り消しは DVC 側の版にも効く (版ごと破棄、EDGE-104)。
+- 実体は 1 つのバケットにしか無い (2026-11-25)。DVC は「どのオブジェクトがどの版に入っているか」の台帳で、badkichi-ai 側が持つ。製品側の規則は「DVC に登録済みのオブジェクトは物理削除しない」(REQ-103 / 104 / 107 / EDGE-103) の 1 本。登録を外せるのは badkichi-ai 側だけ。学習同意の取り消しは版の破棄 → 登録を外す → 削除、の順 (REQ-108 / EDGE-104)。「製品側で消したのに DVC 側に残っていた」という事故は構造的に起きない。
 - 手元の検証データ (戸塚・南区、`~/dev/badkichi-ai/`) は製品のストレージに無いので、本単位の削除の対象外。
 
 費用の目安 (概算、kairo-design で実測に置き換える):
@@ -54,8 +55,11 @@
 |---|---|
 | 1080p 原本 1 試合 | 2〜4 GB |
 | 1280 幅 30 fps プロキシ 1 試合 | 300〜600 MB (原本の 1/5〜1/10) |
-| 100 試合を原本のまま保管 | 200〜400 GB。Supabase Pro の込み分 (100 GB) を超えた分が GB 単価で月に数ドル |
-| 100 試合をプロキシで保管 | 30〜60 GB。込み分に収まる |
+| 100 試合を原本のまま保管 | 200〜400 GB |
+| 100 試合をプロキシで保管 | 30〜60 GB |
+| 単価 (1 GB・月) | Supabase Storage 約 3 円 (Pro。Free は 1 GB まで)、R2 約 2 円、B2 約 1 円。R2 / B2 は転送料ほぼ無し |
+
+既定オンだと動画の大半が DVC に登録されて残るので、「削除で費用を抑える」はほぼ効かない。効くのは単価 (R2 / B2) とプロキシ (REQ-301)。100 試合をプロキシで B2 に置けば月に数十円、原本のままでも数百円。
 
 プロキシ (REQ-301) を採れば「原本は早く消す、プロキシはゆっくり消す」の二段構えになり、保持の理由はプロキシに対して働く。解析に要る解像度 (TrackNet 512×288、姿勢 640) はプロキシで足りる。
 
@@ -65,9 +69,9 @@
 - プロキシ (REQ-301) の採否と生成の場所 (video-analysis-job のワーカーが解析のついでに出すのが自然。その場合は解析単位との契約に「プロキシを返す」を足す)
 - 保持の理由の保存形 (jsonb か別テーブル)。付け外しの履歴が要るなら別テーブル
 - 校正の入力 UI を本単位に持つか video-tap-annotation (BL-021) に寄せるか。画面外の隅の扱い
-- 再開可能アップロードの実装 (Supabase Storage の TUS) とプランごとの上限
+- バケットの選択 (R2 / B2 / Supabase Storage S3 互換) と再開可能アップロードの方式 (TUS か S3 マルチパート)、オブジェクトのキーの付け方 (内容ハッシュ)、プランごとの上限
 - 同意の文言 (BL-004 と揃える)。(3) を「入力が完了したら削除」に変えたので、プライバシーポリシーの記載も合わせる。(2) に「特徴量と確認・訂正はモデル改善に使う」を含める (2026-11-25)
-- ~~原本 (映像) の学習利用の既定値~~ → 2026-11-25 作者決定: **既定オン・取り消し可**。理由は「利用者の修正を教師データにしたい」「原本を消すと、改善後のモデルで同じ試合を再推論して訂正がどれだけ減ったか確かめられない」。取り込み = DVC への複製 (REQ-105) にして、製品側の削除を「正本の移動」にした。ADR-020 §3 / §6、ADR-013 §6-4 に追記済み。残り: 同意文言 (BL-004)、公開前の既定値の見直し、DVC の置き場 (ローカルディスクか安い object storage か) と複製するのを原本かプロキシか (kairo-design)
+- ~~原本 (映像) の学習利用の既定値~~ → 2026-11-25 作者決定: **既定オン・取り消し可**。理由は「利用者の修正を教師データにしたい」「原本を消すと、改善後のモデルで同じ試合を再推論して訂正がどれだけ減ったか確かめられない」。取り込み = DVC への複製 (REQ-105) にして、製品側の削除を「正本の移動」にした。ADR-020 §3 / §6、ADR-013 §6-4 に追記済み。さらに作者指摘「最初から DVC に置けないか」で保管先を 1 つにし、取り込みを複製から**登録**に変えた (§2)。残り: 同意文言 (BL-004)、公開前の既定値の見直し、バケットの選択と登録するのが原本かプロキシか (kairo-design)
 - `correction` を付けるタイミング: `ready` になった時点で付けるか、候補を取り込んだ時点か。前者の方が単純 (解析前に消える事故が無い)
 
 ## 5. 進め方の注意
